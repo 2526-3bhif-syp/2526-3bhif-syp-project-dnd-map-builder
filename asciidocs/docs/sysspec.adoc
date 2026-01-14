@@ -25,23 +25,35 @@ endif::backend-html5[]
 
 === Ausgangssituation
 
-Die HTL Leonding ist eine HTL im oö. Zentralraum mit ca. 1000 Schülern und den Fachabteilungen Medientechnik, Informatik, ....
+DnD ist ein fantasy table-top roleplaying game.
+Es gibt einen Spielleiter der eine Kampagne erstellt. Man kann diese Kampagne dann mit seinen Freunden spielen.
+Jeder Spieler hat einen selbst erstellten Charakter mit dem er die Spielwelt erkunden kann.
+Viele Aktivitäten innerhalb einer Kampagne benötigen eine Spielkarte (Map).
 
 === Istzustand
-----
-Beschreibung der speziellen Situation zB in der Abteilung
-----
+Ein Spielleiter erstellt normalerweise Karten mithilfe von Online Tools oder per Hand.
+Vorhandene/Beliebte Tools:
+
+* link:https://www.dungeonscrawl.com/[Dungeon Scrawl]
+* link:https://inkarnate.com/[Inkarnate]
+* link:https://www.worldanvil.com/[Worldanvil]
+* link:https://www.dungeonfog.com/[Dungeon Fog]
+
 === Problemstellung
+Man muss entweder eine vorgefertigte Karte nehmen, dadurch verliert man viel kreative Freiheit, wovon eine DnD Kampagne lebt.
+Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zeit für die Plannung der Kampagne lässt.
+
 === Aufgabenstellung
+
 ==== Funktionale Anforderungen
 
 [plantuml,wireframe,png]
 ----
 @startsalt
 {
-Name         | "                 "
-Modifiers:   | { (X) public | () default | () private | () protected
-	            [] abstract | [] final   | [] static }
+  Name         | "                 "
+    Modifiers:   | { (X) public | () default | () private | () protected
+      [] abstract | [] final   | [] static }
 Superclass:  | { "java.lang.Object " | [Browse...] }
 }
 @endsalt
