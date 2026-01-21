@@ -1,0 +1,27 @@
+:icons: font
+== User Stories
+
+1. Als Spielleiter möchte ich eine Karte zufällig generieren können.
+
+2. Als Spielleiter möchte ich basierend auf den Parametern die Karte generieren:
+
+* Kartengröße
+* Gebirge, Wüste, Meere, Flüsse, Wälder, etc. Anteil
+
+3. Als Spielleiter möchte ich Text auf die Karte einfügen können.
+
+4. Als Spielleiter möchte ich Points of Interest auf der Karte generieren lassen.
+
+5. Als Spielleiter möchte ich beim auf die Karte Zoomen mehr Details sehen können (Level of Detail).
+
+6. Als Spielleiter möchte ich, dass die Karte mit einem Grid/Hexgrid versehen werden kann.
+
+7. Als Spielleiter möchte ich, anhand eines Parameters Provinzen oder Gebietsgrenzen
+
+8. Als Spielleiter möchte ich, die Karte speichern können.
+
+9. Als Spielleiter möchte ich, die Karte exportieren können.
+
+10. Als Spielleiter möchte ich, Points of Interest auf der Karte bearbeiten können. (z.B: Dorf entfernen/moven)
+
+11. Als Spielleiter möchte ich, verschiedene Themes bzw. Styles für die Karte haben bzw. selbst erstellen.

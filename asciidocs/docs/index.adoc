@@ -1,4 +1,7 @@
 = Index page
-ifndef::imagesdir[:imagesdir: images]
 
-image::img.png[]
+
+* xref:sysspec.adoc[System Specification]
+
+* xref:user-stories.adoc[User Stories]
+
