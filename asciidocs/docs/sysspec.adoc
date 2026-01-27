@@ -47,6 +47,138 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 
 ==== Funktionale Anforderungen
 
+. Zufällige Kartengenerierung
+* Der Spielleiter kann eine komplette Karte automatisch generieren lassen.
+* Eine neue Karte kann mit Standardparametern ohne weitere Eingaben erzeugt werden.
+
+. Parametrisierte Generierung
+* Die Generierung ist parametrisiert und unterstützt mindestens folgende Eingaben:
+** Kartengröße (Breite × Höhe in Pixel oder Tile-Einheiten)
+** Anteil von Geländetypen (Gebirge, Wüste, Meer, Flüsse, Wälder, Ebenen, Sümpfe)
+** Dichte/Verteilung von Flüssen und Küstenlinien
+** Anzahl/Typ von Points of Interest (POI)
+
+. Text/Label auf der Karte
+* Der Benutzer kann Text-Labels frei auf der Karte platzieren und formatieren (Schriftgröße, Stil, Farbe).
+
+. Points of Interest (POI)
+* Das System kann POIs automatisch generieren (z.B. Dörfer, Ruinen, Städte) und als separate Objekte verwalten.
+* POIs können erstellt, verschoben, bearbeitet und gelöscht werden.
+
+. Zoom & Level of Detail (LOD)
+* Beim Zoomen werden je nach Zoomstufe unterschiedliche Details angezeigt (vereinfachte Darstellung bei Übersicht, mehr Details beim Hereinzoomen).
+
+. Grid/Hexgrid
+* Die Karte kann mit einem rechteckigen Grid oder einem Hex-Grid überlagert werden; Grid-Parameter (Größe, Sichtbarkeit) sind konfigurierbar.
+
+. Provinzen/Gebietsgrenzen
+* Das System kann auf Wunsch Provinzen oder Gebietslinien generieren und darstellen; Linien lassen sich editieren und einfärben.
+
+. Speichern und Laden
+* Karten können in einem eigenen Format gespeichert und wieder geladen werden (inkl. Metadaten, POIs, Parameter, Seed).
+
+. Export
+* Karten können in verschiedenen Formaten exportiert werden (z.B. PNG, SVG, PDF).
+* Export unterstützt wählbare Auflösung.
+
+. Bearbeitung von POIs
+* POIs verfügen über einen Bearbeitungsdialog (Name, Beschreibung, Koordinaten, Icon/Style).
+* Änderungen an POIs werden gespeichert.
+
+. Themes / Styles
+* Es sind mehrere visuelle Themes verfügbar. Der Benutzer kann Themes auswählen und zwischen ihnen wechseln.
+
+[plantuml,sysspec,png]
+----
+@startuml
+left to right direction
+
+actor "Spielleiter / Benutzer" as User
+
+package "Kartengenerator-System" {
+
+    ' --- Group 1: Generation ---
+    usecase "Karte generieren" as GenMap
+    usecase "Parameter konfigurieren" as ConfigParams
+
+    ' --- Group 2: Editing & Objects ---
+    usecase "POIs verwalten" as ManagePOIs
+    usecase "Text-Labels platzieren/formatieren" as ManageLabels
+    usecase "Provinzen/Grenzen editieren" as EditBorders
+
+    ' --- Group 3: View & Navigation ---
+    usecase "Karte zoomen (LOD)" as Zoom
+    usecase "Grid konfigurieren" as ConfigGrid
+    usecase "Theme wechseln" as SwitchTheme
+
+    ' --- Group 4: File Operations ---
+    usecase "Karte speichern/laden" as SaveLoad
+    usecase "Karte exportieren" as Export
+
+}
+
+' --- Relationships ---
+
+' Generation Logic
+User --> GenMap
+GenMap ..> ConfigParams
+GenMap ..> ManagePOIs
+
+' Editing Logic
+User --> ManagePOIs
+User --> ManageLabels
+User --> EditBorders
+
+' View Logic
+User --> Zoom
+User --> ConfigGrid
+User --> SwitchTheme
+
+' File Logic
+User --> SaveLoad
+User --> Export
+
+@enduml
+----
+
+==== Nichtfunktionale Anforderungen (NFA)
+
+. Performance
+* Die Generierung einer mittelgroßen Karte soll auf einem modernen Rechner zügig abgeschlossen sein.
+* Interaktive Operationen (Verschieben von POIs, Zoom, Layer-Umschalten) müssen reaktiv sein.
+
+. Zuverlässigkeit / Persistenz
+* Gespeicherte Karten dürfen nicht korrupt werden. Das Dateiformat muss Versionsinformationen enthalten.
+* Es gibt eine Undo/Redo-Funktion für Bearbeitungsaktionen.
+
+. Portabilität / Plattform
+* Die Anwendung soll Plattformunabhängig sein und auf Windows, macOS und Linux lauffähig sein.
+
+. Erweiterbarkeit
+* Es soll die Möglichkeit bestehen, Themes bzw. Stilpakete hinzuzufügen, um das Aussehen der Karten zu verändern.
+
+. Sicherheit & Datenschutz
+* Standardmäßig arbeitet die Anwendung offline und speichert Dateien lokal.
+
+=== Ziele
+
+. Der Spielleiter (Dungeon Master) kann sich mehr auf die inhaltliche Planung konzentrieren, da die Kartenerstellung automatisch erfolgt.
+. Kreative Freiheit bleibt erhalten, da die generierten Karten anpassbar sind.
+. Zeitersparnis bei der Kampagnen-vorbereitung durch schnelle Kartengenerierung.
+
+=== Mengengerüst
+
+=== Rahmenbedingungen
+
+Die Applikation soll in Java mittels JavaFX als GUI-Framework umgesetzt werden.
+
+== Entwurf "Wie mache ich"
+=== Systemarchitektur
+=== ...
+
+== Projekthandbuch "Organisatorische Rahmenbedingungen"
+
+
 [plantuml,wireframe,png]
 ----
 @startsalt
@@ -58,19 +190,6 @@ Superclass:  | { "java.lang.Object " | [Browse...] }
 }
 @endsalt
 ----
-==== Nichtfunktionale Anforderungen (NFA)
-=== Ziele
-=== Mengengerüst
-=== Rahmenbedingungen
-zB Vorgaben vom Auftraggeber
-
-== Entwurf "Wie mache ich es"
-=== Systemarchitektur
-=== ...
-
-== Projekthandbuch "Organisatorische Rahmenbedingungen"
-
-
 
 === GANTT-Diagramm
 
@@ -92,4 +211,3 @@ mit User-Stories (definiert in YouTrack)
 
 * link:minutes-of-meeting.html[Protokollvorlage]
 * link:demo.html[Demo]
-
