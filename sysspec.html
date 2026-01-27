@@ -451,7 +451,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="details">
 <span id="author" class="author">firstname lastname</span><br>
 <span id="revnumber">version 1.0.0,</span>
-<span id="revdate">2026-01-21</span>
+<span id="revdate">2026-01-27</span>
 <br><span id="revremark">Some notes</span>
 </div>
 <div id="toc" class="toc2">
@@ -468,7 +468,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_rahmenbedingungen">1.7. Rahmenbedingungen</a></li>
 </ul>
 </li>
-<li><a href="#_entwurf_wie_mache_ich_es">2. Entwurf "Wie mache ich es"</a>
+<li><a href="#_entwurf_wie_mache_ich">2. Entwurf "Wie mache ich"</a>
 <ul class="sectlevel2">
 <li><a href="#_systemarchitektur">2.1. Systemarchitektur</a></li>
 <li><a href="#">2.2. &#8230;&#8203;</a></li>
@@ -538,20 +538,233 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 <h3 id="_aufgabenstellung"><a class="anchor" href="#_aufgabenstellung"></a>1.4. Aufgabenstellung</h3>
 <div class="sect3">
 <h4 id="_funktionale_anforderungen"><a class="anchor" href="#_funktionale_anforderungen"></a>1.4.1. Funktionale Anforderungen</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Zufällige Kartengenerierung</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Der Spielleiter kann eine komplette Karte automatisch generieren lassen.</p>
+</li>
+<li>
+<p>Eine neue Karte kann mit Standardparametern ohne weitere Eingaben erzeugt werden.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Parametrisierte Generierung</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Die Generierung ist parametrisiert und unterstützt mindestens folgende Eingaben:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Kartengröße (Breite × Höhe in Pixel oder Tile-Einheiten)</p>
+</li>
+<li>
+<p>Anteil von Geländetypen (Gebirge, Wüste, Meer, Flüsse, Wälder, Ebenen, Sümpfe)</p>
+</li>
+<li>
+<p>Dichte/Verteilung von Flüssen und Küstenlinien</p>
+</li>
+<li>
+<p>Anzahl/Typ von Points of Interest (POI)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Text/Label auf der Karte</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Der Benutzer kann Text-Labels frei auf der Karte platzieren und formatieren (Schriftgröße, Stil, Farbe).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Points of Interest (POI)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Das System kann POIs automatisch generieren (z.B. Dörfer, Ruinen, Städte) und als separate Objekte verwalten.</p>
+</li>
+<li>
+<p>POIs können erstellt, verschoben, bearbeitet und gelöscht werden.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Zoom &amp; Level of Detail (LOD)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Beim Zoomen werden je nach Zoomstufe unterschiedliche Details angezeigt (vereinfachte Darstellung bei Übersicht, mehr Details beim Hereinzoomen).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Grid/Hexgrid</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Die Karte kann mit einem rechteckigen Grid oder einem Hex-Grid überlagert werden; Grid-Parameter (Größe, Sichtbarkeit) sind konfigurierbar.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Provinzen/Gebietsgrenzen</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Das System kann auf Wunsch Provinzen oder Gebietslinien generieren und darstellen; Linien lassen sich editieren und einfärben.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Speichern und Laden</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Karten können in einem eigenen Format gespeichert und wieder geladen werden (inkl. Metadaten, POIs, Parameter, Seed).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Export</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Karten können in verschiedenen Formaten exportiert werden (z.B. PNG, SVG, PDF).</p>
+</li>
+<li>
+<p>Export unterstützt wählbare Auflösung.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Bearbeitung von POIs</p>
+<div class="ulist">
+<ul>
+<li>
+<p>POIs verfügen über einen Bearbeitungsdialog (Name, Beschreibung, Koordinaten, Icon/Style).</p>
+</li>
+<li>
+<p>Änderungen an POIs werden gespeichert.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Themes / Styles</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Es sind mehrere visuelle Themes verfügbar. Der Benutzer kann Themes auswählen und zwischen ihnen wechseln.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
 <div class="imageblock">
 <div class="content">
-<img src="images/wireframe.png" alt="wireframe" width="376" height="84">
+<img src="images/sysspec.png" alt="sysspec" width="759" height="721">
 </div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_nichtfunktionale_anforderungen_nfa"><a class="anchor" href="#_nichtfunktionale_anforderungen_nfa"></a>1.4.2. Nichtfunktionale Anforderungen (NFA)</h4>
-
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Performance</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Die Generierung einer mittelgroßen Karte soll auf einem modernen Rechner zügig abgeschlossen sein.</p>
+</li>
+<li>
+<p>Interaktive Operationen (Verschieben von POIs, Zoom, Layer-Umschalten) müssen reaktiv sein.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Zuverlässigkeit / Persistenz</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Gespeicherte Karten dürfen nicht korrupt werden. Das Dateiformat muss Versionsinformationen enthalten.</p>
+</li>
+<li>
+<p>Es gibt eine Undo/Redo-Funktion für Bearbeitungsaktionen.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Portabilität / Plattform</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Die Anwendung soll Plattformunabhängig sein und auf Windows, macOS und Linux lauffähig sein.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Erweiterbarkeit</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Es soll die Möglichkeit bestehen, Themes bzw. Stilpakete hinzuzufügen, um das Aussehen der Karten zu verändern.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Sicherheit &amp; Datenschutz</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Standardmäßig arbeitet die Anwendung offline und speichert Dateien lokal.</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_ziele"><a class="anchor" href="#_ziele"></a>1.5. Ziele</h3>
-
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Der Spielleiter (Dungeon Master) kann sich mehr auf die inhaltliche Planung konzentrieren, da die Kartenerstellung automatisch erfolgt.</p>
+</li>
+<li>
+<p>Kreative Freiheit bleibt erhalten, da die generierten Karten anpassbar sind.</p>
+</li>
+<li>
+<p>Zeitersparnis bei der Kampagnen-vorbereitung durch schnelle Kartengenerierung.</p>
+</li>
+</ol>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_mengengerüst"><a class="anchor" href="#_mengengerüst"></a>1.6. Mengengerüst</h3>
@@ -560,13 +773,13 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 <div class="sect2">
 <h3 id="_rahmenbedingungen"><a class="anchor" href="#_rahmenbedingungen"></a>1.7. Rahmenbedingungen</h3>
 <div class="paragraph">
-<p>zB Vorgaben vom Auftraggeber</p>
+<p>Die Applikation soll in Java mittels JavaFX als GUI-Framework umgesetzt werden.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_entwurf_wie_mache_ich_es"><a class="anchor" href="#_entwurf_wie_mache_ich_es"></a>2. Entwurf "Wie mache ich es"</h2>
+<h2 id="_entwurf_wie_mache_ich"><a class="anchor" href="#_entwurf_wie_mache_ich"></a>2. Entwurf "Wie mache ich"</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_systemarchitektur"><a class="anchor" href="#_systemarchitektur"></a>2.1. Systemarchitektur</h3>
@@ -581,6 +794,11 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 <div class="sect1">
 <h2 id="_projekthandbuch_organisatorische_rahmenbedingungen"><a class="anchor" href="#_projekthandbuch_organisatorische_rahmenbedingungen"></a>3. Projekthandbuch "Organisatorische Rahmenbedingungen"</h2>
 <div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="images/wireframe.png" alt="wireframe" width="376" height="84">
+</div>
+</div>
 <div class="sect2">
 <h3 id="_gantt_diagramm"><a class="anchor" href="#_gantt_diagramm"></a>3.1. GANTT-Diagramm</h3>
 <div class="paragraph">
@@ -608,7 +826,7 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 <div id="footer">
 <div id="footer-text">
 Version 1.0.0<br>
-Last updated 2026-01-21 11:58:23 UTC
+Last updated 2026-01-27 18:15:57 UTC
 </div>
 </div>
 </body>
