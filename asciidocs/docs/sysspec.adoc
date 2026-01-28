@@ -1,5 +1,5 @@
-= My Project
-firstname lastname
+= DnD Map Builder
+Almir Hadzic, Erik Reitbauer, Lukas Grünzweil, Nico Haider, Ali Hasem
 1.0.0, {docdate}: Some notes
 ifndef::imagesdir[:imagesdir: images]
 //:toc-placement!:  // prevents the generation of the doc at this position, so it can be printed afterwards
