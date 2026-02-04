@@ -1,4 +1,4 @@
-= Index page
+= Dnd map builder documentation
 
 
 * xref:sysspec.adoc[System Specification]
