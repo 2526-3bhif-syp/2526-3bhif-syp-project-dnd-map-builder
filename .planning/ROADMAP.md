@@ -3,7 +3,7 @@
 ## Phase 1: Foundation & Application Shell
 - **Goal:** Set up JavaFX project structure, main window, and basic canvas.
 - **Plans:** 1 plans
-  - [ ] 01-foundation-application-shell-01-PLAN.md — Refactor to MVP and build primary UI shell.
+  - [x] 01-foundation-application-shell-01-PLAN.md — Refactor to MVP and build primary UI shell.
 - **Tasks:**
   - Initialize Java/JavaFX project structure.
   - Create main application window with menu bar and primary workspace.
