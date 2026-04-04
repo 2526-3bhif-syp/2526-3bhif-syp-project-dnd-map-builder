@@ -8,7 +8,7 @@ public class MapGenerator {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
-        double waterLevel = 0.3;
+        double waterLevel = 0.25;
         double temperatureBias = 0.0;
         double rainfallBias = 0.0;
 
@@ -38,12 +38,13 @@ public class MapGenerator {
                 double ny = (double) y / height;
 
                 // Elevation
-                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5; 
+                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.6 + 0.5; 
                 // Island falloff
                 double cx = nx * 2 - 1;
                 double cy = ny * 2 - 1;
-                double d = Math.sqrt(cx * cx + cy * cy);
-                e = e - d * 0.5;
+                // Squared distance gives a broader center landmass before dropping off
+                double d2 = cx * cx + cy * cy;
+                e = e - d2 * 0.3;
                 cell.setElevation(e);
 
                 // Temperature
