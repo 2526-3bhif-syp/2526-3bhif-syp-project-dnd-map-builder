@@ -82,3 +82,10 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 - Advanced export functions (Phase 5).
 
 </deferred>
+
+## Extra User Requirements
+- The map is static (no movement).
+- Implement wind logic so biomes are geographically more precise.
+- Biome transitions should use color mixing, NOT extra biomes.
+- Include ocean temperature moderation.
+- DO NOT implement rivers.
