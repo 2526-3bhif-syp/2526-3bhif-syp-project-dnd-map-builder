@@ -1,8 +1,14 @@
 package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.core.MVPBase;
+import com.mapbuilder.mapbuilder.core.map.MapCell;
+import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import javafx.animation.PauseTransition;
 import javafx.concurrent.Task;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelWriter;
 import javafx.util.Duration;
 
 public class MainPresenter implements MVPBase.Presenter<MainView> {
@@ -41,12 +47,14 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     }
 
     private void generateMapAsync() {
-        int seed;
+        int parsedSeed;
         try {
-            seed = Integer.parseInt(view.getSeedField().getText());
+            parsedSeed = Integer.parseInt(view.getSeedField().getText());
         } catch (NumberFormatException e) {
-            seed = view.getSeedField().getText().hashCode();
+            parsedSeed = view.getSeedField().getText().hashCode();
         }
+        
+        final int seed = parsedSeed;
         
         double waterLevel = view.getWaterLevelSlider().getValue();
         double tempBias = view.getTempBiasSlider().getValue();
@@ -65,6 +73,22 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     }
 
     private void renderMap() {
-        // implemented in next task
+        MapGrid grid = model.getCurrentGrid();
+        Canvas canvas = view.getCanvas();
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        PixelWriter pixelWriter = gc.getPixelWriter();
+
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        int[] pixels = new int[width * height];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                MapCell cell = grid.getCell(x, y);
+                pixels[y * width + x] = cell.getMixedColorARGB();
+            }
+        }
+
+        pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
     }
 }
