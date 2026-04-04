@@ -14,6 +14,9 @@ public class HelloApplication extends Application {
         presenter.setView(view);
 
         Scene scene = new Scene(view, 1200, 800);
+        String css = getClass().getResource("/styles.css").toExternalForm();
+        scene.getStylesheets().add(css);
+        
         stage.setTitle("DnD Map Builder");
         stage.setScene(scene);
         stage.show();
