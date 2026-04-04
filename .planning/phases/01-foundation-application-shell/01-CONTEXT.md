@@ -17,7 +17,7 @@ Setting up the initial JavaFX application shell, project architecture, and core 
 - **D-01:** Build UI programmatically using Java code (No FXML/SceneBuilder).
 
 ### Layout Structure
-- **D-02:** Follow the UI sketch provided by the user for the primary application window layout.
+- **D-02:** Follow the UI sketch provided by the user for the primary application window layout. This features a central canvas, a collapsible left sidebar for generator parameters (with tabs like Welt, POI, Königreiche, etc., sliders for stats, seed input, and generate buttons), a top-right action bar (Speichern, Laden, Export, Drucken), and a collapsible bottom-right layer visibility panel (Markierungen, POIs, Strukturen, Berge, Flüsse, Grid).
 
 ### Canvas Implementation
 - **D-03:** Use a JavaFX `Canvas` node as the high-performance drawing layer for rendering the map and its features.
@@ -65,7 +65,11 @@ Setting up the initial JavaFX application shell, project architecture, and core 
 ## Specific Ideas
 
 - The user specifically requested the MVP architecture.
-- The UI layout will strictly follow a sketch provided by the user.
+- The UI layout will strictly follow a sketch provided by the user. Key layout details:
+  - **Left Panel (Generator Settings):** Collapsible (Ausblenden). Top: Seed input + refresh. Middle: Tabs (Welt, POI, Königreiche, Straßen & Flüsse) with sliders for map generation stats (Kartengröße, Wasseranteil, Wüstenanteil, Chance für Dörfer/Dungeons, Berganteil). Bottom: Buttons for "Alle zufällig wählen" and "Karte Generieren".
+  - **Top Right Bar:** Horizontal buttons for Speichern (Save), Laden (Load), Export, and Drucken (Print).
+  - **Bottom Right Panel (Layers):** Collapsible (Ausblenden). List of toggleable layers with eye icons: Markierungen, Punkte von Interesse, Strukturen & Straßen, Berge, Flüsse und Seen, Grid.
+  - **Center:** The main map Canvas.
 
 </specifics>
 
