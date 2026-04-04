@@ -10,7 +10,7 @@ class MapGeneratorTest {
         MapGrid grid = new MapGrid(10, 10);
         MapGenerator generator = new MapGenerator();
         
-        generator.generate(grid, 12345, 0.0, 0.0, 0.0);
+        generator.generate(grid, 12345, 5, 0.01f);
         
         MapCell centerCell = grid.getCell(5, 5);
         assertNotNull(centerCell.getBiome(), "Biome should not be null after generation");

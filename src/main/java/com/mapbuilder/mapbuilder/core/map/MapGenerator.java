@@ -4,21 +4,31 @@ import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
 
 public class MapGenerator {
 
-    public void generate(MapGrid grid, int seed, double waterLevel, double temperatureBias, double rainfallBias) {
+    public void generate(MapGrid grid, int seed, int octaves, float scale) {
         int width = grid.getWidth();
         int height = grid.getHeight();
+
+        double waterLevel = 0.3;
+        double temperatureBias = 0.0;
+        double rainfallBias = 0.0;
 
         FastNoiseLite elevationNoise = new FastNoiseLite(seed);
         elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
         elevationNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        elevationNoise.SetFractalOctaves(octaves);
+        elevationNoise.SetFrequency(scale);
 
         FastNoiseLite tempNoise = new FastNoiseLite(seed + 1);
         tempNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
         tempNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        tempNoise.SetFractalOctaves(octaves);
+        tempNoise.SetFrequency(scale);
 
         FastNoiseLite rainNoise = new FastNoiseLite(seed + 2);
         rainNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
         rainNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        rainNoise.SetFractalOctaves(octaves);
+        rainNoise.SetFrequency(scale);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {

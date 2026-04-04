@@ -8,12 +8,15 @@ public class MainModel {
     private final MapGenerator generator;
 
     public MainModel() {
-        this.currentGrid = new MapGrid(500, 500);
+        this.currentGrid = new MapGrid(800, 800);
         this.generator = new MapGenerator();
     }
 
-    public void generateMap(int seed, double waterLevel, double tempBias, double rainBias) {
-        generator.generate(currentGrid, seed, waterLevel, tempBias, rainBias);
+    public void generateMap(int seed, int size, int octaves, float scale) {
+        if (currentGrid.getWidth() != size || currentGrid.getHeight() != size) {
+            currentGrid = new MapGrid(size, size);
+        }
+        generator.generate(currentGrid, seed, octaves, scale);
     }
 
     public MapGrid getCurrentGrid() {

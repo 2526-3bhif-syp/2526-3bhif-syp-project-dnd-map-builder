@@ -36,9 +36,9 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     }
 
     private void bind() {
-        view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
-        view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
-        view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getSeedField().textProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
@@ -55,15 +55,14 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         }
         
         final int seed = parsedSeed;
-        
-        double waterLevel = view.getWaterLevelSlider().getValue();
-        double tempBias = view.getTempBiasSlider().getValue();
-        double rainBias = view.getRainBiasSlider().getValue();
+        final int size = (int) view.getSizeSlider().getValue();
+        final int octaves = (int) view.getOctavesSlider().getValue();
+        final float scale = (float) view.getScaleSlider().getValue();
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.generateMap(seed, waterLevel, tempBias, rainBias);
+                model.generateMap(seed, size, octaves, scale);
                 return null;
             }
         };
@@ -75,11 +74,17 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     private void renderMap() {
         MapGrid grid = model.getCurrentGrid();
         Canvas canvas = view.getCanvas();
+        
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        if (canvas.getWidth() != width || canvas.getHeight() != height) {
+            canvas.setWidth(width);
+            canvas.setHeight(height);
+        }
+
         GraphicsContext gc = canvas.getGraphicsContext2D();
         PixelWriter pixelWriter = gc.getPixelWriter();
 
-        int width = grid.getWidth();
-        int height = grid.getHeight();
         int[] pixels = new int[width * height];
 
         for (int y = 0; y < height; y++) {

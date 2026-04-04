@@ -8,9 +8,9 @@ public interface MVPBase {
     interface View {
         Canvas getCanvas();
         TextField getSeedField();
-        Slider getWaterLevelSlider();
-        Slider getTempBiasSlider();
-        Slider getRainBiasSlider();
+        Slider getSizeSlider();
+        Slider getOctavesSlider();
+        Slider getScaleSlider();
     }
 
     interface Presenter<V extends View> {
