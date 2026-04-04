@@ -1,8 +1,16 @@
 package com.mapbuilder.mapbuilder.core;
 
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+
 public interface MVPBase {
     interface View {
-        // Base view interface
+        Canvas getCanvas();
+        TextField getSeedField();
+        Slider getWaterLevelSlider();
+        Slider getTempBiasSlider();
+        Slider getRainBiasSlider();
     }
 
     interface Presenter<V extends View> {

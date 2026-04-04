@@ -18,6 +18,10 @@ public class MainView extends AnchorPane implements MVPBase.View {
     
     private final Canvas canvas;
     private final Pane canvasContainer;
+    private final TextField seedField;
+    private final Slider waterLevelSlider;
+    private final Slider tempBiasSlider;
+    private final Slider rainBiasSlider;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -43,11 +47,25 @@ public class MainView extends AnchorPane implements MVPBase.View {
         TabPane tabPane = new TabPane(new Tab("Tab 1"), new Tab("Tab 2"));
         tabPane.setStyle("-fx-background-color: transparent;");
 
+        seedField = new TextField("12345");
+        waterLevelSlider = new Slider(-0.5, 0.5, 0.0);
+        waterLevelSlider.setShowTickMarks(true);
+        tempBiasSlider = new Slider(-1.0, 1.0, 0.0);
+        tempBiasSlider.setShowTickMarks(true);
+        rainBiasSlider = new Slider(-1.0, 1.0, 0.0);
+        rainBiasSlider.setShowTickMarks(true);
+
         leftPanel.getChildren().addAll(
             new Label("Generator Settings"),
-            new TextField("Seed..."),
+            new Label("Seed"),
+            seedField,
+            new Label("Water Level"),
+            waterLevelSlider,
+            new Label("Temperature"),
+            tempBiasSlider,
+            new Label("Rainfall"),
+            rainBiasSlider,
             tabPane,
-            new Slider(0, 100, 50),
             new Button("Generate")
         );
         AnchorPane.setTopAnchor(leftPanel, 10.0);
@@ -84,5 +102,30 @@ public class MainView extends AnchorPane implements MVPBase.View {
 
         // Add everything to the AnchorPane
         this.getChildren().addAll(canvasContainer, leftPanel, topActionBar, layersPanel);
+    }
+
+    @Override
+    public Canvas getCanvas() {
+        return canvas;
+    }
+
+    @Override
+    public TextField getSeedField() {
+        return seedField;
+    }
+
+    @Override
+    public Slider getWaterLevelSlider() {
+        return waterLevelSlider;
+    }
+
+    @Override
+    public Slider getTempBiasSlider() {
+        return tempBiasSlider;
+    }
+
+    @Override
+    public Slider getRainBiasSlider() {
+        return rainBiasSlider;
     }
 }
