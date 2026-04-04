@@ -1,17 +1,20 @@
 package com.mapbuilder.mapbuilder;
 
+import com.mapbuilder.mapbuilder.main.MainPresenter;
+import com.mapbuilder.mapbuilder.main.MainView;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-
-import java.io.IOException;
 
 public class HelloApplication extends Application {
     @Override
-    public void start(Stage stage) throws IOException {
-        Scene scene = new Scene(new Pane(), 320, 240);
-        stage.setTitle("Map Builder");
+    public void start(Stage stage) {
+        MainView view = new MainView();
+        MainPresenter presenter = new MainPresenter();
+        presenter.setView(view);
+
+        Scene scene = new Scene(view, 1200, 800);
+        stage.setTitle("DnD Map Builder");
         stage.setScene(scene);
         stage.show();
     }
