@@ -23,6 +23,10 @@ public class MainView extends BorderPane implements MVPBase.View {
     private final Slider sizeSlider;
     private final Slider octavesSlider;
     private final Slider scaleSlider;
+    private final Slider falloffSlider;
+    private final Slider waterLevelSlider;
+    private final Slider tempBiasSlider;
+    private final Slider rainBiasSlider;
 
     public MainView() {
         // Center Panel (Map Canvas)
@@ -58,24 +62,48 @@ public class MainView extends BorderPane implements MVPBase.View {
         octavesSlider.setMinorTickCount(0);
         octavesSlider.setSnapToTicks(true);
 
-        scaleSlider = new Slider(0.001, 0.05, 0.01);
+        scaleSlider = new Slider(0.001, 0.05, 0.005);
         scaleSlider.setShowTickMarks(true);
         scaleSlider.setShowTickLabels(true);
         scaleSlider.setMajorTickUnit(0.01);
 
+        falloffSlider = new Slider(-1.0, 1.0, 0.0);
+        falloffSlider.setShowTickMarks(true);
+        falloffSlider.setShowTickLabels(true);
+        falloffSlider.setMajorTickUnit(0.5);
+
+        waterLevelSlider = new Slider(-1.0, 1.0, 0.0);
+        waterLevelSlider.setShowTickMarks(true);
+        waterLevelSlider.setShowTickLabels(true);
+        waterLevelSlider.setMajorTickUnit(0.5);
+
+        tempBiasSlider = new Slider(-0.5, 0.5, 0.0);
+        tempBiasSlider.setShowTickMarks(true);
+        tempBiasSlider.setShowTickLabels(true);
+        tempBiasSlider.setMajorTickUnit(0.25);
+
+        rainBiasSlider = new Slider(-0.5, 0.5, 0.0);
+        rainBiasSlider.setShowTickMarks(true);
+        rainBiasSlider.setShowTickLabels(true);
+        rainBiasSlider.setMajorTickUnit(0.25);
+
         leftPanel.getChildren().addAll(
             new Label("Generator Settings"),
-            new Label("Seed"),
-            seedField,
-            new Label("Map Size"),
-            sizeSlider,
-            new Label("Octaves (Detail Level)"),
-            octavesSlider,
-            new Label("Scale (Zoom Level)"),
-            scaleSlider,
+            new Label("Seed"), seedField,
+            new Label("Map Size"), sizeSlider,
+            new Label("Octaves (Detail Level)"), octavesSlider,
+            new Label("Scale (Zoom Level)"), scaleSlider,
+            new Label("Island Falloff"), falloffSlider,
+            new Label("Sea Level"), waterLevelSlider,
+            new Label("Temperature Bias"), tempBiasSlider,
+            new Label("Rainfall Bias"), rainBiasSlider,
             new Button("Generate")
         );
-        this.setLeft(leftPanel);
+        
+        ScrollPane leftScroll = new ScrollPane(leftPanel);
+        leftScroll.setFitToWidth(true);
+        leftScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        this.setLeft(leftScroll);
 
         // Top Panel (Actions)
         HBox topActionBar = new HBox(15);
@@ -93,23 +121,21 @@ public class MainView extends BorderPane implements MVPBase.View {
     }
 
     @Override
-    public Canvas getCanvas() {
-        return canvas;
-    }
-
-    public TextField getSeedField() {
-        return seedField;
-    }
-
-    public Slider getSizeSlider() {
-        return sizeSlider;
-    }
-
-    public Slider getOctavesSlider() {
-        return octavesSlider;
-    }
-
-    public Slider getScaleSlider() {
-        return scaleSlider;
-    }
+    public Canvas getCanvas() { return canvas; }
+    @Override
+    public TextField getSeedField() { return seedField; }
+    @Override
+    public Slider getSizeSlider() { return sizeSlider; }
+    @Override
+    public Slider getOctavesSlider() { return octavesSlider; }
+    @Override
+    public Slider getScaleSlider() { return scaleSlider; }
+    @Override
+    public Slider getFalloffSlider() { return falloffSlider; }
+    @Override
+    public Slider getWaterLevelSlider() { return waterLevelSlider; }
+    @Override
+    public Slider getTempBiasSlider() { return tempBiasSlider; }
+    @Override
+    public Slider getRainBiasSlider() { return rainBiasSlider; }
 }

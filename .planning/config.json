@@ -1,6 +1,8 @@
 {
   "project_name": "DnD Map Builder",
-  "workflow": "get-shit-done",
+  "workflow": {
+    "_auto_chain_active": false
+  },
   "preferences": {
     "auto": true
   }

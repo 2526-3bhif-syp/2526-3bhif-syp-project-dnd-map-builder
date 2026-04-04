@@ -11,6 +11,10 @@ public interface MVPBase {
         Slider getSizeSlider();
         Slider getOctavesSlider();
         Slider getScaleSlider();
+        Slider getFalloffSlider();
+        Slider getWaterLevelSlider();
+        Slider getTempBiasSlider();
+        Slider getRainBiasSlider();
     }
 
     interface Presenter<V extends View> {

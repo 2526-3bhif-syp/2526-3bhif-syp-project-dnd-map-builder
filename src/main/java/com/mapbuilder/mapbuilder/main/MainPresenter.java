@@ -40,6 +40,10 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getSeedField().textProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getFalloffSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
     private void triggerGeneration() {
@@ -58,11 +62,16 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         final int size = (int) view.getSizeSlider().getValue();
         final int octaves = (int) view.getOctavesSlider().getValue();
         final float scale = (float) view.getScaleSlider().getValue();
+        
+        final double falloff = view.getFalloffSlider().getValue();
+        final double waterLevel = view.getWaterLevelSlider().getValue();
+        final double tempBias = view.getTempBiasSlider().getValue();
+        final double rainBias = view.getRainBiasSlider().getValue();
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.generateMap(seed, size, octaves, scale);
+                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias);
                 return null;
             }
         };

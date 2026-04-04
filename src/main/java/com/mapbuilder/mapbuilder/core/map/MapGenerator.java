@@ -4,13 +4,9 @@ import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
 
 public class MapGenerator {
 
-    public void generate(MapGrid grid, int seed, int octaves, float scale) {
+    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias) {
         int width = grid.getWidth();
         int height = grid.getHeight();
-
-        double waterLevel = 0.25;
-        double temperatureBias = 0.0;
-        double rainfallBias = 0.0;
 
         FastNoiseLite elevationNoise = new FastNoiseLite(seed);
         elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
@@ -38,13 +34,14 @@ public class MapGenerator {
                 double ny = (double) y / height;
 
                 // Elevation
-                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.6 + 0.5; 
+                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5; 
                 // Island falloff
                 double cx = nx * 2 - 1;
                 double cy = ny * 2 - 1;
-                // Squared distance gives a broader center landmass before dropping off
-                double d2 = cx * cx + cy * cy;
-                e = e - d2 * 0.3;
+                double d = Math.sqrt(cx * cx + cy * cy);
+                // Squaring the distance creates a non-linear falloff (flatter in center, steeper at edges)
+                // This keeps the center solid and connected, and pushes the water to the edges.
+                e = e - Math.pow(d, 2.0) * (1.0 + falloff);
                 cell.setElevation(e);
 
                 // Temperature
