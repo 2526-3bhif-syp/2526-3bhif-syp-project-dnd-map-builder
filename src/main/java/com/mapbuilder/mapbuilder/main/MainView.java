@@ -87,10 +87,12 @@ public class MainView extends AnchorPane implements MVPBase.View {
         leftPanel.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         leftPanel.getStyleClass().add("left-panel");
         
-        // Add a blur effect if possible (JavaFX standard way for translucent panels)
-        javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(10, 10, 3);
-        // However, applying blur directly blurs the content. To blur background only requires complex clipping/snapshotting.
-        // We rely on the rgba() for transparency, skipping blur to keep content readable.
+        // Apply GaussianBlur directly to the panels to test what it looks like as requested
+        javafx.scene.effect.GaussianBlur blur = new javafx.scene.effect.GaussianBlur();
+        blur.setRadius(10.0);
+        leftPanel.setEffect(blur);
+        topActionBar.setEffect(blur);
+        layersPanel.setEffect(blur);
 
         HBox headerBox = new HBox();
         headerBox.setAlignment(Pos.CENTER_LEFT);
