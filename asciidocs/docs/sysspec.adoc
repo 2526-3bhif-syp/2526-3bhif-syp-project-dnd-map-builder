@@ -46,20 +46,28 @@ Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zei
 Probleme mit vorhandenen Tools:
 
 * link:https://www.dungeonscrawl.com/[Dungeon Scrawl]
+* Beispiel einer Karte:
+** image:dungeonscrawl-example.jpg[]
 ** Karten müssen selbst mit der Maus "gezeichnet" werden.
 ** Keine Möglichkeit Gewässer, Wälder, Gebirge, etc. zur Karte hinzuzufügen.
 ** Essenzielle Features wie Texturen oder PDF-Export nur über ein Abonnement erhältlich.
 
 * link:https://inkarnate.com/[Inkarnate]
+* Beispiel einer Karte:
+** image:inkarnate-example.jpg[]
 ** Keine prozedurale Generierung, jeder Baum in einem Wald muss einzeln platziert werden.
 ** Das Interface ist überladen mit Features. Funktionen wie Maskierung, Textur-Blending und das Verwalten von hunderten Objekten ist für Anfänger überfordernd.
 ** Benötigt zur Verwendung einen Account.
 
 * link:https://www.worldanvil.com/[Worldanvil]
+* Beispiel einer Karte:
+** image:worldanvil.webp[]
 ** Die Lernkurve ist steil. Viele Features im UI.
 ** World Anvil ist kein Zeichenprogramm. Man muss fertige Karten hochladen, dass heißt wenn man die Karte ändern will, muss man sie durch externe Programme ändern.
 
 * link:https://www.dungeonfog.com/[Dungeon Fog]
+* Beispiel einer Karte:
+** image:dungeonfog-example.webp[]
 ** Keine prozedurale Generierung.
 ** Starke Einschränkungen in der kostenlosen Version (limitierte Kartenanzahl).
 
