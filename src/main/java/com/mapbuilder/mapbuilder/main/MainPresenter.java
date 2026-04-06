@@ -44,6 +44,7 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRiverCountSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
     private void triggerGeneration() {
@@ -67,11 +68,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         final double waterLevel = view.getWaterLevelSlider().getValue();
         final double tempBias = view.getTempBiasSlider().getValue();
         final double rainBias = view.getRainBiasSlider().getValue();
+        final int riverCount = (int) view.getRiverCountSlider().getValue();
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias);
+                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias, riverCount);
                 return null;
             }
         };

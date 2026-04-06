@@ -15,6 +15,7 @@ public interface MVPBase {
         Slider getWaterLevelSlider();
         Slider getTempBiasSlider();
         Slider getRainBiasSlider();
+        Slider getRiverCountSlider();
     }
 
     interface Presenter<V extends View> {
