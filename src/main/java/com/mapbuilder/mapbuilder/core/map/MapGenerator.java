@@ -2,8 +2,14 @@ package com.mapbuilder.mapbuilder.core.map;
 
 import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
 import java.util.Random;
+import java.util.Comparator;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 public class MapGenerator {
 
@@ -191,20 +197,39 @@ public class MapGenerator {
     }
 
     private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
-        // Scale lake size with map size and add some randomness so they look more organic
-        int baseRadius = Math.max(6, grid.getWidth() / 80); // e.g. radius 10 on an 800x800 map
-        int r = baseRadius + (int)(Math.random() * 4); 
-        
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dy = -r; dy <= r; dy++) {
-                // Slightly distort the circle to make it look less perfectly round
-                double noise = Math.random() * 0.2 + 0.9; // 0.9 to 1.1 multiplier
-                if (dx*dx + dy*dy <= (r*r * noise)) {
-                    MapCell neighbor = grid.getCell(center.getX() + dx, center.getY() + dy);
-                    if (neighbor != null && !neighbor.isRiver() && !neighbor.isLake() && neighbor.getElevation() > waterLevel) {
-                        neighbor.setLake(true);
+        // Organic lake generation using elevation-based flooding
+        int baseArea = Math.max(100, (grid.getWidth() * grid.getHeight()) / 6400); // Scale lake size based on map size
+        int targetSize = baseArea + (int)(Math.random() * baseArea); // Randomize area somewhat
+
+        PriorityQueue<MapCell> floodQueue = new PriorityQueue<>(Comparator.comparingDouble(MapCell::getElevation));
+        Set<MapCell> visited = new HashSet<>();
+        List<MapCell> lakeCells = new ArrayList<>();
+
+        floodQueue.add(center);
+        visited.add(center);
+
+        int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
+
+        while (!floodQueue.isEmpty() && lakeCells.size() < targetSize) {
+            MapCell current = floodQueue.poll();
+            
+            // Only add to lake if it's land
+            if (current.getElevation() > waterLevel) {
+                lakeCells.add(current);
+                current.setLake(true);
+
+                // Add neighbors to the queue
+                for (int[] dir : dirs) {
+                    MapCell neighbor = grid.getCell(current.getX() + dir[0], current.getY() + dir[1]);
+                    // Don't flood back into the ocean or outside bounds
+                    if (neighbor != null && neighbor.getElevation() > waterLevel && !visited.contains(neighbor)) {
+                        visited.add(neighbor);
+                        floodQueue.add(neighbor);
                     }
                 }
+            } else {
+                // If the lake flooded into the ocean, stop filling here.
+                break;
             }
         }
     }
