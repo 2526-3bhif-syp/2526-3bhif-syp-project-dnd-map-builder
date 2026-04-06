@@ -43,6 +43,26 @@ Vorhandene/Beliebte Tools:
 Man muss entweder eine vorgefertigte Karte nehmen, dadurch verliert man viel kreative Freiheit, wovon eine DnD Kampagne lebt.
 Oder man erstellt eine neue Karte von Grund auf, was dem Spielleiter weniger Zeit für die Plannung der Kampagne lässt.
 
+Probleme mit vorhandenen Tools:
+
+* link:https://www.dungeonscrawl.com/[Dungeon Scrawl]
+** Karten müssen selbst mit der Maus "gezeichnet" werden.
+** Keine Möglichkeit Gewässer, Wälder, Gebirge, etc. zur Karte hinzuzufügen.
+** Essenzielle Features wie Texturen oder PDF-Export nur über ein Abonnement erhältlich.
+
+* link:https://inkarnate.com/[Inkarnate]
+** Keine prozedurale Generierung, jeder Baum in einem Wald muss einzeln platziert werden.
+** Das Interface ist überladen mit Features. Funktionen wie Maskierung, Textur-Blending und das Verwalten von hunderten Objekten ist für Anfänger überfordernd.
+** Benötigt zur Verwendung einen Account.
+
+* link:https://www.worldanvil.com/[Worldanvil]
+** Die Lernkurve ist steil. Viele Features im UI.
+** World Anvil ist kein Zeichenprogramm. Man muss fertige Karten hochladen, dass heißt wenn man die Karte ändern will, muss man sie durch externe Programme ändern.
+
+* link:https://www.dungeonfog.com/[Dungeon Fog]
+** Keine prozedurale Generierung.
+** Starke Einschränkungen in der kostenlosen Version (limitierte Kartenanzahl).
+
 === Aufgabenstellung
 
 ==== Funktionale Anforderungen
