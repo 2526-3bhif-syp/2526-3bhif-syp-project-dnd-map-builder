@@ -28,3 +28,10 @@ Phase 1: Foundation & Application Shell
 
 **Stopped at:** Completed quick-01-PLAN.md
 **Resume file:** None
+**Last activity:** 2026-04-06 - Completed quick task 260406-o1n: refactor the ui back to what we had, but keep the map editor and make the map zoomable
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260406-o1n | refactor the ui back to what we had, but keep the map editor and make the map zoomable | 2026-04-06 | 28a5b3c | [260406-o1n-refactor-the-ui-back-to-what-we-had-but-](./quick/260406-o1n-refactor-the-ui-back-to-what-we-had-but-/) |
