@@ -27,7 +27,6 @@ public class MainView extends BorderPane implements MVPBase.View {
     private final Slider waterLevelSlider;
     private final Slider tempBiasSlider;
     private final Slider rainBiasSlider;
-    private final Slider riverCountSlider;
 
     public MainView() {
         // Center Panel (Map Canvas)
@@ -88,13 +87,6 @@ public class MainView extends BorderPane implements MVPBase.View {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
-        riverCountSlider = new Slider(0, 100, 10);
-        riverCountSlider.setShowTickMarks(true);
-        riverCountSlider.setShowTickLabels(true);
-        riverCountSlider.setMajorTickUnit(20);
-        riverCountSlider.setMinorTickCount(0);
-        riverCountSlider.setSnapToTicks(true);
-
         leftPanel.getChildren().addAll(
             new Label("Generator Settings"),
             new Label("Seed"), seedField,
@@ -105,7 +97,6 @@ public class MainView extends BorderPane implements MVPBase.View {
             new Label("Sea Level"), waterLevelSlider,
             new Label("Temperature Bias"), tempBiasSlider,
             new Label("Rainfall Bias"), rainBiasSlider,
-            new Label("River Count"), riverCountSlider,
             new Button("Generate")
         );
         
@@ -147,6 +138,4 @@ public class MainView extends BorderPane implements MVPBase.View {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     @Override
     public Slider getRainBiasSlider() { return rainBiasSlider; }
-    @Override
-    public Slider getRiverCountSlider() { return riverCountSlider; }
 }

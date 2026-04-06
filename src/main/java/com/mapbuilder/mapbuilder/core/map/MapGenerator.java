@@ -7,7 +7,7 @@ import java.util.List;
 
 public class MapGenerator {
 
-    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias, int riverCount) {
+    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias) {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
@@ -83,6 +83,7 @@ public class MapGenerator {
             }
         }
 
+        int riverCount = (width * height) / 64000;
         generateRivers(grid, seed, riverCount, waterLevel);
     }
 
@@ -110,11 +111,12 @@ public class MapGenerator {
         MapCell current = start;
         List<MapCell> path = new ArrayList<>();
         int maxLen = grid.getWidth() * grid.getHeight() / 10; // Prevent infinite loops
+        int minRiverLen = Math.max(10, grid.getWidth() / 40); // Minimum river length to prevent weird artifacts
         int len = 0;
+        boolean formedLake = false;
 
         while (len < maxLen) {
             path.add(current);
-            current.setRiver(true);
             
             if (current.getElevation() <= waterLevel) {
                 break; // Reached ocean
@@ -137,7 +139,7 @@ public class MapGenerator {
 
             if (next == null) {
                 // Local minimum -> form lake
-                formLake(grid, current, path);
+                formedLake = true;
                 break;
             } else if (next.isRiver() || next.isLake()) {
                 // Joined another river or lake
@@ -147,16 +149,34 @@ public class MapGenerator {
             current = next;
             len++;
         }
+
+        // Apply river flags and thickness only if it's long enough
+        if (path.size() >= minRiverLen) {
+            if (formedLake) {
+                formLake(grid, current, path, waterLevel);
+            }
+            for (MapCell cell : path) {
+                cell.setRiver(true);
+                // Make river thicker by adding adjacent cells
+                int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+                for (int[] dir : dirs) {
+                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
+                    if (neighbor != null && neighbor.getElevation() > waterLevel) {
+                        neighbor.setRiver(true);
+                    }
+                }
+            }
+        }
     }
 
-    private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath) {
-        int r = 1;
-        int maxLakeSize = 2; // Radius
+    private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
+        // Larger min size to prevent small artifact blobs
+        int r = 3; 
         for (int dx = -r; dx <= r; dx++) {
             for (int dy = -r; dy <= r; dy++) {
                 if (dx*dx + dy*dy <= r*r) {
                     MapCell neighbor = grid.getCell(center.getX() + dx, center.getY() + dy);
-                    if (neighbor != null && !neighbor.isRiver() && !neighbor.isLake()) {
+                    if (neighbor != null && !neighbor.isRiver() && !neighbor.isLake() && neighbor.getElevation() > waterLevel) {
                         neighbor.setLake(true);
                     }
                 }
