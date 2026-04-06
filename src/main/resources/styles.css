@@ -1,3 +1,18 @@
 .tab-pane *.tab-header-background {
     -fx-background-color: transparent;
 }
+
+.left-panel-text, .left-panel .label {
+    -fx-text-fill: #000000;
+}
+
+/* Fix slider marker colors */
+.slider .axis {
+    -fx-tick-label-fill: black;
+}
+.slider .axis:minor-tick {
+    -fx-stroke: #444;
+}
+.slider .axis:major-tick {
+    -fx-stroke: #222;
+}
