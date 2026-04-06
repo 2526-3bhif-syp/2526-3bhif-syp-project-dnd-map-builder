@@ -25,6 +25,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Canvas canvas;
     private final Pane canvasContainer;
     private final TextField seedField;
+    private final Button randomSeedButton;
     
     private final Slider sizeSlider;
     private final Slider octavesSlider;
@@ -103,6 +104,12 @@ public class MainView extends AnchorPane implements MVPBase.View {
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
+        seedField.setPrefWidth(100);
+        randomSeedButton = new Button("Random Seed");
+        randomSeedButton.setStyle("-fx-cursor: hand;");
+        HBox seedRow = new HBox(8);
+        seedRow.setAlignment(Pos.CENTER_LEFT);
+        seedRow.getChildren().addAll(new Label("Seed"), seedField, randomSeedButton);
         
         sizeSlider = new Slider(200, 2000, 800);
         sizeSlider.setShowTickMarks(true);
@@ -143,7 +150,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
 
         leftPanel.getChildren().addAll(
             headerBox,
-            new Label("Seed"), seedField,
+            seedRow,
             tabPane,
             new Label("Map Size"), sizeSlider,
             new Label("Octaves (Detail Level)"), octavesSlider,
@@ -266,4 +273,6 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     @Override
     public Slider getRainBiasSlider() { return rainBiasSlider; }
+    @Override
+    public Button getRandomSeedButton() { return randomSeedButton; }
 }

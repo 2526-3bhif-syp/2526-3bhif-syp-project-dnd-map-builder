@@ -11,6 +11,8 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.util.Duration;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class MainPresenter implements MVPBase.Presenter<MainView> {
     
     private MainView view;
@@ -36,6 +38,10 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     }
 
     private void bind() {
+        view.getRandomSeedButton().setOnAction(e -> {
+            int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
+            view.getSeedField().setText(String.valueOf(randomSeed));
+        });
         view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
