@@ -34,6 +34,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Slider waterLevelSlider;
     private final Slider tempBiasSlider;
     private final Slider rainBiasSlider;
+    private final Button generateButton;
+    private final Button randomizeSettingsButton;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -148,6 +150,11 @@ public class MainView extends AnchorPane implements MVPBase.View {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
+        generateButton = new Button("Generate");
+        randomizeSettingsButton = new Button("Randomize Settings");
+        HBox actionRow = new HBox(8);
+        actionRow.getChildren().addAll(generateButton, randomizeSettingsButton);
+
         leftPanel.getChildren().addAll(
             headerBox,
             seedRow,
@@ -159,7 +166,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
             new Label("Sea Level"), waterLevelSlider,
             new Label("Temperature Bias"), tempBiasSlider,
             new Label("Rainfall Bias"), rainBiasSlider,
-            new Button("Generate")
+            new HBox(8, generateButton, randomizeSettingsButton)
         );
         
         ScrollPane leftScroll = new ScrollPane(leftPanel);
@@ -275,4 +282,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Slider getRainBiasSlider() { return rainBiasSlider; }
     @Override
     public Button getRandomSeedButton() { return randomSeedButton; }
+    @Override
+    public Button getGenerateButton() { return generateButton; }
+    @Override
+    public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
 }

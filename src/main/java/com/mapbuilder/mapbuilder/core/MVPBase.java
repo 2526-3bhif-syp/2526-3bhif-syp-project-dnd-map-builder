@@ -17,6 +17,8 @@ public interface MVPBase {
         Slider getTempBiasSlider();
         Slider getRainBiasSlider();
         Button getRandomSeedButton();
+        Button getGenerateButton();
+        Button getRandomizeSettingsButton();
     }
 
     interface Presenter<V extends View> {
