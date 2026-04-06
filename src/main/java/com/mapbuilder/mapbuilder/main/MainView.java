@@ -33,6 +33,11 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Slider waterLevelSlider;
     private final Slider tempBiasSlider;
     private final Slider rainBiasSlider;
+    private javafx.scene.control.CheckBox enableRiversToggle;
+    private javafx.scene.control.CheckBox enableLakesToggle;
+    private Slider riverDensitySlider;
+    private Slider lakeSizeSlider;
+    private Slider minLakeAreaSlider;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -266,4 +271,10 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     @Override
     public Slider getRainBiasSlider() { return rainBiasSlider; }
+    public javafx.scene.control.CheckBox getEnableRiversToggle() { return enableRiversToggle; }
+    public javafx.scene.control.CheckBox getEnableLakesToggle() { return enableLakesToggle; }
+    public Slider getRiverDensitySlider() { return riverDensitySlider; }
+    public Slider getLakeSizeSlider() { return lakeSizeSlider; }
+    public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
 }
+
