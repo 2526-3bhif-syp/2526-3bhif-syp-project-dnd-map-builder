@@ -1,0 +1,9 @@
+{
+  "project_name": "DnD Map Builder",
+  "workflow": {
+    "_auto_chain_active": false
+  },
+  "preferences": {
+    "auto": true
+  }
+}
