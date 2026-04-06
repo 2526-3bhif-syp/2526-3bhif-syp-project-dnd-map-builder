@@ -1,10 +1,13 @@
 package com.mapbuilder.mapbuilder.core.map;
 
 import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MapGenerator {
 
-    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias) {
+    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias, int riverCount) {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
@@ -77,6 +80,86 @@ public class MapGenerator {
 
                 // Mixed color
                 cell.setMixedColorARGB(biome.getColorARGB());
+            }
+        }
+
+        generateRivers(grid, seed, riverCount, waterLevel);
+    }
+
+    private void generateRivers(MapGrid grid, int seed, int riverCount, double waterLevel) {
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        Random rand = new Random(seed + 999);
+
+        for (int i = 0; i < riverCount; i++) {
+            // Find a source
+            int sx = rand.nextInt(width);
+            int sy = rand.nextInt(height);
+            MapCell source = grid.getCell(sx, sy);
+            
+            // Source must be high elevation and relatively wet
+            if (source.getElevation() < waterLevel + 0.3 || source.getRainfall() < 0.3 || source.isRiver() || source.isLake()) {
+                continue;
+            }
+
+            traceRiver(grid, source, waterLevel);
+        }
+    }
+
+    private void traceRiver(MapGrid grid, MapCell start, double waterLevel) {
+        MapCell current = start;
+        List<MapCell> path = new ArrayList<>();
+        int maxLen = grid.getWidth() * grid.getHeight() / 10; // Prevent infinite loops
+        int len = 0;
+
+        while (len < maxLen) {
+            path.add(current);
+            current.setRiver(true);
+            
+            if (current.getElevation() <= waterLevel) {
+                break; // Reached ocean
+            }
+
+            MapCell next = null;
+            double lowest = current.getElevation();
+
+            // Find lowest neighbor
+            int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
+            for (int[] dir : dirs) {
+                MapCell neighbor = grid.getCell(current.getX() + dir[0], current.getY() + dir[1]);
+                if (neighbor != null && !path.contains(neighbor)) {
+                    if (neighbor.getElevation() < lowest) {
+                        lowest = neighbor.getElevation();
+                        next = neighbor;
+                    }
+                }
+            }
+
+            if (next == null) {
+                // Local minimum -> form lake
+                formLake(grid, current, path);
+                break;
+            } else if (next.isRiver() || next.isLake()) {
+                // Joined another river or lake
+                break;
+            }
+
+            current = next;
+            len++;
+        }
+    }
+
+    private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath) {
+        int r = 1;
+        int maxLakeSize = 2; // Radius
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dy = -r; dy <= r; dy++) {
+                if (dx*dx + dy*dy <= r*r) {
+                    MapCell neighbor = grid.getCell(center.getX() + dx, center.getY() + dy);
+                    if (neighbor != null && !neighbor.isRiver() && !neighbor.isLake()) {
+                        neighbor.setLake(true);
+                    }
+                }
             }
         }
     }

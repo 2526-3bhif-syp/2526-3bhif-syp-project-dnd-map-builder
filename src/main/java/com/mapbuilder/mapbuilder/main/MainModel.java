@@ -12,11 +12,11 @@ public class MainModel {
         this.generator = new MapGenerator();
     }
 
-    public void generateMap(int seed, int size, int octaves, float scale, double falloff, double waterLevel, double tempBias, double rainBias) {
+    public void generateMap(int seed, int size, int octaves, float scale, double falloff, double waterLevel, double tempBias, double rainBias, int riverCount) {
         if (currentGrid.getWidth() != size || currentGrid.getHeight() != size) {
             currentGrid = new MapGrid(size, size);
         }
-        generator.generate(currentGrid, seed, octaves, scale, falloff, waterLevel, tempBias, rainBias);
+        generator.generate(currentGrid, seed, octaves, scale, falloff, waterLevel, tempBias, rainBias, riverCount);
     }
 
     public MapGrid getCurrentGrid() {
