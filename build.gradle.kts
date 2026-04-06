@@ -27,7 +27,7 @@ tasks.withType<JavaCompile> {
 
 application {
     mainModule.set("com.mapbuilder.mapbuilder")
-    mainClass.set("com.mapbuilder.mapbuilder.HelloApplication")
+    mainClass.set("com.mapbuilder.mapbuilder.MapBuilderApplication")
     applicationDefaultJvmArgs += "--enable-native-access=javafx.graphics"
 }
 
