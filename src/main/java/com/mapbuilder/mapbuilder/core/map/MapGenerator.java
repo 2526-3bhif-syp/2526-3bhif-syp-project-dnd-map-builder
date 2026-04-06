@@ -13,6 +13,21 @@ import java.util.Set;
 
 public class MapGenerator {
 
+    // --- River Generation Constants ---
+    public static final int RIVER_DENSITY_DIVISOR = 64000;
+    public static final int MAX_RIVER_ATTEMPTS_MULTIPLIER = 50;
+    
+    public static final double MIN_SOURCE_ELEVATION_OFFSET = 0.3;
+    public static final double MIN_SOURCE_RAINFALL = 0.3;
+    
+    public static final double MIN_RIVER_LENGTH_RATIO = 0.1; // 10% of map width
+    public static final double MAX_RIVER_LENGTH_RATIO = 0.1; // 10% of map area
+    public static final double RIVER_CARVING_DEPTH = 0.001;
+
+    public static final int MIN_LAKE_AREA = 100;
+    public static final double LAKE_AREA_RATIO = 1.0 / 1600.0;
+    // ----------------------------------
+
     public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias) {
         int width = grid.getWidth();
         int height = grid.getHeight();
@@ -93,7 +108,7 @@ public class MapGenerator {
             }
         }
 
-        int riverCount = (width * height) / 64000;
+        int riverCount = (width * height) / RIVER_DENSITY_DIVISOR;
         generateRivers(grid, seed, riverCount, waterLevel);
     }
 
@@ -104,7 +119,7 @@ public class MapGenerator {
         
         int successfulRivers = 0;
         int attempts = 0;
-        int maxAttempts = targetRiverCount * 50; // Prevent infinite loops if map is entirely ocean/dry
+        int maxAttempts = targetRiverCount * MAX_RIVER_ATTEMPTS_MULTIPLIER; // Prevent infinite loops if map is entirely ocean/dry
 
         while (successfulRivers < targetRiverCount && attempts < maxAttempts) {
             attempts++;
@@ -114,7 +129,7 @@ public class MapGenerator {
             MapCell source = grid.getCell(sx, sy);
             
             // Source must be high elevation and relatively wet
-            if (source.getElevation() < waterLevel + 0.3 || source.getRainfall() < 0.3 || source.isRiver() || source.isLake()) {
+            if (source.getElevation() < waterLevel + MIN_SOURCE_ELEVATION_OFFSET || source.getRainfall() < MIN_SOURCE_RAINFALL || source.isRiver() || source.isLake()) {
                 continue;
             }
 
@@ -127,8 +142,8 @@ public class MapGenerator {
     private boolean traceRiver(MapGrid grid, MapCell start, double waterLevel) {
         MapCell current = start;
         List<MapCell> path = new ArrayList<>();
-        int maxLen = grid.getWidth() * grid.getHeight() / 10; // Prevent infinite loops
-        int minRiverLen = Math.max(10, grid.getWidth() / 10); // Minimum river length: 10% of map width
+        int maxLen = (int) (grid.getWidth() * grid.getHeight() * MAX_RIVER_LENGTH_RATIO); // Prevent infinite loops
+        int minRiverLen = Math.max(10, (int) (grid.getWidth() * MIN_RIVER_LENGTH_RATIO)); // Minimum river length
         int len = 0;
         boolean formedLake = false;
 
@@ -163,7 +178,7 @@ public class MapGenerator {
             if (next == null) {
                 // Local minimum. If river is too short, force it to continue by carving through the lowest available neighbor
                 if (path.size() < minRiverLen && lowestNeighbor != null) {
-                    lowestNeighbor.setElevation(current.getElevation() - 0.001); // Carve down
+                    lowestNeighbor.setElevation(current.getElevation() - RIVER_CARVING_DEPTH); // Carve down
                     next = lowestNeighbor;
                 } else {
                     // It's long enough, or no neighbors left, form a lake
@@ -202,7 +217,7 @@ public class MapGenerator {
 
     private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
         // Organic lake generation using elevation-based flooding
-        int baseArea = Math.max(100, (grid.getWidth() * grid.getHeight()) / 1600); // Scale lake size based on map size
+        int baseArea = Math.max(MIN_LAKE_AREA, (int) (grid.getWidth() * grid.getHeight() * LAKE_AREA_RATIO)); // Scale lake size based on map size
         int targetSize = baseArea + (int)(Math.random() * baseArea); // Randomize area somewhat
 
         PriorityQueue<MapCell> floodQueue = new PriorityQueue<>(Comparator.comparingDouble(MapCell::getElevation));

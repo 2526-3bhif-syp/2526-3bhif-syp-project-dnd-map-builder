@@ -13,6 +13,9 @@ import javafx.util.Duration;
 
 public class MainPresenter implements MVPBase.Presenter<MainView> {
     
+    public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
+    public static final int COLOR_LAKE = 0xFF1E90FF;  // Dodger Blue
+
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
@@ -100,9 +103,9 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
             for (int x = 0; x < width; x++) {
                 MapCell cell = grid.getCell(x, y);
                 if (cell.isLake()) {
-                    pixels[y * width + x] = 0xFF1E90FF; // Dodger Blue
+                    pixels[y * width + x] = COLOR_LAKE;
                 } else if (cell.isRiver()) {
-                    pixels[y * width + x] = 0xFF00BFFF; // Deep Sky Blue
+                    pixels[y * width + x] = COLOR_RIVER;
                 } else {
                     pixels[y * width + x] = cell.getMixedColorARGB();
                 }
