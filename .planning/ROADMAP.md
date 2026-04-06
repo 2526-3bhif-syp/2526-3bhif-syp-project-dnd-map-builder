@@ -11,10 +11,11 @@
 
 ## Phase 2: Core Map Generation
 - **Goal:** Implement random map generation logic and parameter configuration, including rivers and lakes.
-- **Plans:** 3 plans
+- **Plans:** 4 plans
   - [x] 02-core-map-generation-01-PLAN.md — Implement backend Map Generation engine and core math
   - [x] 02-core-map-generation-02-PLAN.md — Bind MapGenerator to UI and implement debounced rendering
-  - [ ] 02-core-map-generation-03-PLAN.md — Implement downward-flowing rivers and lakes
+  - [x] 02-core-map-generation-03-PLAN.md — Implement downward-flowing rivers and lakes
+  - [ ] 02-core-map-generation-04-PLAN.md — Configurable rivers and independent lakes
 - **Tasks:**
   - Build map generation algorithm (terrain, features).
   - Create configuration UI for map parameters (size, terrain types, density).
