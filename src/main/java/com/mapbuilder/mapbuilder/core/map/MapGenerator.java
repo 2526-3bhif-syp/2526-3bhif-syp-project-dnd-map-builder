@@ -12,6 +12,18 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 public class MapGenerator {
+    private boolean enableRivers = true;
+    private boolean enableLakes = true;
+    private double riverDensity = 100.0;
+    private double lakeSize = 100.0;
+    private double minLakeArea = 100.0;
+    public void setHydrologyParams(boolean rivers, boolean lakes, double density, double size, double minArea) {
+        this.enableRivers = rivers;
+        this.enableLakes = lakes;
+        this.riverDensity = density;
+        this.lakeSize = size;
+        this.minLakeArea = minArea;
+    }
 
     // --- River Generation Constants ---
     public static final int RIVER_DENSITY_DIVISOR = 64000;
@@ -280,3 +292,4 @@ public class MapGenerator {
         }
     }
 }
+

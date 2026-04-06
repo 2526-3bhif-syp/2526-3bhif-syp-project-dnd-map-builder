@@ -115,3 +115,4 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
     }
 }
+
