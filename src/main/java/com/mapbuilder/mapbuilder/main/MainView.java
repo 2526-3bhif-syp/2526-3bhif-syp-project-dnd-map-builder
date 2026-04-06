@@ -99,7 +99,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
 
-        TabPane tabPane = new TabPane(new Tab("Tab 1"), new Tab("Tab 2"));
+        TabPane tabPane = new TabPane(new Tab("World"), new Tab("POIs"), new Tab("Kingdoms"));
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
