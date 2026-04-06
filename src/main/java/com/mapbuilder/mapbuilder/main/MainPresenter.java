@@ -47,6 +47,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getEnableRiversToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getEnableLakesToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRiverDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLakeSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getMinLakeAreaSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
     private void triggerGeneration() {
@@ -70,11 +76,18 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         final double waterLevel = view.getWaterLevelSlider().getValue();
         final double tempBias = view.getTempBiasSlider().getValue();
         final double rainBias = view.getRainBiasSlider().getValue();
+        
+        final boolean enableRivers = view.getEnableRiversToggle().isSelected();
+        final boolean enableLakes = view.getEnableLakesToggle().isSelected();
+        final double riverDensity = view.getRiverDensitySlider().getValue();
+        final double lakeSize = view.getLakeSizeSlider().getValue();
+        final int minLakeArea = (int) view.getMinLakeAreaSlider().getValue();
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias);
+                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
+                                  enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea);
                 return null;
             }
         };

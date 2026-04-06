@@ -12,19 +12,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 public class MapGenerator {
-    private boolean enableRivers = true;
-    private boolean enableLakes = true;
-    private double riverDensity = 100.0;
-    private double lakeSize = 100.0;
-    private double minLakeArea = 100.0;
-    public void setHydrologyParams(boolean rivers, boolean lakes, double density, double size, double minArea) {
-        this.enableRivers = rivers;
-        this.enableLakes = lakes;
-        this.riverDensity = density;
-        this.lakeSize = size;
-        this.minLakeArea = minArea;
-    }
-
     // --- River Generation Constants ---
     public static final int RIVER_DENSITY_DIVISOR = 64000;
     public static final int MAX_RIVER_ATTEMPTS_MULTIPLIER = 50;
@@ -40,7 +27,8 @@ public class MapGenerator {
     public static final double LAKE_AREA_RATIO = 1.0 / 1600.0;
     // ----------------------------------
 
-    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias) {
+    public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias,
+                         boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea) {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
@@ -120,20 +108,29 @@ public class MapGenerator {
             }
         }
 
-        int riverCount = (width * height) / RIVER_DENSITY_DIVISOR;
-        generateRivers(grid, seed, riverCount, waterLevel);
+        if (enableRivers || enableLakes) {
+            int baseRiverCount = (width * height) / RIVER_DENSITY_DIVISOR;
+            int targetRiverCount = (int) (baseRiverCount * (riverDensityPercent / 100.0));
+            
+            // If rivers are disabled but lakes are enabled, we might want to still run the river logic but only keep the lakes, or run a separate lake logic.
+            // A simple way to get natural lakes is to run the river trace, but not mark the path as rivers.
+            generateHydrology(grid, seed, targetRiverCount, waterLevel, enableRivers, enableLakes, lakeSizePercent, customMinLakeArea);
+        }
     }
 
-    private void generateRivers(MapGrid grid, int seed, int targetRiverCount, double waterLevel) {
+    private void generateHydrology(MapGrid grid, int seed, int targetRiverCount, double waterLevel, boolean enableRivers, boolean enableLakes, double lakeSizePercent, int customMinLakeArea) {
         int width = grid.getWidth();
         int height = grid.getHeight();
         Random rand = new Random(seed + 999);
         
         int successfulRivers = 0;
         int attempts = 0;
-        int maxAttempts = targetRiverCount * MAX_RIVER_ATTEMPTS_MULTIPLIER; // Prevent infinite loops if map is entirely ocean/dry
+        
+        // If targetRiverCount is 0 but we want lakes, we need some attempts.
+        int effectiveRiverCount = Math.max(targetRiverCount, (enableLakes ? ((width * height) / RIVER_DENSITY_DIVISOR) : 0));
+        int maxAttempts = effectiveRiverCount * MAX_RIVER_ATTEMPTS_MULTIPLIER; 
 
-        while (successfulRivers < targetRiverCount && attempts < maxAttempts) {
+        while (successfulRivers < effectiveRiverCount && attempts < maxAttempts) {
             attempts++;
             // Find a source
             int sx = rand.nextInt(width);
@@ -145,13 +142,13 @@ public class MapGenerator {
                 continue;
             }
 
-            if (traceRiver(grid, source, waterLevel)) {
+            if (traceHydrology(grid, source, waterLevel, enableRivers, enableLakes, lakeSizePercent, customMinLakeArea, targetRiverCount > 0 && successfulRivers < targetRiverCount)) {
                 successfulRivers++;
             }
         }
     }
 
-    private boolean traceRiver(MapGrid grid, MapCell start, double waterLevel) {
+    private boolean traceHydrology(MapGrid grid, MapCell start, double waterLevel, boolean enableRivers, boolean enableLakes, double lakeSizePercent, int customMinLakeArea, boolean isRiverAttempt) {
         MapCell current = start;
         List<MapCell> path = new ArrayList<>();
         int maxLen = (int) (grid.getWidth() * grid.getHeight() * MAX_RIVER_LENGTH_RATIO); // Prevent infinite loops
@@ -189,7 +186,7 @@ public class MapGenerator {
 
             if (next == null) {
                 // Local minimum. If river is too short, force it to continue by carving through the lowest available neighbor
-                if (path.size() < minRiverLen && lowestNeighbor != null) {
+                if (path.size() < minRiverLen && lowestNeighbor != null && isRiverAttempt) {
                     lowestNeighbor.setElevation(current.getElevation() - RIVER_CARVING_DEPTH); // Carve down
                     next = lowestNeighbor;
                 } else {
@@ -206,31 +203,36 @@ public class MapGenerator {
             len++;
         }
 
-        // Apply river flags and thickness only if it's long enough
-        if (path.size() >= minRiverLen) {
-            if (formedLake) {
-                formLake(grid, current, path, waterLevel);
+        boolean success = false;
+        
+        // If it's a river attempt and long enough, or we don't care about river length for standalone lakes
+        if (path.size() >= minRiverLen || (!isRiverAttempt && formedLake)) {
+            if (formedLake && enableLakes) {
+                formLake(grid, current, waterLevel, lakeSizePercent, customMinLakeArea);
+                success = true;
             }
-            for (MapCell cell : path) {
-                cell.setRiver(true);
-                // Make river thicker by adding adjacent cells
-                int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
-                for (int[] dir : dirs) {
-                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
-                    if (neighbor != null && neighbor.getElevation() > waterLevel) {
-                        neighbor.setRiver(true);
+            if (enableRivers && isRiverAttempt && path.size() >= minRiverLen) {
+                for (MapCell cell : path) {
+                    cell.setRiver(true);
+                    // Make river thicker by adding adjacent cells
+                    int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+                    for (int[] dir : dirs) {
+                        MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
+                        if (neighbor != null && neighbor.getElevation() > waterLevel) {
+                            neighbor.setRiver(true);
+                        }
                     }
                 }
+                success = true;
             }
-            return true;
         }
-        return false;
+        return success;
     }
 
-    private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
+    private void formLake(MapGrid grid, MapCell center, double waterLevel, double lakeSizePercent, int customMinLakeArea) {
         // Organic lake generation using elevation-based flooding
-        int baseArea = Math.max(MIN_LAKE_AREA, (int) (grid.getWidth() * grid.getHeight() * LAKE_AREA_RATIO)); // Scale lake size based on map size
-        int targetSize = baseArea + (int)(Math.random() * baseArea); // Randomize area somewhat
+        int baseArea = Math.max(customMinLakeArea, (int) (grid.getWidth() * grid.getHeight() * LAKE_AREA_RATIO)); // Scale lake size based on map size
+        int targetSize = (int) ((baseArea + (int)(Math.random() * baseArea)) * (lakeSizePercent / 100.0)); // Apply size multiplier
 
         PriorityQueue<MapCell> floodQueue = new PriorityQueue<>(Comparator.comparingDouble(MapCell::getElevation));
         Set<MapCell> visited = new HashSet<>();
