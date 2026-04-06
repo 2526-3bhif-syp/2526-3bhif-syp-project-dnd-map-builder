@@ -191,11 +191,15 @@ public class MapGenerator {
     }
 
     private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
-        // Larger min size to prevent small artifact blobs
-        int r = 3; 
+        // Scale lake size with map size and add some randomness so they look more organic
+        int baseRadius = Math.max(6, grid.getWidth() / 80); // e.g. radius 10 on an 800x800 map
+        int r = baseRadius + (int)(Math.random() * 4); 
+        
         for (int dx = -r; dx <= r; dx++) {
             for (int dy = -r; dy <= r; dy++) {
-                if (dx*dx + dy*dy <= r*r) {
+                // Slightly distort the circle to make it look less perfectly round
+                double noise = Math.random() * 0.2 + 0.9; // 0.9 to 1.1 multiplier
+                if (dx*dx + dy*dy <= (r*r * noise)) {
                     MapCell neighbor = grid.getCell(center.getX() + dx, center.getY() + dy);
                     if (neighbor != null && !neighbor.isRiver() && !neighbor.isLake() && neighbor.getElevation() > waterLevel) {
                         neighbor.setLake(true);
