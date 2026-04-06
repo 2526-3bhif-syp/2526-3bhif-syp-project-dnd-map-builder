@@ -1,23 +1,29 @@
 package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.core.MVPBase;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
-public class MainView extends BorderPane implements MVPBase.View {
+public class MainView extends AnchorPane implements MVPBase.View {
     
     private final Canvas canvas;
-    private final ScrollPane scrollPane;
+    private final Pane canvasContainer;
     private final TextField seedField;
     
     private final Slider sizeSlider;
@@ -29,25 +35,73 @@ public class MainView extends BorderPane implements MVPBase.View {
     private final Slider rainBiasSlider;
 
     public MainView() {
-        // Center Panel (Map Canvas)
+        // Center Panel (Canvas Container) - Now at the back of the AnchorPane
+        canvasContainer = new Pane();
+        canvasContainer.setStyle("-fx-background-color: #333333;");
         canvas = new Canvas(800, 800);
-        StackPane canvasWrapper = new StackPane(canvas);
-        canvasWrapper.setStyle("-fx-background-color: #333333;");
-        canvasWrapper.setPadding(new Insets(20)); // Buffer around the map
         
-        scrollPane = new ScrollPane(canvasWrapper);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background: #2b2b2b; -fx-border-color: #2b2b2b;");
+        Group canvasGroup = new Group(canvas);
+        canvasContainer.getChildren().add(canvasGroup);
         
-        this.setCenter(scrollPane);
+        // Center the canvas inside the canvas container manually (optional) or let the generator resize it
+        
+        AnchorPane.setTopAnchor(canvasContainer, 0.0);
+        AnchorPane.setBottomAnchor(canvasContainer, 0.0);
+        AnchorPane.setLeftAnchor(canvasContainer, 0.0);
+        AnchorPane.setRightAnchor(canvasContainer, 0.0);
+        
+        // Zoom functionality
+        canvasContainer.setOnScroll(event -> {
+            double zoomFactor = 1.05;
+            double deltaY = event.getDeltaY();
+            if (deltaY < 0) {
+                zoomFactor = 1 / zoomFactor;
+            }
+            double newScaleX = canvasGroup.getScaleX() * zoomFactor;
+            double newScaleY = canvasGroup.getScaleY() * zoomFactor;
+            
+            newScaleX = Math.max(0.1, Math.min(newScaleX, 10.0));
+            newScaleY = Math.max(0.1, Math.min(newScaleY, 10.0));
+            
+            canvasGroup.setScaleX(newScaleX);
+            canvasGroup.setScaleY(newScaleY);
+            event.consume();
+        });
 
-        // Left Panel (Generator Settings)
+        // Panning functionality
+        final double[] dragStart = new double[2];
+        canvasContainer.setOnMousePressed(event -> {
+            dragStart[0] = event.getSceneX() - canvasGroup.getTranslateX();
+            dragStart[1] = event.getSceneY() - canvasGroup.getTranslateY();
+        });
+        
+        canvasContainer.setOnMouseDragged(event -> {
+            canvasGroup.setTranslateX(event.getSceneX() - dragStart[0]);
+            canvasGroup.setTranslateY(event.getSceneY() - dragStart[1]);
+        });
+
+        // Left Panel (Generator Settings) - Floating
         VBox leftPanel = new VBox(10);
         leftPanel.setPrefWidth(260);
         leftPanel.setPadding(new Insets(15));
-        leftPanel.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;");
+        leftPanel.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        leftPanel.getStyleClass().add("left-panel");
         
+        // Removed broken GaussianBlur as it blurs the panel itself, not the background behind it.
+
+        HBox headerBox = new HBox();
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        Label headerLabel = new Label("Generator Settings");
+        headerLabel.setStyle("-fx-font-weight: bold;");
+        Button collapseLeftBtn = new Button("<<");
+        collapseLeftBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        Pane spacer = new Pane();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
+
+        TabPane tabPane = new TabPane(new Tab("Tab 1"), new Tab("Tab 2"));
+        tabPane.setStyle("-fx-background-color: transparent;");
+
         seedField = new TextField("12345");
         
         sizeSlider = new Slider(200, 2000, 800);
@@ -88,8 +142,9 @@ public class MainView extends BorderPane implements MVPBase.View {
         rainBiasSlider.setMajorTickUnit(0.25);
 
         leftPanel.getChildren().addAll(
-            new Label("Generator Settings"),
+            headerBox,
             new Label("Seed"), seedField,
+            tabPane,
             new Label("Map Size"), sizeSlider,
             new Label("Octaves (Detail Level)"), octavesSlider,
             new Label("Scale (Zoom Level)"), scaleSlider,
@@ -103,12 +158,37 @@ public class MainView extends BorderPane implements MVPBase.View {
         ScrollPane leftScroll = new ScrollPane(leftPanel);
         leftScroll.setFitToWidth(true);
         leftScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        this.setLeft(leftScroll);
+        leftScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        leftScroll.setPrefViewportHeight(600);
+        
+        AnchorPane.setTopAnchor(leftScroll, 10.0);
+        AnchorPane.setLeftAnchor(leftScroll, 10.0);
+        AnchorPane.setBottomAnchor(leftScroll, 10.0);
 
-        // Top Panel (Actions)
+        Button showLeftBtn = new Button(">>");
+        showLeftBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 0 8 8 0;");
+        showLeftBtn.setVisible(false);
+        AnchorPane.setTopAnchor(showLeftBtn, 10.0);
+        AnchorPane.setLeftAnchor(showLeftBtn, 0.0);
+
+        collapseLeftBtn.setOnAction(e -> {
+            TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
+            tt.setToX(-300);
+            tt.setOnFinished(evt -> showLeftBtn.setVisible(true));
+            tt.play();
+        });
+        
+        showLeftBtn.setOnAction(e -> {
+            showLeftBtn.setVisible(false);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
+            tt.setToX(0);
+            tt.play();
+        });
+
+        // Top Right Panel (Actions) - Floating
         HBox topActionBar = new HBox(15);
         topActionBar.setPadding(new Insets(10, 15, 10, 15));
-        topActionBar.setStyle("-fx-background-color: #e0e0e0; -fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;");
+        topActionBar.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
         
         Button saveBtn = new Button("Save");
@@ -117,7 +197,55 @@ public class MainView extends BorderPane implements MVPBase.View {
         Button printBtn = new Button("Print");
         
         topActionBar.getChildren().addAll(saveBtn, loadBtn, exportBtn, printBtn);
-        this.setTop(topActionBar);
+        AnchorPane.setTopAnchor(topActionBar, 10.0);
+        AnchorPane.setRightAnchor(topActionBar, 10.0);
+
+        // Bottom Right Layers Panel - Floating
+        VBox layersPanel = new VBox(10);
+        layersPanel.setPrefWidth(200);
+        layersPanel.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        
+        HBox layersHeaderBox = new HBox();
+        layersHeaderBox.setAlignment(Pos.CENTER_LEFT);
+        Label layersHeaderLabel = new Label("Layers");
+        layersHeaderLabel.setStyle("-fx-font-weight: bold;");
+        Button collapseRightBtn = new Button(">>");
+        collapseRightBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        Pane rightSpacer = new Pane();
+        HBox.setHgrow(rightSpacer, javafx.scene.layout.Priority.ALWAYS);
+        layersHeaderBox.getChildren().addAll(collapseRightBtn, rightSpacer, layersHeaderLabel);
+
+        layersPanel.getChildren().addAll(
+            layersHeaderBox,
+            new Button("Toggle Layer 1")
+        );
+        AnchorPane.setBottomAnchor(layersPanel, 10.0);
+        AnchorPane.setRightAnchor(layersPanel, 10.0);
+
+        Button showRightBtn = new Button("<<");
+        showRightBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8 0 0 8;");
+        showRightBtn.setVisible(false);
+        AnchorPane.setBottomAnchor(showRightBtn, 10.0);
+        AnchorPane.setRightAnchor(showRightBtn, 0.0);
+
+        collapseRightBtn.setOnAction(e -> {
+            TranslateTransition tt = new TranslateTransition(Duration.millis(300), layersPanel);
+            tt.setToX(250);
+            tt.setOnFinished(evt -> showRightBtn.setVisible(true));
+            tt.play();
+        });
+
+        showRightBtn.setOnAction(e -> {
+            showRightBtn.setVisible(false);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(300), layersPanel);
+            tt.setToX(0);
+            tt.play();
+        });
+
+
+
+        // Add everything to the AnchorPane
+        this.getChildren().addAll(canvasContainer, leftScroll, showLeftBtn, topActionBar, layersPanel, showRightBtn);
     }
 
     @Override
