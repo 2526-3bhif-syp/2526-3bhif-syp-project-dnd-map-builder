@@ -8,6 +8,8 @@ public class MapCell {
     private double rainfall;
     private Biome biome;
     private int mixedColorARGB;
+    private boolean isRiver;
+    private boolean isLake;
 
     public MapCell(int x, int y) {
         this.x = x;
@@ -68,5 +70,21 @@ public class MapCell {
 
     public void setMixedColorARGB(int mixedColorARGB) {
         this.mixedColorARGB = mixedColorARGB;
+    }
+
+    public boolean isRiver() {
+        return isRiver;
+    }
+
+    public void setRiver(boolean isRiver) {
+        this.isRiver = isRiver;
+    }
+
+    public boolean isLake() {
+        return isLake;
+    }
+
+    public void setLake(boolean isLake) {
+        this.isLake = isLake;
     }
 }

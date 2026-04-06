@@ -99,7 +99,13 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 MapCell cell = grid.getCell(x, y);
-                pixels[y * width + x] = cell.getMixedColorARGB();
+                if (cell.isLake()) {
+                    pixels[y * width + x] = 0xFF1E90FF; // Dodger Blue
+                } else if (cell.isRiver()) {
+                    pixels[y * width + x] = 0xFF00BFFF; // Deep Sky Blue
+                } else {
+                    pixels[y * width + x] = cell.getMixedColorARGB();
+                }
             }
         }
 
