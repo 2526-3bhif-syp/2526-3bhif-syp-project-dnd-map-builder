@@ -87,12 +87,17 @@ public class MapGenerator {
         generateRivers(grid, seed, riverCount, waterLevel);
     }
 
-    private void generateRivers(MapGrid grid, int seed, int riverCount, double waterLevel) {
+    private void generateRivers(MapGrid grid, int seed, int targetRiverCount, double waterLevel) {
         int width = grid.getWidth();
         int height = grid.getHeight();
         Random rand = new Random(seed + 999);
+        
+        int successfulRivers = 0;
+        int attempts = 0;
+        int maxAttempts = targetRiverCount * 50; // Prevent infinite loops if map is entirely ocean/dry
 
-        for (int i = 0; i < riverCount; i++) {
+        while (successfulRivers < targetRiverCount && attempts < maxAttempts) {
+            attempts++;
             // Find a source
             int sx = rand.nextInt(width);
             int sy = rand.nextInt(height);
@@ -103,15 +108,17 @@ public class MapGenerator {
                 continue;
             }
 
-            traceRiver(grid, source, waterLevel);
+            if (traceRiver(grid, source, waterLevel)) {
+                successfulRivers++;
+            }
         }
     }
 
-    private void traceRiver(MapGrid grid, MapCell start, double waterLevel) {
+    private boolean traceRiver(MapGrid grid, MapCell start, double waterLevel) {
         MapCell current = start;
         List<MapCell> path = new ArrayList<>();
         int maxLen = grid.getWidth() * grid.getHeight() / 10; // Prevent infinite loops
-        int minRiverLen = Math.max(10, grid.getWidth() / 40); // Minimum river length to prevent weird artifacts
+        int minRiverLen = Math.max(10, grid.getWidth() / 10); // Minimum river length: 10% of map width
         int len = 0;
         boolean formedLake = false;
 
@@ -124,6 +131,8 @@ public class MapGenerator {
 
             MapCell next = null;
             double lowest = current.getElevation();
+            MapCell lowestNeighbor = null;
+            double absoluteLowest = Double.MAX_VALUE;
 
             // Find lowest neighbor
             int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
@@ -134,13 +143,23 @@ public class MapGenerator {
                         lowest = neighbor.getElevation();
                         next = neighbor;
                     }
+                    if (neighbor.getElevation() < absoluteLowest) {
+                        absoluteLowest = neighbor.getElevation();
+                        lowestNeighbor = neighbor;
+                    }
                 }
             }
 
             if (next == null) {
-                // Local minimum -> form lake
-                formedLake = true;
-                break;
+                // Local minimum. If river is too short, force it to continue by carving through the lowest available neighbor
+                if (path.size() < minRiverLen && lowestNeighbor != null) {
+                    lowestNeighbor.setElevation(current.getElevation() - 0.001); // Carve down
+                    next = lowestNeighbor;
+                } else {
+                    // It's long enough, or no neighbors left, form a lake
+                    formedLake = true;
+                    break;
+                }
             } else if (next.isRiver() || next.isLake()) {
                 // Joined another river or lake
                 break;
@@ -166,7 +185,9 @@ public class MapGenerator {
                     }
                 }
             }
+            return true;
         }
+        return false;
     }
 
     private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
