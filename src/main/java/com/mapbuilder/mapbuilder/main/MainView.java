@@ -84,15 +84,10 @@ public class MainView extends AnchorPane implements MVPBase.View {
         VBox leftPanel = new VBox(10);
         leftPanel.setPrefWidth(260);
         leftPanel.setPadding(new Insets(15));
-        leftPanel.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        leftPanel.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         leftPanel.getStyleClass().add("left-panel");
         
-        // Apply GaussianBlur directly to the panels to test what it looks like as requested
-        javafx.scene.effect.GaussianBlur blur = new javafx.scene.effect.GaussianBlur();
-        blur.setRadius(10.0);
-        leftPanel.setEffect(blur);
-        topActionBar.setEffect(blur);
-        layersPanel.setEffect(blur);
+        // Removed broken GaussianBlur as it blurs the panel itself, not the background behind it.
 
         HBox headerBox = new HBox();
         headerBox.setAlignment(Pos.CENTER_LEFT);
@@ -171,7 +166,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setBottomAnchor(leftScroll, 10.0);
 
         Button showLeftBtn = new Button(">>");
-        showLeftBtn.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-background-radius: 0 8 8 0;");
+        showLeftBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 0 8 8 0;");
         showLeftBtn.setVisible(false);
         AnchorPane.setTopAnchor(showLeftBtn, 10.0);
         AnchorPane.setLeftAnchor(showLeftBtn, 0.0);
@@ -193,7 +188,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         // Top Right Panel (Actions) - Floating
         HBox topActionBar = new HBox(15);
         topActionBar.setPadding(new Insets(10, 15, 10, 15));
-        topActionBar.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        topActionBar.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
         
         Button saveBtn = new Button("Save");
@@ -208,7 +203,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         // Bottom Right Layers Panel - Floating
         VBox layersPanel = new VBox(10);
         layersPanel.setPrefWidth(200);
-        layersPanel.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        layersPanel.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
         
         HBox layersHeaderBox = new HBox();
         layersHeaderBox.setAlignment(Pos.CENTER_LEFT);
@@ -228,7 +223,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setRightAnchor(layersPanel, 10.0);
 
         Button showRightBtn = new Button("<<");
-        showRightBtn.setStyle("-fx-background-color: rgba(244, 244, 244, 0.7); -fx-background-radius: 8 0 0 8;");
+        showRightBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8 0 0 8;");
         showRightBtn.setVisible(false);
         AnchorPane.setBottomAnchor(showRightBtn, 10.0);
         AnchorPane.setRightAnchor(showRightBtn, 0.0);
@@ -246,6 +241,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
             tt.setToX(0);
             tt.play();
         });
+
+
 
         // Add everything to the AnchorPane
         this.getChildren().addAll(canvasContainer, leftScroll, showLeftBtn, topActionBar, layersPanel, showRightBtn);
