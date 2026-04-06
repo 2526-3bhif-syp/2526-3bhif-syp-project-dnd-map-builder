@@ -39,6 +39,10 @@ public class MapGenerator {
             for (int y = 0; y < height; y++) {
                 MapCell cell = grid.getCell(x, y);
 
+                // Reset river and lake state from previous generation
+                cell.setRiver(false);
+                cell.setLake(false);
+
                 double nx = (double) x / width;
                 double ny = (double) y / height;
 
@@ -198,7 +202,7 @@ public class MapGenerator {
 
     private void formLake(MapGrid grid, MapCell center, List<MapCell> riverPath, double waterLevel) {
         // Organic lake generation using elevation-based flooding
-        int baseArea = Math.max(100, (grid.getWidth() * grid.getHeight()) / 6400); // Scale lake size based on map size
+        int baseArea = Math.max(100, (grid.getWidth() * grid.getHeight()) / 1600); // Scale lake size based on map size
         int targetSize = baseArea + (int)(Math.random() * baseArea); // Randomize area somewhat
 
         PriorityQueue<MapCell> floodQueue = new PriorityQueue<>(Comparator.comparingDouble(MapCell::getElevation));
