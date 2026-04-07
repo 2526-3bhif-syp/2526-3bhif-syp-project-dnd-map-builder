@@ -93,7 +93,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         headerBox.setAlignment(Pos.CENTER_LEFT);
         Label headerLabel = new Label("Generator Settings");
         headerLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16px;");
-        Button collapseLeftBtn = new Button("<<");
+        Button collapseLeftBtn = new Button("\u25C0"); // ◀
         collapseLeftBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: white;");
         Pane spacer = new Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
@@ -177,7 +177,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setLeftAnchor(leftScroll, 10.0);
         AnchorPane.setBottomAnchor(leftScroll, 10.0);
 
-        Button showLeftBtn = new Button(">>");
+        Button showLeftBtn = new Button("\u25B6"); // ▶
         showLeftBtn.setStyle("-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-background-radius: 0 8 8 0; -fx-padding: 10 5; -fx-cursor: hand;");
         showLeftBtn.setVisible(false);
         AnchorPane.setTopAnchor(showLeftBtn, 10.0);
@@ -223,7 +223,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         layersHeaderBox.setAlignment(Pos.CENTER_LEFT);
         Label layersHeaderLabel = new Label("Layers");
         layersHeaderLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16px;");
-        Button collapseRightBtn = new Button(">");
+        Button collapseRightBtn = new Button("\u25B6"); // ▶
         collapseRightBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: white;");
         Pane rightSpacer = new Pane();
         HBox.setHgrow(rightSpacer, javafx.scene.layout.Priority.ALWAYS);
@@ -263,7 +263,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
 
-        Button showRightBtn = new Button("<");
+        Button showRightBtn = new Button("\u25C0"); // ◀
         showRightBtn.setStyle("-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-background-radius: 8 0 0 8; -fx-padding: 10 5;");
         showRightBtn.setVisible(false);
         AnchorPane.setTopAnchor(showRightBtn, 80.0);
