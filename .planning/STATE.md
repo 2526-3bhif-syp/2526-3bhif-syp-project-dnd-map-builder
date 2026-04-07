@@ -37,3 +37,4 @@ Phase 1: Foundation & Application Shell
 |---|-------------|------|--------|-----------|
 | 260406-o1n | refactor the ui back to what we had, but keep the map editor and make the map zoomable | 2026-04-06 | 28a5b3c | [260406-o1n-refactor-the-ui-back-to-what-we-had-but-](./quick/260406-o1n-refactor-the-ui-back-to-what-we-had-but-/) |
 | 260407-iwd | modify the ui to all look like the refactored right layers panel | 2026-04-07 | b6dbfef | [260407-iwd-modify-the-ui-to-all-look-like-the-refac](./quick/260407-iwd-modify-the-ui-to-all-look-like-the-refac/) |
+| 260407-j0l | modify the ui only now to fix the contra | 2026-04-07 | aef42c3 | [260407-j0l-modify-the-ui-only-now-to-fix-the-contra](./quick/260407-j0l-modify-the-ui-only-now-to-fix-the-contra/) |
