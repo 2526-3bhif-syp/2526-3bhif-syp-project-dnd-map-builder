@@ -200,32 +200,60 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setTopAnchor(topActionBar, 10.0);
         AnchorPane.setRightAnchor(topActionBar, 10.0);
 
-        // Bottom Right Layers Panel - Floating
+        
+        // Right Layers Panel - Floating
         VBox layersPanel = new VBox(10);
-        layersPanel.setPrefWidth(200);
-        layersPanel.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        layersPanel.setPrefWidth(250);
+        layersPanel.setStyle("-fx-background-color: #2b2b2b; -fx-padding: 15; -fx-background-radius: 8 0 0 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         
         HBox layersHeaderBox = new HBox();
         layersHeaderBox.setAlignment(Pos.CENTER_LEFT);
         Label layersHeaderLabel = new Label("Layers");
-        layersHeaderLabel.setStyle("-fx-font-weight: bold;");
-        Button collapseRightBtn = new Button(">>");
-        collapseRightBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        layersHeaderLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16px;");
+        Button collapseRightBtn = new Button(">");
+        collapseRightBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: white;");
         Pane rightSpacer = new Pane();
         HBox.setHgrow(rightSpacer, javafx.scene.layout.Priority.ALWAYS);
         layersHeaderBox.getChildren().addAll(collapseRightBtn, rightSpacer, layersHeaderLabel);
 
-        layersPanel.getChildren().addAll(
-            layersHeaderBox,
-            new Button("Toggle Layer 1")
-        );
-        AnchorPane.setBottomAnchor(layersPanel, 10.0);
-        AnchorPane.setRightAnchor(layersPanel, 10.0);
+        layersPanel.getChildren().add(layersHeaderBox);
 
-        Button showRightBtn = new Button("<<");
-        showRightBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8 0 0 8;");
+        String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
+        ToggleButton[] layerToggles = new ToggleButton[layerNames.length];
+        
+        for (int i = 0; i < layerNames.length; i++) {
+            HBox row = new HBox();
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setStyle("-fx-background-color: #3c3f41; -fx-padding: 8; -fx-background-radius: 5;");
+            
+            Label nameLabel = new Label(layerNames[i]);
+            nameLabel.setStyle("-fx-text-fill: white;");
+            
+            Pane rowSpacer = new Pane();
+            HBox.setHgrow(rowSpacer, javafx.scene.layout.Priority.ALWAYS);
+            
+            ToggleButton toggle = new ToggleButton("(o)");
+            toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+            toggle.selectedProperty().addListener((obs, oldV, newV) -> {
+                if (newV) {
+                    toggle.setText("(/)");
+                } else {
+                    toggle.setText("(o)");
+                }
+            });
+            layerToggles[i] = toggle;
+            
+            row.getChildren().addAll(nameLabel, rowSpacer, toggle);
+            layersPanel.getChildren().add(row);
+        }
+        
+        AnchorPane.setTopAnchor(layersPanel, 80.0);
+        AnchorPane.setRightAnchor(layersPanel, 0.0);
+
+        Button showRightBtn = new Button("<");
+        showRightBtn.setStyle("-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-background-radius: 8 0 0 8; -fx-padding: 10 5;");
         showRightBtn.setVisible(false);
-        AnchorPane.setBottomAnchor(showRightBtn, 10.0);
+        AnchorPane.setTopAnchor(showRightBtn, 80.0);
         AnchorPane.setRightAnchor(showRightBtn, 0.0);
 
         collapseRightBtn.setOnAction(e -> {
@@ -242,9 +270,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
             tt.play();
         });
 
-
-
         // Add everything to the AnchorPane
+
         this.getChildren().addAll(canvasContainer, leftScroll, showLeftBtn, topActionBar, layersPanel, showRightBtn);
     }
 
