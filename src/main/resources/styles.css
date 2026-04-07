@@ -18,6 +18,13 @@
 }
 
 /* Dark theme form controls */
+.slider .track {
+    -fx-background-color: #3c3f41;
+}
+.slider .thumb {
+    -fx-background-color: #ffffff;
+}
+
 .text-field {
     -fx-background-color: #3c3f41;
     -fx-text-fill: #ffffff;
