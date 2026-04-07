@@ -84,7 +84,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         VBox leftPanel = new VBox(10);
         leftPanel.setPrefWidth(260);
         leftPanel.setPadding(new Insets(15));
-        leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
+        leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0 8 8 0; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         leftPanel.getStyleClass().add("left-panel");
         
         // Removed broken GaussianBlur as it blurs the panel itself, not the background behind it.
@@ -173,19 +173,19 @@ public class MainView extends AnchorPane implements MVPBase.View {
         leftScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         leftScroll.setPrefViewportHeight(600);
         
-        AnchorPane.setTopAnchor(leftScroll, 10.0);
-        AnchorPane.setLeftAnchor(leftScroll, 10.0);
+        AnchorPane.setTopAnchor(leftScroll, 80.0);
+        AnchorPane.setLeftAnchor(leftScroll, 0.0);
         AnchorPane.setBottomAnchor(leftScroll, 10.0);
 
         Button showLeftBtn = new Button("\u25B6"); // ▶
         showLeftBtn.setStyle("-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-background-radius: 0 8 8 0; -fx-padding: 10 5; -fx-cursor: hand;");
         showLeftBtn.setVisible(false);
-        AnchorPane.setTopAnchor(showLeftBtn, 10.0);
+        AnchorPane.setTopAnchor(showLeftBtn, 80.0);
         AnchorPane.setLeftAnchor(showLeftBtn, 0.0);
 
         collapseLeftBtn.setOnAction(e -> {
             TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
-            tt.setToX(-300);
+            tt.setToX(-280);
             tt.setOnFinished(evt -> showLeftBtn.setVisible(true));
             tt.play();
         });
