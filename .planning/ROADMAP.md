@@ -11,10 +11,11 @@
 
 ## Phase 2: Core Map Generation
 - **Goal:** Implement random map generation logic and parameter configuration.
-- **Plans:** 3 plans
+- **Plans:** 4 plans
   - [ ] 02-core-map-generation-01-PLAN.md — Implement backend Map Generation engine and core math
   - [ ] 02-core-map-generation-02-PLAN.md — Bind MapGenerator to UI and implement debounced rendering
   - [ ] 02-core-map-generation-03-PLAN.md — Implement Layer Panel UI based on user sketch
+  - [ ] 02-core-map-generation-04-PLAN.md — Implement Layer Selector UI based on mock (Image 1)
 - **Tasks:**
   - Build map generation algorithm (terrain, features).
   - Create configuration UI for map parameters (size, terrain types, density).
