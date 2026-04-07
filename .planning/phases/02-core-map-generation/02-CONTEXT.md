@@ -39,6 +39,10 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 - **D-09 (CPU Translation Layer):** Translate the backend `MapGrid` data structure into visual colors and iterate via a JavaFX `PixelWriter` directly to a `WritableImage` on the Canvas.
 - **D-10 (Debounced Binding):** Bind the MVP View's sliders (Size, Water %, etc.) and seed inputs directly to the generator with a debounce, triggering real-time preview updates on the canvas.
 
+### Layer Panel Styling
+- **D-11 (Layer Panel UI):** Add a new wave to implement and style the right-side Layer Panel exactly as shown in the provided sketch (Image 1). It must be a floating box with a pull-out tab (`<`) on the left edge.
+- **D-12 (Layer Rows & Toggles):** Inside the panel, create distinct rounded-rectangle rows for each layer: "Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", and "Grid". Each row must have a visibility toggle icon (an eye) aligned to the right, which displays as crossed-out when the layer is hidden.
+
 </decisions>
 
 <canonical_refs>
@@ -49,6 +53,9 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 ### Project Specs
 - `.planning/REQUIREMENTS.md` — Functional Requirement 1 & 2 (Random & Parameterized Generation).
 - `.planning/phases/01-foundation-application-shell/01-CONTEXT.md` — MVP architecture constraints and Canvas references.
+
+### External Assets
+- `User's Layer Panel Sketch` — The user provided a sketch (Image 1) detailing the Layer Panel layout with 6 specific layer rows, rounded borders, an expand/collapse handle, and eye icons for visibility toggling.
 
 *(Note: No external implementation references or scripts are required. The math and biome logic defined in the decisions above are the sole source of truth).*
 </canonical_refs>
