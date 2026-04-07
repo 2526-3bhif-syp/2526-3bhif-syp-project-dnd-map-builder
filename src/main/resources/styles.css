@@ -3,16 +3,49 @@
 }
 
 .left-panel-text, .left-panel .label {
-    -fx-text-fill: #000000;
+    -fx-text-fill: #ffffff;
 }
 
 /* Fix slider marker colors */
 .slider .axis {
-    -fx-tick-label-fill: black;
+    -fx-tick-label-fill: #dddddd;
 }
 .slider .axis:minor-tick {
-    -fx-stroke: #444;
+    -fx-stroke: #777777;
 }
 .slider .axis:major-tick {
-    -fx-stroke: #222;
+    -fx-stroke: #aaaaaa;
 }
+
+/* Dark theme form controls */
+.text-field {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+.text-field:focused {
+    -fx-border-color: #777777;
+}
+
+.button {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+.button:hover {
+    -fx-background-color: #4c4f51;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #3c3f41;
+}
+.tab-pane .tab:selected {
+    -fx-background-color: #4c4f51;
+}
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #ffffff;
+}
+
