@@ -84,7 +84,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         VBox leftPanel = new VBox(10);
         leftPanel.setPrefWidth(260);
         leftPanel.setPadding(new Insets(15));
-        leftPanel.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         leftPanel.getStyleClass().add("left-panel");
         
         // Removed broken GaussianBlur as it blurs the panel itself, not the background behind it.
@@ -92,9 +92,9 @@ public class MainView extends AnchorPane implements MVPBase.View {
         HBox headerBox = new HBox();
         headerBox.setAlignment(Pos.CENTER_LEFT);
         Label headerLabel = new Label("Generator Settings");
-        headerLabel.setStyle("-fx-font-weight: bold;");
+        headerLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 16px;");
         Button collapseLeftBtn = new Button("<<");
-        collapseLeftBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        collapseLeftBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: white;");
         Pane spacer = new Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
@@ -141,18 +141,30 @@ public class MainView extends AnchorPane implements MVPBase.View {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
+        Label seedLabel = new Label("Seed"); seedLabel.setStyle("-fx-text-fill: white;");
+        Label mapSizeLabel = new Label("Map Size"); mapSizeLabel.setStyle("-fx-text-fill: white;");
+        Label octavesLabel = new Label("Octaves (Detail Level)"); octavesLabel.setStyle("-fx-text-fill: white;");
+        Label scaleLabel = new Label("Scale (Zoom Level)"); scaleLabel.setStyle("-fx-text-fill: white;");
+        Label falloffLabel = new Label("Island Falloff"); falloffLabel.setStyle("-fx-text-fill: white;");
+        Label seaLevelLabel = new Label("Sea Level"); seaLevelLabel.setStyle("-fx-text-fill: white;");
+        Label tempBiasLabel = new Label("Temperature Bias"); tempBiasLabel.setStyle("-fx-text-fill: white;");
+        Label rainBiasLabel = new Label("Rainfall Bias"); rainBiasLabel.setStyle("-fx-text-fill: white;");
+        
+        Button generateBtn = new Button("Generate");
+        generateBtn.setStyle("-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;");
+
         leftPanel.getChildren().addAll(
             headerBox,
-            new Label("Seed"), seedField,
+            seedLabel, seedField,
             tabPane,
-            new Label("Map Size"), sizeSlider,
-            new Label("Octaves (Detail Level)"), octavesSlider,
-            new Label("Scale (Zoom Level)"), scaleSlider,
-            new Label("Island Falloff"), falloffSlider,
-            new Label("Sea Level"), waterLevelSlider,
-            new Label("Temperature Bias"), tempBiasSlider,
-            new Label("Rainfall Bias"), rainBiasSlider,
-            new Button("Generate")
+            mapSizeLabel, sizeSlider,
+            octavesLabel, octavesSlider,
+            scaleLabel, scaleSlider,
+            falloffLabel, falloffSlider,
+            seaLevelLabel, waterLevelSlider,
+            tempBiasLabel, tempBiasSlider,
+            rainBiasLabel, rainBiasSlider,
+            generateBtn
         );
         
         ScrollPane leftScroll = new ScrollPane(leftPanel);
@@ -166,7 +178,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setBottomAnchor(leftScroll, 10.0);
 
         Button showLeftBtn = new Button(">>");
-        showLeftBtn.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 0 8 8 0;");
+        showLeftBtn.setStyle("-fx-background-color: #2b2b2b; -fx-text-fill: white; -fx-background-radius: 0 8 8 0; -fx-padding: 10 5; -fx-cursor: hand;");
         showLeftBtn.setVisible(false);
         AnchorPane.setTopAnchor(showLeftBtn, 10.0);
         AnchorPane.setLeftAnchor(showLeftBtn, 0.0);
@@ -188,13 +200,14 @@ public class MainView extends AnchorPane implements MVPBase.View {
         // Top Right Panel (Actions) - Floating
         HBox topActionBar = new HBox(15);
         topActionBar.setPadding(new Insets(10, 15, 10, 15));
-        topActionBar.setStyle("-fx-background-color: #f4f4f4; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+        topActionBar.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
         
-        Button saveBtn = new Button("Save");
-        Button loadBtn = new Button("Load");
-        Button exportBtn = new Button("Export");
-        Button printBtn = new Button("Print");
+        String btnStyle = "-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;";
+        Button saveBtn = new Button("Save"); saveBtn.setStyle(btnStyle);
+        Button loadBtn = new Button("Load"); loadBtn.setStyle(btnStyle);
+        Button exportBtn = new Button("Export"); exportBtn.setStyle(btnStyle);
+        Button printBtn = new Button("Print"); printBtn.setStyle(btnStyle);
         
         topActionBar.getChildren().addAll(saveBtn, loadBtn, exportBtn, printBtn);
         AnchorPane.setTopAnchor(topActionBar, 10.0);
