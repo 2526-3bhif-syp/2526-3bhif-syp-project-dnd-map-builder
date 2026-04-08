@@ -30,7 +30,7 @@ Es gibt einen Spielleiter der eine Kampagne erstellt. Man kann diese Kampagne da
 Jeder Spieler hat einen selbst erstellten Charakter mit dem er die Spielwelt erkunden kann.
 Viele Aktivitäten innerhalb einer Kampagne benötigen eine Spielkarte (Map).
 
-=== Istzustand
+=== Ist-Zustand
 Ein Spielleiter erstellt normalerweise Karten mithilfe von Online Tools oder per Hand.
 Vorhandene/Beliebte Tools:
 

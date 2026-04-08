@@ -25,7 +25,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Canvas canvas;
     private final Pane canvasContainer;
     private final TextField seedField;
-    
+    private final Button randomSeedButton;
+
     private final Slider sizeSlider;
     private final Slider octavesSlider;
     private final Slider scaleSlider;
@@ -33,6 +34,13 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Slider waterLevelSlider;
     private final Slider tempBiasSlider;
     private final Slider rainBiasSlider;
+    private final Button generateButton;
+    private final Button randomizeSettingsButton;
+    private javafx.scene.control.CheckBox enableRiversToggle;
+    private javafx.scene.control.CheckBox enableLakesToggle;
+    private Slider riverDensitySlider;
+    private Slider lakeSizeSlider;
+    private Slider minLakeAreaSlider;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -99,11 +107,27 @@ public class MainView extends AnchorPane implements MVPBase.View {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
 
-        TabPane tabPane = new TabPane(new Tab("Tab 1"), new Tab("Tab 2"));
+        Tab terrainTab = new Tab("Terrain");
+        terrainTab.setClosable(false);
+        VBox terrainContent = new VBox(10);
+        terrainContent.setPadding(new Insets(10, 0, 10, 0));
+
+        Tab hydrologyTab = new Tab("Hydrology");
+        hydrologyTab.setClosable(false);
+        VBox hydrologyContent = new VBox(10);
+        hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab);
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
-        
+        seedField.setPrefWidth(100);
+        randomSeedButton = new Button("Random Seed");
+        randomSeedButton.setStyle("-fx-cursor: hand;");
+        HBox seedRow = new HBox(8);
+        seedRow.setAlignment(Pos.CENTER_LEFT);
+        seedRow.getChildren().addAll(new Label("Seed"), seedField, randomSeedButton);
+
         sizeSlider = new Slider(200, 2000, 800);
         sizeSlider.setShowTickMarks(true);
         sizeSlider.setShowTickLabels(true);
@@ -149,13 +173,19 @@ public class MainView extends AnchorPane implements MVPBase.View {
         Label seaLevelLabel = new Label("Sea Level"); seaLevelLabel.setStyle("-fx-text-fill: white;");
         Label tempBiasLabel = new Label("Temperature Bias"); tempBiasLabel.setStyle("-fx-text-fill: white;");
         Label rainBiasLabel = new Label("Rainfall Bias"); rainBiasLabel.setStyle("-fx-text-fill: white;");
-        
+
         Button generateBtn = new Button("Generate");
         generateBtn.setStyle("-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;");
+
+        generateButton = new Button("Generate");
+        randomizeSettingsButton = new Button("Randomize Settings");
+        HBox actionRow = new HBox(8);
+        actionRow.getChildren().addAll(generateButton, randomizeSettingsButton);
 
         leftPanel.getChildren().addAll(
             headerBox,
             seedLabel, seedField,
+            seedRow,
             tabPane,
             mapSizeLabel, sizeSlider,
             octavesLabel, octavesSlider,
@@ -165,6 +195,17 @@ public class MainView extends AnchorPane implements MVPBase.View {
             tempBiasLabel, tempBiasSlider,
             rainBiasLabel, rainBiasSlider,
             generateBtn
+        );
+
+        terrainContent.getChildren().addAll(
+            new Label("Map Size"), sizeSlider,
+            new Label("Octaves (Detail Level)"), octavesSlider,
+            new Label("Scale (Zoom Level)"), scaleSlider,
+            new Label("Island Falloff"), falloffSlider,
+            new Label("Sea Level"), waterLevelSlider,
+            new Label("Temperature Bias"), tempBiasSlider,
+            new Label("Rainfall Bias"), rainBiasSlider,
+            new HBox(8, generateButton, randomizeSettingsButton)
         );
         
         ScrollPane leftScroll = new ScrollPane(leftPanel);
@@ -215,7 +256,7 @@ public class MainView extends AnchorPane implements MVPBase.View {
         AnchorPane.setTopAnchor(topActionBar, 10.0);
         AnchorPane.setRightAnchor(topActionBar, 10.0);
 
-        
+
         // Right Layers Panel - Floating
         VBox layersPanel = new VBox(10);
         layersPanel.setPrefWidth(250);
@@ -235,18 +276,18 @@ public class MainView extends AnchorPane implements MVPBase.View {
 
         String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
         ToggleButton[] layerToggles = new ToggleButton[layerNames.length];
-        
+
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
             row.setAlignment(Pos.CENTER_LEFT);
             row.setStyle("-fx-background-color: #3c3f41; -fx-padding: 8; -fx-background-radius: 5;");
-            
+
             Label nameLabel = new Label(layerNames[i]);
             nameLabel.setStyle("-fx-text-fill: white;");
-            
+
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, javafx.scene.layout.Priority.ALWAYS);
-            
+
             ToggleButton toggle = new ToggleButton("(o)");
             toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
@@ -257,11 +298,11 @@ public class MainView extends AnchorPane implements MVPBase.View {
                 }
             });
             layerToggles[i] = toggle;
-            
+
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
             layersPanel.getChildren().add(row);
         }
-        
+
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
 
@@ -308,4 +349,16 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     @Override
     public Slider getRainBiasSlider() { return rainBiasSlider; }
+    @Override
+    public Button getRandomSeedButton() { return randomSeedButton; }
+    @Override
+    public Button getGenerateButton() { return generateButton; }
+    @Override
+    public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
+    public javafx.scene.control.CheckBox getEnableRiversToggle() { return enableRiversToggle; }
+    public javafx.scene.control.CheckBox getEnableLakesToggle() { return enableLakesToggle; }
+    public Slider getRiverDensitySlider() { return riverDensitySlider; }
+    public Slider getLakeSizeSlider() { return lakeSizeSlider; }
+    public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
 }
+

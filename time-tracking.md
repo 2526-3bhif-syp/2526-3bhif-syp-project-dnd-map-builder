@@ -6,6 +6,7 @@
 
 # Lukas
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
+- 6.4.26 - 3 Hours - River and Lake generation
 
 # Nico
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
