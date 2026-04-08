@@ -33,6 +33,11 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Slider waterLevelSlider;
     private final Slider tempBiasSlider;
     private final Slider rainBiasSlider;
+    private javafx.scene.control.CheckBox enableRiversToggle;
+    private javafx.scene.control.CheckBox enableLakesToggle;
+    private Slider riverDensitySlider;
+    private Slider lakeSizeSlider;
+    private Slider minLakeAreaSlider;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -99,7 +104,17 @@ public class MainView extends AnchorPane implements MVPBase.View {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
 
-        TabPane tabPane = new TabPane(new Tab("Tab 1"), new Tab("Tab 2"));
+        Tab terrainTab = new Tab("Terrain");
+        terrainTab.setClosable(false);
+        VBox terrainContent = new VBox(10);
+        terrainContent.setPadding(new Insets(10, 0, 10, 0));
+        
+        Tab hydrologyTab = new Tab("Hydrology");
+        hydrologyTab.setClosable(false);
+        VBox hydrologyContent = new VBox(10);
+        hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab);
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
@@ -140,18 +155,54 @@ public class MainView extends AnchorPane implements MVPBase.View {
         rainBiasSlider.setShowTickMarks(true);
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
-
-        leftPanel.getChildren().addAll(
-            headerBox,
-            new Label("Seed"), seedField,
-            tabPane,
+        
+        terrainContent.getChildren().addAll(
             new Label("Map Size"), sizeSlider,
             new Label("Octaves (Detail Level)"), octavesSlider,
             new Label("Scale (Zoom Level)"), scaleSlider,
             new Label("Island Falloff"), falloffSlider,
             new Label("Sea Level"), waterLevelSlider,
             new Label("Temperature Bias"), tempBiasSlider,
-            new Label("Rainfall Bias"), rainBiasSlider,
+            new Label("Rainfall Bias"), rainBiasSlider
+        );
+        terrainTab.setContent(terrainContent);
+
+        // Hydrology Controls
+        enableRiversToggle = new javafx.scene.control.CheckBox("Enable Rivers");
+        enableRiversToggle.setSelected(true);
+        
+        riverDensitySlider = new Slider(0, 200, 100);
+        riverDensitySlider.setShowTickMarks(true);
+        riverDensitySlider.setShowTickLabels(true);
+        riverDensitySlider.setMajorTickUnit(50);
+        
+        enableLakesToggle = new javafx.scene.control.CheckBox("Enable Lakes");
+        enableLakesToggle.setSelected(true);
+        
+        lakeSizeSlider = new Slider(0, 200, 100);
+        lakeSizeSlider.setShowTickMarks(true);
+        lakeSizeSlider.setShowTickLabels(true);
+        lakeSizeSlider.setMajorTickUnit(50);
+        
+        minLakeAreaSlider = new Slider(10, 500, 100);
+        minLakeAreaSlider.setShowTickMarks(true);
+        minLakeAreaSlider.setShowTickLabels(true);
+        minLakeAreaSlider.setMajorTickUnit(100);
+        
+        hydrologyContent.getChildren().addAll(
+            enableRiversToggle,
+            new Label("River Density (%)"), riverDensitySlider,
+            new javafx.scene.control.Separator(),
+            enableLakesToggle,
+            new Label("Lake Size Multiplier (%)"), lakeSizeSlider,
+            new Label("Minimum Lake Area"), minLakeAreaSlider
+        );
+        hydrologyTab.setContent(hydrologyContent);
+
+        leftPanel.getChildren().addAll(
+            headerBox,
+            new Label("Seed"), seedField,
+            tabPane,
             new Button("Generate")
         );
         
@@ -266,4 +317,10 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     @Override
     public Slider getRainBiasSlider() { return rainBiasSlider; }
+    public javafx.scene.control.CheckBox getEnableRiversToggle() { return enableRiversToggle; }
+    public javafx.scene.control.CheckBox getEnableLakesToggle() { return enableLakesToggle; }
+    public Slider getRiverDensitySlider() { return riverDensitySlider; }
+    public Slider getLakeSizeSlider() { return lakeSizeSlider; }
+    public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
 }
+
