@@ -42,3 +42,4 @@ Phase 1: Foundation & Application Shell
 | 260407-jji | make the left panel full height, make it connect with the screen border like the layers panel, and remove the scrollbar | 2026-04-07 | ec39808 | [260407-jji-make-the-left-panel-full-height-make-it-](./quick/260407-jji-make-the-left-panel-full-height-make-it-/) |
 | 260408-hk1 | run a code cleanup on the rendering code | 2026-04-08 | ad6fc20 | [260408-hk1-run-a-code-cleanup-on-the-rendering-code](./quick/260408-hk1-run-a-code-cleanup-on-the-rendering-code/) |
 | 260408-ht7 | make the collapsing sidebars behave the same | 2026-04-08 | 9007daa | [260408-ht7-make-the-collapsing-sidebars-behave-the-](./quick/260408-ht7-make-the-collapsing-sidebars-behave-the-/) |
+| 260408-hz5 | add style matching the theme to the checkboxes | 2026-04-08 | 9d491c4 | [260408-hz5-add-style-matching-the-theme-to-the-chec](./quick/260408-hz5-add-style-matching-the-theme-to-the-chec/) |
