@@ -58,10 +58,13 @@
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
 }
-.tab-pane .tab-content-area {
+.tab-pane, .tab-pane .tab-content-area {
     -fx-padding: 0;
     -fx-background-color: transparent;
     -fx-border-width: 0;
+    -fx-effect: null;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
 }
 .tab-pane .tab .tab-label {
     -fx-text-fill: #ffffff;
