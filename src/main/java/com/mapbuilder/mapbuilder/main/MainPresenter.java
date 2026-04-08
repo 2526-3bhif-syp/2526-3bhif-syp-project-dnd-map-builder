@@ -3,6 +3,7 @@ package com.mapbuilder.mapbuilder.main;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -145,6 +146,7 @@ public class MainPresenter {
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
+        Platform.runLater(() -> view.centerMap());
     }
 }
 
