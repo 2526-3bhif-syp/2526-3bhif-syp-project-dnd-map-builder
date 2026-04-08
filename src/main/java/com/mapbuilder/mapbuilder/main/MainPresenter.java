@@ -11,6 +11,8 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.util.Duration;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class MainPresenter implements MVPBase.Presenter<MainView> {
     
     public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
@@ -39,6 +41,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
     }
 
     private void bind() {
+        view.getRandomSeedButton().setOnAction(e -> {
+            int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
+            view.getSeedField().setText(String.valueOf(randomSeed));
+        });
+        view.getGenerateButton().setOnAction(e -> triggerGeneration());
+        view.getRandomizeSettingsButton().setOnAction(e -> randomizeSettings());
         view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
@@ -57,6 +65,18 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
 
     private void triggerGeneration() {
         debounce.playFromStart();
+    }
+
+    private void randomizeSettings() {
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        view.getSizeSlider().setValue(rand.nextInt(200, 2001));
+        view.getOctavesSlider().setValue(rand.nextInt(1, 11));
+        view.getScaleSlider().setValue(rand.nextDouble(0.001, 0.05));
+        view.getFalloffSlider().setValue(rand.nextDouble(-1.0, 1.0));
+        view.getWaterLevelSlider().setValue(rand.nextDouble(-1.0, 1.0));
+        view.getTempBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
+        view.getRainBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
+        triggerGeneration();
     }
 
     private void generateMapAsync() {
