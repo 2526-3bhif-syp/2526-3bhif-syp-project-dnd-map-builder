@@ -116,6 +116,38 @@ public class MainView extends AnchorPane implements MVPBase.View {
         hydrologyTab.setClosable(false);
         VBox hydrologyContent = new VBox(10);
         hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
+        // Hydrology Controls
+        enableRiversToggle = new javafx.scene.control.CheckBox("Enable Rivers");
+        enableRiversToggle.setSelected(true);
+
+        riverDensitySlider = new Slider(0, 200, 100);
+        riverDensitySlider.setShowTickMarks(true);
+        riverDensitySlider.setShowTickLabels(true);
+        riverDensitySlider.setMajorTickUnit(50);
+
+        enableLakesToggle = new javafx.scene.control.CheckBox("Enable Lakes");
+        enableLakesToggle.setSelected(true);
+
+        lakeSizeSlider = new Slider(0, 200, 100);
+        lakeSizeSlider.setShowTickMarks(true);
+        lakeSizeSlider.setShowTickLabels(true);
+        lakeSizeSlider.setMajorTickUnit(50);
+
+        minLakeAreaSlider = new Slider(10, 500, 100);
+        minLakeAreaSlider.setShowTickMarks(true);
+        minLakeAreaSlider.setShowTickLabels(true);
+        minLakeAreaSlider.setMajorTickUnit(100);
+
+        hydrologyContent.getChildren().addAll(
+                enableRiversToggle,
+                new Label("River Density (%)"), riverDensitySlider,
+                new javafx.scene.control.Separator(),
+                enableLakesToggle,
+                new Label("Lake Size Multiplier (%)"), lakeSizeSlider,
+                new Label("Minimum Lake Area"), minLakeAreaSlider
+        );
+        hydrologyTab.setContent(hydrologyContent);
+
 
         TabPane tabPane = new TabPane(terrainTab, hydrologyTab);
         tabPane.setStyle("-fx-background-color: transparent;");
@@ -174,6 +206,16 @@ public class MainView extends AnchorPane implements MVPBase.View {
         Label tempBiasLabel = new Label("Temperature Bias"); tempBiasLabel.setStyle("-fx-text-fill: white;");
         Label rainBiasLabel = new Label("Rainfall Bias"); rainBiasLabel.setStyle("-fx-text-fill: white;");
 
+        terrainContent.getChildren().addAll(
+            mapSizeLabel, sizeSlider,
+            octavesLabel, octavesSlider,
+            scaleLabel, scaleSlider,
+            falloffLabel, falloffSlider,
+            seaLevelLabel, waterLevelSlider,
+            tempBiasLabel, tempBiasSlider,
+            rainBiasLabel, rainBiasSlider
+        );
+        terrainTab.setContent(terrainContent);
         Button generateBtn = new Button("Generate");
         generateBtn.setStyle("-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;");
 
@@ -187,27 +229,9 @@ public class MainView extends AnchorPane implements MVPBase.View {
             seedLabel, seedField,
             seedRow,
             tabPane,
-            mapSizeLabel, sizeSlider,
-            octavesLabel, octavesSlider,
-            scaleLabel, scaleSlider,
-            falloffLabel, falloffSlider,
-            seaLevelLabel, waterLevelSlider,
-            tempBiasLabel, tempBiasSlider,
-            rainBiasLabel, rainBiasSlider,
             generateBtn
         );
 
-        terrainContent.getChildren().addAll(
-            new Label("Map Size"), sizeSlider,
-            new Label("Octaves (Detail Level)"), octavesSlider,
-            new Label("Scale (Zoom Level)"), scaleSlider,
-            new Label("Island Falloff"), falloffSlider,
-            new Label("Sea Level"), waterLevelSlider,
-            new Label("Temperature Bias"), tempBiasSlider,
-            new Label("Rainfall Bias"), rainBiasSlider,
-            new HBox(8, generateButton, randomizeSettingsButton)
-        );
-        
         ScrollPane leftScroll = new ScrollPane(leftPanel);
         leftScroll.setFitToWidth(true);
         leftScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
