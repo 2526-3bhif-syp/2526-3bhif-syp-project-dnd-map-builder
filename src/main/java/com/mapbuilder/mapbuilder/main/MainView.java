@@ -244,7 +244,7 @@ public class MainView extends AnchorPane {
         leftScroll.setFitToWidth(true);
         leftScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         leftScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        leftScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        leftScroll.setStyle("-fx-background: #2b2b2b; -fx-background-color: #2b2b2b; -fx-padding: 0; -fx-border-color: transparent; -fx-border-width: 0; -fx-background-insets: 0;");
         leftScroll.getStyleClass().add("left-panel-scroll");
         leftScroll.setPrefViewportHeight(600);
         
