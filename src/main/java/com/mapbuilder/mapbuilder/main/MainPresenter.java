@@ -1,6 +1,5 @@
 package com.mapbuilder.mapbuilder.main;
 
-import com.mapbuilder.mapbuilder.core.MVPBase;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import javafx.animation.PauseTransition;
@@ -13,7 +12,7 @@ import javafx.util.Duration;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public class MainPresenter implements MVPBase.Presenter<MainView> {
+public class MainPresenter {
     
     public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
     public static final int COLOR_LAKE = 0xFF1E90FF;  // Dodger Blue
@@ -28,14 +27,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         this.debounce.setOnFinished(e -> generateMapAsync());
     }
 
-    @Override
     public void setView(MainView view) {
         this.view = view;
         bind();
         triggerGeneration(); // initial generation
     }
 
-    @Override
     public MainView getView() {
         return view;
     }
