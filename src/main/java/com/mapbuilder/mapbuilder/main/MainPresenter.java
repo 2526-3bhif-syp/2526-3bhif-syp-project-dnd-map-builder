@@ -42,7 +42,6 @@ public class MainPresenter {
             int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
             view.getSeedField().setText(String.valueOf(randomSeed));
         });
-        view.getGenerateButton().setOnAction(e -> triggerGeneration());
         view.getRandomizeSettingsButton().setOnAction(e -> randomizeSettings());
         view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
@@ -73,6 +72,9 @@ public class MainPresenter {
         view.getWaterLevelSlider().setValue(rand.nextDouble(-1.0, 1.0));
         view.getTempBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
         view.getRainBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
+        view.getRiverDensitySlider().setValue(rand.nextDouble(0, 200));
+        view.getLakeSizeSlider().setValue(rand.nextDouble(0, 200));
+        view.getMinLakeAreaSlider().setValue(rand.nextDouble(10, 500));
         triggerGeneration();
     }
 
