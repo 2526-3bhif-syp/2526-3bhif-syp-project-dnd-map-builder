@@ -36,7 +36,6 @@ public class MainView extends AnchorPane {
     private Slider waterLevelSlider;
     private Slider tempBiasSlider;
     private Slider rainBiasSlider;
-    private Button generateButton;
     private Button randomizeSettingsButton;
     private CheckBox enableRiversToggle;
     private CheckBox enableLakesToggle;
@@ -103,7 +102,7 @@ public class MainView extends AnchorPane {
         VBox leftPanel = new VBox(10);
         leftPanel.setPrefWidth(260);
         leftPanel.setPadding(new Insets(15));
-        leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
+        leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0;");
         leftPanel.getStyleClass().add("left-panel");
         
         HBox headerBox = new HBox();
@@ -225,17 +224,15 @@ public class MainView extends AnchorPane {
         );
         terrainTab.setContent(terrainContent);
         
-        generateButton = new Button("Generate");
-        generateButton.setStyle("-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;");
         randomizeSettingsButton = new Button("Randomize Settings");
         
         HBox actionRow = new HBox(8);
-        actionRow.getChildren().addAll(generateButton, randomizeSettingsButton);
+        actionRow.getChildren().addAll(randomizeSettingsButton);
 
         leftPanel.getChildren().addAll(
             headerBox,
-            seedLabel, seedField,
             seedRow,
+            seedField,
             tabPane,
             actionRow
         );
@@ -389,7 +386,6 @@ public class MainView extends AnchorPane {
     public Slider getTempBiasSlider() { return tempBiasSlider; }
     public Slider getRainBiasSlider() { return rainBiasSlider; }
     public Button getRandomSeedButton() { return randomSeedButton; }
-    public Button getGenerateButton() { return generateButton; }
     public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
     public CheckBox getEnableRiversToggle() { return enableRiversToggle; }
     public CheckBox getEnableLakesToggle() { return enableLakesToggle; }
