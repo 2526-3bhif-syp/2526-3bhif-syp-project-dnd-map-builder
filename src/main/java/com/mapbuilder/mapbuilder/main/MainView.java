@@ -26,6 +26,7 @@ public class MainView extends AnchorPane {
     
     private Canvas canvas;
     private Pane canvasContainer;
+    private Group canvasGroup;
     private TextField seedField;
     private Button randomSeedButton;
 
@@ -59,7 +60,7 @@ public class MainView extends AnchorPane {
         canvasContainer.setStyle("-fx-background-color: #333333;");
         canvas = new Canvas(800, 800);
         
-        Group canvasGroup = new Group(canvas);
+        canvasGroup = new Group(canvas);
         canvasContainer.getChildren().add(canvasGroup);
         
         AnchorPane.setTopAnchor(canvasContainer, 0.0);
@@ -374,6 +375,20 @@ public class MainView extends AnchorPane {
         });
 
         return showRightBtn;
+    }
+
+    public void centerMap() {
+        double cw = canvasContainer.getWidth();
+        double ch = canvasContainer.getHeight();
+        double mw = canvas.getWidth();
+        double mh = canvas.getHeight();
+        double tx = cw > 0 ? (cw - mw) / 2 : 0;
+        double ty = ch > 0 ? (ch - mh) / 2 : 0;
+        
+        canvasGroup.setScaleX(1.0);
+        canvasGroup.setScaleY(1.0);
+        canvasGroup.setTranslateX(tx);
+        canvasGroup.setTranslateY(ty);
     }
 
     public Canvas getCanvas() { return canvas; }
