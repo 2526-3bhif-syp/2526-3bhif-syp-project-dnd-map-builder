@@ -15,6 +15,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class MainPresenter implements MVPBase.Presenter<MainView> {
     
+    public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
+    public static final int COLOR_LAKE = 0xFF1E90FF;  // Dodger Blue
+
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
@@ -52,6 +55,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getEnableRiversToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getEnableLakesToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRiverDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLakeSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getMinLakeAreaSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
     private void triggerGeneration() {
@@ -87,11 +96,18 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         final double waterLevel = view.getWaterLevelSlider().getValue();
         final double tempBias = view.getTempBiasSlider().getValue();
         final double rainBias = view.getRainBiasSlider().getValue();
+        
+        final boolean enableRivers = view.getEnableRiversToggle().isSelected();
+        final boolean enableLakes = view.getEnableLakesToggle().isSelected();
+        final double riverDensity = view.getRiverDensitySlider().getValue();
+        final double lakeSize = view.getLakeSizeSlider().getValue();
+        final int minLakeArea = (int) view.getMinLakeAreaSlider().getValue();
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias);
+                model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
+                                  enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea);
                 return null;
             }
         };
@@ -119,10 +135,17 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 MapCell cell = grid.getCell(x, y);
-                pixels[y * width + x] = cell.getMixedColorARGB();
+                if (cell.isLake()) {
+                    pixels[y * width + x] = COLOR_LAKE;
+                } else if (cell.isRiver()) {
+                    pixels[y * width + x] = COLOR_RIVER;
+                } else {
+                    pixels[y * width + x] = cell.getMixedColorARGB();
+                }
             }
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
     }
 }
+

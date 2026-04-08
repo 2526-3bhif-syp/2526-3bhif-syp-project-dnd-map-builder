@@ -36,6 +36,11 @@ public class MainView extends AnchorPane implements MVPBase.View {
     private final Slider rainBiasSlider;
     private final Button generateButton;
     private final Button randomizeSettingsButton;
+    private javafx.scene.control.CheckBox enableRiversToggle;
+    private javafx.scene.control.CheckBox enableLakesToggle;
+    private Slider riverDensitySlider;
+    private Slider lakeSizeSlider;
+    private Slider minLakeAreaSlider;
 
     public MainView() {
         // Center Panel (Canvas Container) - Now at the back of the AnchorPane
@@ -102,7 +107,17 @@ public class MainView extends AnchorPane implements MVPBase.View {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         headerBox.getChildren().addAll(headerLabel, spacer, collapseLeftBtn);
 
-        TabPane tabPane = new TabPane(new Tab("World"), new Tab("POIs"), new Tab("Kingdoms"));
+        Tab terrainTab = new Tab("Terrain");
+        terrainTab.setClosable(false);
+        VBox terrainContent = new VBox(10);
+        terrainContent.setPadding(new Insets(10, 0, 10, 0));
+        
+        Tab hydrologyTab = new Tab("Hydrology");
+        hydrologyTab.setClosable(false);
+        VBox hydrologyContent = new VBox(10);
+        hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab);
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
@@ -159,6 +174,8 @@ public class MainView extends AnchorPane implements MVPBase.View {
             headerBox,
             seedRow,
             tabPane,
+        
+        terrainContent.getChildren().addAll(
             new Label("Map Size"), sizeSlider,
             new Label("Octaves (Detail Level)"), octavesSlider,
             new Label("Scale (Zoom Level)"), scaleSlider,
@@ -286,4 +303,10 @@ public class MainView extends AnchorPane implements MVPBase.View {
     public Button getGenerateButton() { return generateButton; }
     @Override
     public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
+    public javafx.scene.control.CheckBox getEnableRiversToggle() { return enableRiversToggle; }
+    public javafx.scene.control.CheckBox getEnableLakesToggle() { return enableLakesToggle; }
+    public Slider getRiverDensitySlider() { return riverDensitySlider; }
+    public Slider getLakeSizeSlider() { return lakeSizeSlider; }
+    public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
 }
+
