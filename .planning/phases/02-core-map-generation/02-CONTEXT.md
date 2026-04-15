@@ -7,7 +7,6 @@
 
 Implement the map generation engine from scratch utilizing a custom seedable RNG, Perlin noise, and Fractional Brownian Motion (fBm). Generate 3 independent fields (elevation, temperature, rainfall) and resolve them into 16 distinct biomes. The architecture must focus on the backend generation strategy, producing a decoupled data structure ready for later graphical rendering, add-ons (like POIs), and modifications.
 
-*Update: Bind downward-flowing river and organic lake generation to the UI configuration panel.*
 </domain>
 
 <decisions>
@@ -40,13 +39,9 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 - **D-09 (CPU Translation Layer):** Translate the backend `MapGrid` data structure into visual colors and iterate via a JavaFX `PixelWriter` directly to a `WritableImage` on the Canvas.
 - **D-10 (Debounced Binding):** Bind the MVP View's sliders (Size, Water %, etc.) and seed inputs directly to the generator with a debounce, triggering real-time preview updates on the canvas.
 
-### River and Lake UI Binding
-- **D-11 (UI Layout):** Place the new river and lake controls in a **separate tab** within the UI's existing/upcoming tabbed interface, rather than mixing them with the core terrain sliders.
-- **D-12 (Generation Trigger):** Tweaking river and lake settings should **automatically trigger map regeneration** (debounced), consistent with the rest of the generator sliders.
-- **D-13 (Master Toggles):** Provide explicit **master toggles** to completely enable or disable rivers and lakes independently, saving the user from having to drag sliders to 0 and lose their previous settings.
-- **D-14 (River Parameters):** Expose "River Density / Count" as a **0% to 200% scale slider** (100% being the default `RIVER_DENSITY_DIVISOR`). When set to 0%, **no rivers generate at all**.
-- **D-15 (Lake Parameters):** Expose "**Lake Size Multiplier**" (using the same 0% to 200% scale) and "**Minimum Lake Area**" (raw integer slider) so the user can control lake blobbing independently.
-- **D-16 (Lake Independence):** Update the generation algorithm so that **lakes can form independently of rivers** at local terrain minimums. If River Density is 0%, lakes should still pool in natural valleys.
+### Layer Panel Styling
+- **D-11 (Layer Panel UI):** Add a new wave to implement and style the right-side Layer Panel exactly as shown in the provided sketch (Image 1). It must be a floating box with a pull-out tab (`<`) on the left edge.
+- **D-12 (Layer Rows & Toggles):** Inside the panel, create distinct rounded-rectangle rows for each layer: "Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", and "Grid". Each row must have a visibility toggle icon (an eye) aligned to the right, which displays as crossed-out when the layer is hidden.
 
 </decisions>
 
@@ -56,8 +51,11 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Project Specs
-- `.planning/REQUIREMENTS.md` - Functional Requirement 1 & 2 (Random & Parameterized Generation).
-- `.planning/phases/01-foundation-application-shell/01-CONTEXT.md` - MVP architecture constraints and Canvas references.
+- `.planning/REQUIREMENTS.md` — Functional Requirement 1 & 2 (Random & Parameterized Generation).
+- `.planning/phases/01-foundation-application-shell/01-CONTEXT.md` — MVP architecture constraints and Canvas references.
+
+### External Assets
+- `User's Layer Panel Sketch` — The user provided a sketch (Image 1) detailing the Layer Panel layout with 6 specific layer rows, rounded borders, an expand/collapse handle, and eye icons for visibility toggling.
 
 *(Note: No external implementation references or scripts are required. The math and biome logic defined in the decisions above are the sole source of truth).*
 </canonical_refs>
@@ -67,7 +65,6 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 
 ### Reusable Assets
 - The JavaFX `Canvas` initialized in Phase 1 will be the rendering target for the translated `MapGrid`.
-- Constants `RIVER_DENSITY_DIVISOR`, `MIN_LAKE_AREA`, and `LAKE_AREA_RATIO` in `MapGenerator.java` are ready to accept scalar values from the MVP Presenter.
 
 ### Integration Points
 - Map generation engine and `MapGrid` state reside in the `Model` layer of the MVP architecture.
@@ -98,8 +95,4 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 - Implement wind logic so biomes are geographically more precise.
 - Biome transitions should use color mixing, NOT extra biomes.
 - Include ocean temperature moderation.
-- DO NOT implement rivers. *(Note: This was an initial requirement that has since been overridden by the River and Lake generation update).*
-
----
-
-*Phase: 02-core-map-generation*
+- DO NOT implement rivers.

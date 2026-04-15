@@ -1,9 +1,9 @@
 package com.mapbuilder.mapbuilder.main;
 
-import com.mapbuilder.mapbuilder.core.MVPBase;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -13,7 +13,7 @@ import javafx.util.Duration;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public class MainPresenter implements MVPBase.Presenter<MainView> {
+public class MainPresenter {
     
     public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
     public static final int COLOR_LAKE = 0xFF1E90FF;  // Dodger Blue
@@ -28,14 +28,12 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         this.debounce.setOnFinished(e -> generateMapAsync());
     }
 
-    @Override
     public void setView(MainView view) {
         this.view = view;
         bind();
         triggerGeneration(); // initial generation
     }
 
-    @Override
     public MainView getView() {
         return view;
     }
@@ -45,7 +43,6 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
             int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
             view.getSeedField().setText(String.valueOf(randomSeed));
         });
-        view.getGenerateButton().setOnAction(e -> triggerGeneration());
         view.getRandomizeSettingsButton().setOnAction(e -> randomizeSettings());
         view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
@@ -76,6 +73,9 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         view.getWaterLevelSlider().setValue(rand.nextDouble(-1.0, 1.0));
         view.getTempBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
         view.getRainBiasSlider().setValue(rand.nextDouble(-0.5, 0.5));
+        view.getRiverDensitySlider().setValue(rand.nextDouble(0, 200));
+        view.getLakeSizeSlider().setValue(rand.nextDouble(0, 200));
+        view.getMinLakeAreaSlider().setValue(rand.nextDouble(10, 500));
         triggerGeneration();
     }
 
@@ -146,6 +146,7 @@ public class MainPresenter implements MVPBase.Presenter<MainView> {
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
+        Platform.runLater(() -> view.centerMap());
     }
 }
 

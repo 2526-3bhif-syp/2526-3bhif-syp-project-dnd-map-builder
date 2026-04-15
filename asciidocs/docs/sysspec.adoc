@@ -234,8 +234,3 @@ mit User-Stories (definiert in YouTrack)
 [Test prototype 2] starts at [Prototype completed]'s end
 @endgantt
 ----
-
-
-
-* link:minutes-of-meeting.html[Protokollvorlage]
-* link:demo.html[Demo]

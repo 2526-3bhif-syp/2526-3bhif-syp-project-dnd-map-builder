@@ -14,4 +14,6 @@ DnD Map Builder is a desktop application built in Java using JavaFX. It allows D
 - **Target Platforms:** Windows, macOS, Linux (Cross-platform)
 
 ## Current State
-Phase 02 complete — Core map generation engine implemented with UI controls.
+Phase 02 complete — Core map generation and layer panel UI implemented.
+
+Last updated: April 07, 2026
