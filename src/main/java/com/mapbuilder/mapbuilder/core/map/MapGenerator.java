@@ -28,7 +28,8 @@ public class MapGenerator {
     // ----------------------------------
 
     public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias,
-                         boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea) {
+                         boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea,
+                         int kingdomCount, int lloydPasses) {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
@@ -115,6 +116,10 @@ public class MapGenerator {
             // If rivers are disabled but lakes are enabled, we might want to still run the river logic but only keep the lakes, or run a separate lake logic.
             // A simple way to get natural lakes is to run the river trace, but not mark the path as rivers.
             generateHydrology(grid, seed, targetRiverCount, waterLevel, enableRivers, enableLakes, lakeSizePercent, customMinLakeArea);
+        }
+
+        if (kingdomCount > 0) {
+            generateKingdoms(grid, seed, kingdomCount, Math.min(5, lloydPasses), waterLevel);
         }
     }
 
@@ -263,6 +268,96 @@ public class MapGenerator {
             } else {
                 // If the lake flooded into the ocean, stop filling here.
                 break;
+            }
+        }
+    }
+
+    private void generateKingdoms(MapGrid grid, int seed, int kingdomCount, int lloydPasses, double waterLevel) {
+        int width = grid.getWidth();
+        int height = grid.getHeight();
+        Random rand = new Random(seed + 888);
+
+        List<Kingdom> kingdoms = new ArrayList<>();
+        List<MapCell> landCells = new ArrayList<>();
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                MapCell cell = grid.getCell(x, y);
+                cell.setKingdom(null);
+                if (cell.getElevation() > waterLevel) {
+                    landCells.add(cell);
+                }
+            }
+        }
+
+        if (landCells.isEmpty() || kingdomCount <= 0) return;
+
+        // Poisson disc simplified / random selection for capitals
+        for (int i = 0; i < kingdomCount; i++) {
+            MapCell capital = landCells.get(rand.nextInt(landCells.size()));
+            int color = 0xFF000000 | rand.nextInt(0xFFFFFF);
+            kingdoms.add(new Kingdom(i, color, capital));
+        }
+
+        for (int pass = 0; pass <= lloydPasses; pass++) {
+            PriorityQueue<Object[]> queue = new PriorityQueue<>(new Comparator<Object[]>() {
+                @Override
+                public int compare(Object[] a, Object[] b) {
+                    return Double.compare((Double) a[1], (Double) b[1]);
+                }
+            });
+            for (Kingdom k : kingdoms) {
+                queue.add(new Object[]{k.getCapital(), 0.0, k});
+            }
+
+            for (MapCell cell : landCells) {
+                cell.setKingdom(null);
+            }
+
+            int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+            while (!queue.isEmpty()) {
+                Object[] curr = queue.poll();
+                MapCell cell = (MapCell) curr[0];
+                double cost = (Double) curr[1];
+                Kingdom k = (Kingdom) curr[2];
+
+                if (cell.getKingdom() != null) continue;
+                cell.setKingdom(k);
+
+                for (int[] dir : dirs) {
+                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
+                    if (neighbor != null && neighbor.getKingdom() == null && neighbor.getElevation() > waterLevel) {
+                        double stepCost = 1.0 + (neighbor.getElevation() * 5.0); // Cost based on elevation
+                        queue.add(new Object[]{neighbor, cost + stepCost, k});
+                    }
+                }
+            }
+
+            if (pass < lloydPasses) {
+                // Lloyd relaxation
+                long[] sumX = new long[kingdomCount];
+                long[] sumY = new long[kingdomCount];
+                int[] count = new int[kingdomCount];
+
+                for (MapCell cell : landCells) {
+                    Kingdom k = cell.getKingdom();
+                    if (k != null) {
+                        sumX[k.getId()] += cell.getX();
+                        sumY[k.getId()] += cell.getY();
+                        count[k.getId()]++;
+                    }
+                }
+
+                for (int i = 0; i < kingdomCount; i++) {
+                    if (count[i] > 0) {
+                        int cx = (int) (sumX[i] / count[i]);
+                        int cy = (int) (sumY[i] / count[i]);
+                        MapCell newCapital = grid.getCell(cx, cy);
+                        if (newCapital != null && newCapital.getElevation() > waterLevel) {
+                            kingdoms.set(i, new Kingdom(i, kingdoms.get(i).getColorARGB(), newCapital));
+                        }
+                    }
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ public class MapCell {
     private int mixedColorARGB;
     private boolean isRiver;
     private boolean isLake;
+    private Kingdom kingdom;
 
     public MapCell(int x, int y) {
         this.x = x;
@@ -86,5 +87,13 @@ public class MapCell {
 
     public void setLake(boolean isLake) {
         this.isLake = isLake;
+    }
+
+    public Kingdom getKingdom() {
+        return kingdom;
+    }
+
+    public void setKingdom(Kingdom kingdom) {
+        this.kingdom = kingdom;
     }
 }
