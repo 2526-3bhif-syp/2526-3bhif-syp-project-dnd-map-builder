@@ -272,6 +272,23 @@ public class MapGenerator {
         }
     }
 
+    private static class ExpansionNode implements Comparable<ExpansionNode> {
+        final MapCell cell;
+        final double cost;
+        final Kingdom kingdom;
+
+        ExpansionNode(MapCell cell, double cost, Kingdom kingdom) {
+            this.cell = cell;
+            this.cost = cost;
+            this.kingdom = kingdom;
+        }
+
+        @Override
+        public int compareTo(ExpansionNode other) {
+            return Double.compare(this.cost, other.cost);
+        }
+    }
+
     private void generateKingdoms(MapGrid grid, int seed, int kingdomCount, int lloydPasses, double waterLevel) {
         int width = grid.getWidth();
         int height = grid.getHeight();
@@ -300,14 +317,9 @@ public class MapGenerator {
         }
 
         for (int pass = 0; pass <= lloydPasses; pass++) {
-            PriorityQueue<Object[]> queue = new PriorityQueue<>(new Comparator<Object[]>() {
-                @Override
-                public int compare(Object[] a, Object[] b) {
-                    return Double.compare((Double) a[1], (Double) b[1]);
-                }
-            });
+            PriorityQueue<ExpansionNode> queue = new PriorityQueue<>();
             for (Kingdom k : kingdoms) {
-                queue.add(new Object[]{k.getCapital(), 0.0, k});
+                queue.add(new ExpansionNode(k.getCapital(), 0.0, k));
             }
 
             for (MapCell cell : landCells) {
@@ -316,10 +328,10 @@ public class MapGenerator {
 
             int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
             while (!queue.isEmpty()) {
-                Object[] curr = queue.poll();
-                MapCell cell = (MapCell) curr[0];
-                double cost = (Double) curr[1];
-                Kingdom k = (Kingdom) curr[2];
+                ExpansionNode curr = queue.poll();
+                MapCell cell = curr.cell;
+                double cost = curr.cost;
+                Kingdom k = curr.kingdom;
 
                 if (cell.getKingdom() != null) continue;
                 cell.setKingdom(k);
@@ -332,7 +344,7 @@ public class MapGenerator {
                         if (neighbor != null && neighbor.getKingdom() == null && neighbor.getElevation() > waterLevel) {
                             double elevationPenalty = Math.max(0.0, neighbor.getElevation());
                             double stepCost = 1.0 + (elevationPenalty * 5.0); // Cost based on elevation (positive only)
-                            queue.add(new Object[]{neighbor, cost + stepCost, k});
+                            queue.add(new ExpansionNode(neighbor, cost + stepCost, k));
                         }
                     }
                 }
