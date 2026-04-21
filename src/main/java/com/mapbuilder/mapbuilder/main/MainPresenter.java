@@ -58,6 +58,12 @@ public class MainPresenter {
         view.getRiverDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getLakeSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getMinLakeAreaSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getKingdomCountSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLloydPassesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
     }
 
     private void triggerGeneration() {
@@ -121,13 +127,16 @@ public class MainPresenter {
 
     private void renderMap() {
         MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
         Canvas canvas = view.getCanvas();
         
         int width = grid.getWidth();
         int height = grid.getHeight();
+        boolean needsCentering = false;
         if (canvas.getWidth() != width || canvas.getHeight() != height) {
             canvas.setWidth(width);
             canvas.setHeight(height);
+            needsCentering = true;
         }
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -190,7 +199,9 @@ public class MainPresenter {
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
-        Platform.runLater(() -> view.centerMap());
+        if (needsCentering) {
+            Platform.runLater(() -> view.centerMap());
+        }
     }
 }
 

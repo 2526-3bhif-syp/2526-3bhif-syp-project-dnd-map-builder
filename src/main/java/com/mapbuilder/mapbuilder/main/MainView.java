@@ -172,7 +172,7 @@ public class MainView extends AnchorPane {
         kingdomCountSlider.setShowTickLabels(true);
         kingdomCountSlider.setMajorTickUnit(10);
 
-        lloydPassesSlider = new Slider(0, 5, 2);
+        lloydPassesSlider = new Slider(0, 5, 1);
         lloydPassesSlider.setShowTickMarks(true);
         lloydPassesSlider.setShowTickLabels(true);
         lloydPassesSlider.setMajorTickUnit(1);
