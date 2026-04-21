@@ -325,10 +325,15 @@ public class MapGenerator {
                 cell.setKingdom(k);
 
                 for (int[] dir : dirs) {
-                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
-                    if (neighbor != null && neighbor.getKingdom() == null && neighbor.getElevation() > waterLevel) {
-                        double stepCost = 1.0 + (neighbor.getElevation() * 5.0); // Cost based on elevation
-                        queue.add(new Object[]{neighbor, cost + stepCost, k});
+                    int nx = cell.getX() + dir[0];
+                    int ny = cell.getY() + dir[1];
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        MapCell neighbor = grid.getCell(nx, ny);
+                        if (neighbor != null && neighbor.getKingdom() == null && neighbor.getElevation() > waterLevel) {
+                            double elevationPenalty = Math.max(0.0, neighbor.getElevation());
+                            double stepCost = 1.0 + (elevationPenalty * 5.0); // Cost based on elevation (positive only)
+                            queue.add(new Object[]{neighbor, cost + stepCost, k});
+                        }
                     }
                 }
             }
