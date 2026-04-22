@@ -43,6 +43,13 @@ Implement the map generation engine from scratch utilizing a custom seedable RNG
 - **D-11 (Layer Panel UI):** Add a new wave to implement and style the right-side Layer Panel exactly as shown in the provided sketch (Image 1). It must be a floating box with a pull-out tab (`<`) on the left edge.
 - **D-12 (Layer Rows & Toggles):** Inside the panel, create distinct rounded-rectangle rows for each layer: "Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", and "Grid". Each row must have a visibility toggle icon (an eye) aligned to the right, which displays as crossed-out when the layer is hidden.
 
+### Kingdom Border Generation (Voronoi)
+- **D-13 (Seed Placement):** Use a Poisson Disc algorithm to distribute initial Kingdom capitals. This prevents clumping and allows easy filtering (e.g., keeping them off oceans).
+- **D-14 (Distance Metric):** Voronoi cells expand using Terrain Cost (Dijkstra/A* expansion). This ensures that mountains, oceans, and rivers are "expensive" to cross, causing borders to naturally follow ridges and coastlines.
+- **D-15 (Relaxation Passes):** Implement Lloyd's relaxation algorithm to make the Voronoi cells more uniform. The user can configure the number of passes via a slider in the UI (0 to 5 passes).
+- **D-16 (Sea Claims):** Kingdom expansion must stop exactly at the coastline. Water tiles (oceans/seas) remain unowned and are not part of any Kingdom.
+- **D-17 (Kingdom Configuration UI):** Add sliders to the UI for "Kingdom Count" and "Lloyd Passes (0-5)". These sliders must auto-update the map in real-time, just like the main terrain parameters. Also add toggles to independently enable/disable the border outlines and the tinted area overlays for the Kingdoms layer.
+
 </decisions>
 
 <canonical_refs>

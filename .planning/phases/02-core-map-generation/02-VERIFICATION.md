@@ -1,11 +1,11 @@
 ---
 phase: 02-core-map-generation
-verified: 2026-04-07T00:00:00Z
+verified: 2026-04-21T00:00:00Z
 status: passed
-score: 9/9 must-haves verified
+score: 13/13 must-haves verified
 re_verification:
   previous_status: passed
-  previous_score: 5/5
+  previous_score: 9/9
   gaps_closed: []
   gaps_remaining: []
   regressions: []
@@ -13,8 +13,8 @@ re_verification:
 
 # Phase 02: Core Map Generation Verification Report
 
-**Phase Goal:** Implement a layered procedural map generation system (biomes, terrain, details) and connect it to the interactive UI Canvas, including the Layer Selector panel for toggling visibility.
-**Verified:** 2026-04-07
+**Phase Goal:** Implement a layered procedural map generation system (biomes, terrain, details) and connect it to the interactive UI Canvas, including the Layer Selector panel for toggling visibility. Included Kingdom border generation via Voronoi Expansion.
+**Verified:** 2026-04-21
 **Status:** passed
 **Re-verification:** Yes
 
@@ -33,8 +33,12 @@ re_verification:
 | 7 | The Layer Panel UI appears on the right edge of the screen. | ✓ VERIFIED | `MainView` builds a right-aligned sliding side panel. |
 | 8 | It has specific rounded rows with toggle icons. | ✓ VERIFIED | Panel includes 6 layered rows using `ToggleButton` styled as eye icons (`(o)`/`(/)`). |
 | 9 | It has a pull-out tab for collapsing/expanding. | ✓ VERIFIED | Includes `<` and `>` buttons hooked up to `TranslateTransition` sliding mechanics. |
+| 10 | Kingdom capitals are generated using Poisson Disc/Random sampling. | ✓ VERIFIED | `MapGenerator` places requested capitals on valid land tiles. |
+| 11 | Voronoi cells expand using terrain cost (mountains/oceans). | ✓ VERIFIED | Voronoi Dijkstra expansion respects elevation scaling. |
+| 12 | Expansion stops exactly at the coastline. | ✓ VERIFIED | Expansion limited to cells strictly above `waterLevel`. |
+| 13 | Lloyd's relaxation smooths the borders based on user config. | ✓ VERIFIED | Lloyd iteration recomputes centroids up to `lloydPasses` times (max 5). |
 
-**Score:** 9/9 truths verified
+**Score:** 13/13 truths verified
 
 ### Required Artifacts
 

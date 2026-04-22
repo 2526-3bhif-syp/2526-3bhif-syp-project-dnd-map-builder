@@ -102,6 +102,84 @@
 
 ---
 
+**Date:** 2026-04-21
+**Phase:** 02-core-map-generation
+**Areas discussed:** Seed Placement, Distance Metric, Visual Representation, UI / Configuration, Relaxation Passes, Sea Claims
+
+---
+
+## Seed Placement
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Poisson Disc | Uniformly spaced, prevents clumping, easily restricted from oceans | ✓ |
+| Biome-weighted Random | Higher spawn chance in fertile biomes (plains, forests), 0 in ocean | |
+| Pure Random | Simple random selection, might clump | |
+
+**User's choice:** Poisson Disc (Recommended)
+
+---
+
+## Distance Metric
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Terrain Cost | Mountains/oceans cost more to cross, borders naturally follow ridges/coasts | ✓ |
+| Euclidean Distance | Standard Voronoi, ignores terrain entirely | |
+| Manhattan / Chebyshev | Similar to Euclidean but faster to compute, though slightly blocky | |
+
+**User's choice:** Terrain Cost (Recommended)
+
+---
+
+## Visuals
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Solid / Dashed Outline | Draws a distinct colored line only on the edge pixels between different kingdoms | |
+| Tinted Overlay | The entire kingdom area is slightly tinted with a distinct color | |
+| Outline + Tint | Combines both the outline and the tint | |
+
+**User's choice:** "add toggles to the UI to toggle on/off both outlines and tints" (Custom)
+
+---
+
+## UI
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Slider (Auto-update) | A slider for kingdom count that updates in real-time like other parameters | ✓ |
+| Separate Regen Button | A separate button to regenerate only kingdoms without changing terrain | |
+| Main Map Generation | Only configurable before generating the entire map | |
+
+**User's choice:** Slider (Auto-update) (Recommended)
+
+---
+
+## Relaxation Passes
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 1-3 Passes | More passes make borders more uniform and natural, but take longer to compute | |
+| 0 Passes (Base Voronoi)| Fastest generation, borders might be slightly irregular | |
+| 5+ Passes | Perfectly uniform cells, but very slow with terrain costs | |
+
+**User's choice:** "add a slider to the UI to configure lloyd passes (slider from 0 to 5)" (Custom)
+
+---
+
+## Sea Claims
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Stop at Coastline | Borders stop exactly at the coast, oceans are unowned | ✓ |
+| Claim Shallow Water | Kingdoms claim nearby shallow water, deep ocean unowned | |
+| Claim Entire Ocean | Kingdoms extend into the ocean infinitely until they meet another | |
+
+**User's choice:** Stop at Coastline (Recommended)
+
+---
+
 ## the agent's Discretion
 
 None — all areas discussed.

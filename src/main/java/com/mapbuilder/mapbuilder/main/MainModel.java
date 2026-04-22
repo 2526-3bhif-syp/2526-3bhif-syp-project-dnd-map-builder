@@ -13,12 +13,12 @@ public class MainModel {
     }
 
     public void generateMap(int seed, int size, int octaves, float scale, double falloff, double waterLevel, double tempBias, double rainBias,
-                            boolean enableRivers, boolean enableLakes, double riverDensity, double lakeSize, int minLakeArea) {
+                            boolean enableRivers, boolean enableLakes, double riverDensity, double lakeSize, int minLakeArea, int kingdomCount, int lloydPasses) {
         if (currentGrid.getWidth() != size || currentGrid.getHeight() != size) {
             currentGrid = new MapGrid(size, size);
         }
         generator.generate(currentGrid, seed, octaves, scale, falloff, waterLevel, tempBias, rainBias,
-                           enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea);
+                           enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea, kingdomCount, lloydPasses);
     }
 
     public MapGrid getCurrentGrid() {

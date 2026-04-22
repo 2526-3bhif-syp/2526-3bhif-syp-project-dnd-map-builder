@@ -44,6 +44,11 @@ public class MainView extends AnchorPane {
     private Slider lakeSizeSlider;
     private Slider minLakeAreaSlider;
 
+    private Slider kingdomCountSlider;
+    private Slider lloydPassesSlider;
+    private CheckBox enableBordersToggle;
+    private CheckBox enableKingdomOverlayToggle;
+
     public MainView() {
         setupCanvasContainer();
         ScrollPane leftScroll = setupLeftPanel();
@@ -157,7 +162,39 @@ public class MainView extends AnchorPane {
         );
         hydrologyTab.setContent(hydrologyContent);
 
-        TabPane tabPane = new TabPane(terrainTab, hydrologyTab);
+        Tab kingdomsTab = new Tab("Kingdoms");
+        kingdomsTab.setClosable(false);
+        VBox kingdomsContent = new VBox(10);
+        kingdomsContent.setPadding(new Insets(10, 0, 10, 0));
+
+        kingdomCountSlider = new Slider(0, 50, 10);
+        kingdomCountSlider.setShowTickMarks(true);
+        kingdomCountSlider.setShowTickLabels(true);
+        kingdomCountSlider.setMajorTickUnit(10);
+
+        lloydPassesSlider = new Slider(0, 5, 1);
+        lloydPassesSlider.setShowTickMarks(true);
+        lloydPassesSlider.setShowTickLabels(true);
+        lloydPassesSlider.setMajorTickUnit(1);
+        lloydPassesSlider.setMinorTickCount(0);
+        lloydPassesSlider.setSnapToTicks(true);
+
+        enableBordersToggle = new CheckBox("Show Borders");
+        enableBordersToggle.setSelected(true);
+
+        enableKingdomOverlayToggle = new CheckBox("Show Kingdom Overlay");
+        enableKingdomOverlayToggle.setSelected(true);
+
+        kingdomsContent.getChildren().addAll(
+                new Label("Kingdom Count"), kingdomCountSlider,
+                new Label("Lloyd's Relaxation Passes"), lloydPassesSlider,
+                new Separator(),
+                enableBordersToggle,
+                enableKingdomOverlayToggle
+        );
+        kingdomsTab.setContent(kingdomsContent);
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab);
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
@@ -407,4 +444,8 @@ public class MainView extends AnchorPane {
     public Slider getRiverDensitySlider() { return riverDensitySlider; }
     public Slider getLakeSizeSlider() { return lakeSizeSlider; }
     public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
+    public Slider getKingdomCountSlider() { return kingdomCountSlider; }
+    public Slider getLloydPassesSlider() { return lloydPassesSlider; }
+    public CheckBox getEnableBordersToggle() { return enableBordersToggle; }
+    public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
 }
