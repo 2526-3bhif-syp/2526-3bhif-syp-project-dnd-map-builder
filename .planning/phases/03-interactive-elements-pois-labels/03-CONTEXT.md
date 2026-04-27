@@ -18,32 +18,26 @@ Implement Points of Interest (POIs) auto-generation during map creation using wo
 - **D-02 (POI Properties):** Each POI instance contains:
   - `id` (UUID or int)
   - `x, y` (map coordinates as integers)
-  - `type` (enum: CITY, DUNGEON, LANDMARK, RUIN, VILLAGE, CASTLE, TOWER, CAVE, SHRINE, TAVERN, etc. — expandable)
+  - `type` (enum: CITY, VILLAGE, CASTLE, DUNGEON, CAVE, RUIN — 6 types, expandable)
   - `name` (user-editable string, initially generated)
   - `description` (user-editable text, may be empty)
   - `customColor` (ARGB, nullable — if null, use type-based default)
   - `customIcon` (optional icon type override, nullable)
-  - `createdAt` / `createdByRule` (metadata: "kingdom_capital", "border_dungeon", "terrain_landmark", or "user_placed" for future manual placement)
+  - `createdAt` / `createdByRule` (metadata: "kingdom_capital", "border_dungeon", or "user_placed" for future manual placement)
 
 ### POI Auto-Generation Rules
 - **D-03 (Kingdom Cities):** Place a CITY POI at each kingdom's capital cell (already identified in Phase 2). All biomes are viable for cities (no filtering). Assign city name based on kingdom ID or user preferences (TBD in planner).
 - **D-04 (Dungeon/Ruin Placement):** Place DUNGEON POIs at strategic terrain-based locations:
-  - **Multi-Kingdom Borders:** Cell where 3+ kingdom borders meet (high conflict zones).
+  - **Multi-Kingdom Borders:** Cell where 2+ kingdom borders meet (strategic zones).
   - **Cave/Mountain Clusters:** Cells in high-elevation zones (Bare Rock, Snow, etc.) with low kingdom ownership probability.
   - **Rule Frequency:** User controls density via slider: `dungeonDensity` (0.0–1.0, default 0.5). Scales the count of placed dungeons relative to map area.
-- **D-05 (Landmark Placement):** Place LANDMARK POIs at extreme terrain features:
-  - **Waterfalls/Rapids:** Cells with high elevation adjacent to water (rivers/coasts).
-  - **Mountain Peaks:** Highest elevation cells per kingdom cluster.
-  - **Rule Frequency:** User controls via slider: `landmarkDensity` (0.0–1.0, default 0.3).
-- **D-06 (Additional Villages/Towns):** Optionally scatter VILLAGE/TOWN POIs in habitable biomes (grassland, temperate forest, savanna):
-  - **Probability per Biome:** Each biome defines a base settlement probability. Grassland/temperate forest higher, desert/tundra lower.
-  - **Spacing:** Poisson-disc sampling with minimum distance (e.g., 5–10 cells apart) to prevent clustering.
-  - **Rule Frequency:** User controls via slider: `settlementDensity` (0.0–1.0, default 0.4).
-- **D-07 (User Parametrization):** Right-side panel adds three new sliders:
-  - `Dungeon Density` (0.0–1.0)
-  - `Landmark Density` (0.0–1.0)
-  - `Settlement Density` (0.0–1.0)
-  - These sliders trigger map regeneration (POI list cleared and regenerated), following Phase 2 debounce pattern.
+  - **Implementation:** Density multiplier = 0.0005 (results in ~5–10 dungeons on typical 128×128 map at default slider value).
+- **D-05 (Additional Villages/Towns):** Scatter VILLAGE, CASTLE, CAVE, and RUIN POIs in habitable and wilderness zones using grid-based Poisson-disc seeding:
+  - **Village/Castle Distribution:** VILLAGE and CASTLE POIs scattered across habitable biomes (grassland, temperate forest, savanna) with uniform grid spacing.
+  - **Ruined Sites:** RUIN POIs placed at high-elevation or wilderness locations (mountains, badlands) with sparser distribution than settlements.
+  - **Spacing:** Grid-based quadrant seeding ensures uniform map coverage without clustering.
+  - **Rule Frequency:** User controls via slider: `settlementDensity` (0.0–1.0, default 0.4). 
+  - **Implementation:** Density multiplier = 0.00005 (results in ~2–5 settlements on typical 128×128 map at default slider value).
 
 ### POI Visual Representation
 - **D-08 (Rendering Layer):** POIs render on a separate JavaFX Canvas (overlaid above the map biome/kingdom canvas via StackPane). This decouples POI rendering from biome/kingdom updates and prevents flicker when parameters change.
@@ -58,7 +52,7 @@ Implement Points of Interest (POIs) auto-generation during map creation using wo
 - **D-13 (Sidebar List + Modal Editor):** Right panel includes a POI list section below the layer toggles showing all POIs (name + type icon + coordinates). Clicking a POI opens a modal dialog.
 - **D-14 (Modal POI Editor):** Modal contains:
   - Text field: POI name (editable)
-  - Dropdown: POI type (enum: CITY, DUNGEON, LANDMARK, etc.)
+  - Dropdown: POI type (enum: CITY, VILLAGE, CASTLE, DUNGEON, CAVE, RUIN)
   - Text area: Description (editable, multi-line)
   - Color picker: Custom color ARGB (nullable; if cleared, uses type default)
   - Icon picker: Select override icon or use type default
@@ -88,7 +82,7 @@ Implement Points of Interest (POIs) auto-generation during map creation using wo
 
 ### Layer Panel UI Updates
 - **D-21 (New UI Elements):**
-  - Add three sliders below layer toggles: Dungeon Density, Landmark Density, Settlement Density (0.0–1.0 range, default 0.5/0.3/0.4).
+  - Add two sliders below layer toggles: Dungeon Density, Settlement Density (0.0–1.0 range, defaults 0.5/0.4).
   - Add subsection in right panel: "Points of Interest" list showing all POIs (sortable by name/type, optional search box).
   - Clicking POI in list opens modal editor.
 

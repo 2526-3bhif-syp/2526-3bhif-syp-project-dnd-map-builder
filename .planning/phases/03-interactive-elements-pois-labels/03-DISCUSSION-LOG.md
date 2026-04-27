@@ -146,5 +146,103 @@
 
 ---
 
-*Discussion Log — Phase 03*
-*Gathered: 2026-04-24*
+## Post-Execution Refinements (2026-04-27)
+
+**Date:** 2026-04-27
+**Phase:** 03-interactive-elements-pois-labels
+**Testing Results:** 25 unit tests passing; visual testing revealed usability improvements needed
+
+### POI Type Reduction: 10 → 6
+
+| Decision | Rationale | Commits |
+|----------|-----------|---------|
+| Remove: TAVERN, LANDMARK, TOWER, SHRINE | Testing showed these 4 types added visual clutter without meaningful gameplay benefit. Reduced feature surface to focus on core POI types (CITY, VILLAGE, CASTLE, DUNGEON, CAVE, RUIN) sufficient for first release. | `06d740d` |
+| Keep: CITY, VILLAGE, CASTLE, DUNGEON, CAVE, RUIN | These 6 types cover essential world-building roles: settlements (city/village/castle), danger zones (dungeon/cave), and history (ruin). Streamlined set improves map readability. | |
+
+**User Impact:** POI list now shows only meaningful types; icon mapper updated for 6 sprites; tests updated to use valid types.
+
+### Landmark Generation Removal
+
+| Decision | Rationale | Commits |
+|----------|-----------|---------|
+| Remove: addLandmarks() method, landmarkDensity slider, LANDMARK POI type | Landmark generation (peaks/waterfalls) added clutter without enhancing gameplay. Dungeons and settlements provide sufficient POI variety. Removing landmark slider simplifies UI (3 sliders → 2). | `02933e1`, `06d740d` |
+| Keep: Dungeon & Settlement sliders only | Dungeons provide challenge/exploration POIs; settlements provide civilization/trading POIs; both are strategically important. Landmark removal reduces cognitive load. | |
+
+**User Impact:** Cleaner POI layer on map; simpler UI (fewer sliders); reduced map clutter.
+
+### Dungeon Density Multiplier Reduction: 0.015 → 0.0005 (20x)
+
+| Iteration | Multiplier | Result | Status |
+|-----------|------------|--------|--------|
+| Initial | 0.015 | ~40+ dungeons on 128×128 map; excessive clutter | ❌ Rejected (visual test) |
+| Intermediate | 0.003 | ~12–15 dungeons; still too many | ⚠️ Better but inadequate |
+| Final | 0.0005 | ~5–10 dungeons; sparse, meaningful placement | ✅ Approved |
+
+**Rationale:** At default slider value (0.5), result should be sparse, accessory to map. Excessive dungeons broke immersion; 20x reduction achieves appropriate balance.
+
+**Commits:** `9d92a2a` (6x reduction), `e866367` (refined to 20x)
+
+**Dungeon Generation Constraint Relaxation:**
+- Border requirement: 3+ adjacent kingdoms → 2+ adjacent kingdoms (more realistic dungeon placement)
+- Elevation threshold: 0.5 → 0.4 (allows more cave/mountain locations for dungeons)
+
+**Result:** Dungeons now generate reliably even at lower density settings; placement more distributed across map.
+
+### Settlement Density Multiplier Reduction: 0.0015 → 0.00005 (30x)
+
+| Iteration | Multiplier | Result | Status |
+|-----------|------------|--------|--------|
+| Initial | 0.0015 | ~40+ settlements on 128×128 map; excessive | ❌ Rejected (visual test) |
+| Intermediate | 0.0003 | ~10–15 settlements; still crowded | ⚠️ Better but inadequate |
+| Final | 0.00005 | ~2–5 settlements; sparse, distinctive | ✅ Approved |
+
+**Rationale:** Excessive settlements dominated POI layer. 30x reduction achieves sparse placement that highlights each settlement as meaningful landmark.
+
+**Commits:** `9d92a2a` (6x reduction), `e866367` (refined to 30x)
+
+### Settlement Distribution Algorithm: Poisson-Disc → Grid-Based Quadrant Seeding
+
+| Approach | Description | Problem | Status |
+|----------|-------------|---------|--------|
+| Poisson-Disc Sampling | Random multi-seed approach with minimum distance constraint. Simple greedy algorithm. | **Settlement Clustering:** All settlements gravitated toward map center instead of distributing evenly; visual testing showed dense clusters in center, empty periphery. | ❌ Rejected |
+| Grid-Based Quadrant Seeding | Divide map into grid quadrants; place 1 settlement per quadrant deterministically. Uniform coverage guaranteed. | None identified. Uniform distribution across map; no center bias. | ✅ Approved |
+
+**Rationale:** Poisson-disc approach had inherent bias toward center due to random seeding behavior. Grid-based quadrant approach ensures uniform distribution without clustering.
+
+**Commits:** `5302f2c` (implemented grid-based seeding)
+
+**Result:** Settlements now distributed uniformly across all map regions; each quadrant has roughly equal settlement density; improved map coherence.
+
+### Zero-Density Bug Fix
+
+| Issue | Symptom | Fix | Commits |
+|-------|---------|-----|---------|
+| Forced minimum count | Setting density slider to 0.0 still generated 1 POI | Changed Math.max(1, count) → Math.max(0, count) | `5302f2c` |
+| User expectation | Users expected 0.0 slider to disable generation completely | Now: 0.0 → 0 POIs, 0.5 → ~5–10 POIs, 1.0 → max POIs | ✅ Verified |
+
+**Result:** Density sliders now truly span full range from disabled (0.0) to maximum (1.0).
+
+### UI/UX Refinements
+
+| Change | Rationale | Commits |
+|--------|-----------|---------|
+| POI list dark background (#1e1e1e) + light text (#e0e0e0) | Original white text on white background was unreadable | `e866367` |
+| Tab header styling (dark bg, white text) | Tab headers not visible; needed dark background for contrast | `e866367` |
+| Removed landmark density slider | Simplifies UI; only 2 sliders needed after landmark removal | `02933e1` |
+
+**Result:** POI list and tab headers now readable; UI simplified.
+
+### Summary of Refinements
+
+**Goal:** Reduce visual clutter, improve map readability, simplify UI, enable sparse POI distribution.
+
+**Achievements:**
+- POI type set reduced from 10 → 6 core types
+- Landmarks completely removed (generation + slider + type)
+- Dungeon density reduced 20x for sparse placement
+- Settlement density reduced 30x for sparse placement
+- Settlement distribution changed to grid-based quadrant seeding (uniform coverage)
+- Zero-density bug fixed (0.0 now truly disables generation)
+- UI styling improved (readable text, visible tabs)
+
+**Outcome:** Phase 3 now delivers sparse, readable POI layer that enhances map without overwhelming it. All 25 tests passing; visual testing approved.

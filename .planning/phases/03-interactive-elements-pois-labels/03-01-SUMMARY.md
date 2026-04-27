@@ -14,10 +14,10 @@ tags:
 dependency_graph:
   provides:
     - PointOfInterest class (D-01, D-02 compliant)
-    - POIType enum (10 types)
+    - POIType enum (6 types implemented, post-execution simplified from initial 10)
     - MapGrid.getPointsOfInterest() and related accessors
   affects:
-    - Phase 3.2 (POI generation rules will depend on this data model)
+    - Phase 3.2 (POI generation rules depend on this data model)
     - Phase 4+ (POI rendering and UI editing depend on this foundation)
 tech_stack:
   added:
@@ -45,12 +45,15 @@ key_files:
 ## ✅ All Tasks Complete
 
 ### Task 1: Create POIType enum
-- **Status:** ✅ Complete
-- **Commit:** `9b40e0e`
+- **Status:** ✅ Complete (Post-execution refinement: reduced to 6 types)
+- **Original Commit:** `9b40e0e`
+- **Refinement Commits:** `06d740d` (removed unused types), `75047ee` (POI density sliders)
 - **Files created:** `src/main/java/com/mapbuilder/mapbuilder/core/map/POIType.java`
 - **Details:**
-  - 10 enum values: CITY, VILLAGE, CASTLE, TAVERN, DUNGEON, CAVE, RUIN, LANDMARK, TOWER, SHRINE
-  - Grouped by category (Kingdom & Settlement, Dungeon & Danger, Natural & Special Landmarks)
+  - Original design: 10 enum values (CITY, VILLAGE, CASTLE, TAVERN, DUNGEON, CAVE, RUIN, LANDMARK, TOWER, SHRINE)
+  - **Post-execution refinement:** Reduced to 6 core types: CITY, VILLAGE, CASTLE, DUNGEON, CAVE, RUIN
+  - Removed: TAVERN, LANDMARK, TOWER, SHRINE (unused in generation rules)
+  - Grouped by category (Kingdom & Settlement, Dungeon & Danger, Natural Sites)
   - Full Javadoc for each type explaining role
   - Follows Biome.java pattern for consistency
   - Expandable for future types
@@ -105,13 +108,13 @@ key_files:
 
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
-| POIType enum created with 10+ expandable types | ✅ | grep shows 10 types |
-| PointOfInterest class created with all D-01/D-02 properties | ✅ | 10 properties verified |
+| POIType enum created with 6 core types (post-execution simplified) | ✅ | 6 types implemented; 4 unused types removed |
+| PointOfInterest class created with all D-01/D-02 properties | ✅ | 10 properties verified; createdByRule simplified (no "terrain_landmark") |
 | Constructor and getters/setters implemented per D-02 spec | ✅ | Full implementation with Javadoc |
 | MapGrid extended with POI list and 5 accessor methods | ✅ | 5 methods: get/set/add/remove/getById |
-| PointOfInterestTest.java covers all public methods | ✅ | 11 test methods covering all behavior |
-| All tests pass (PointOfInterestTest + existing MapGeneratorTest) | ✅ | Tests compile; syntax valid |
-| Code compiles without errors | ✅ | No compilation errors (Java syntax valid) |
+| PointOfInterestTest.java covers all public methods | ✅ | 11 test methods updated for 6 POI types |
+| All 25 tests pass after post-execution fixes | ✅ | Zero-density fix, grid-based seeding, density multiplier reductions |
+| Code compiles without errors | ✅ | No compilation errors after type removal |
 | No serialization blocking (all fields are primitives/enums/Strings) | ✅ | All fields serializable; no circular refs |
 
 ## Architecture Decisions
@@ -132,9 +135,11 @@ key_files:
 
 ## Deviations from Plan
 
-**None — Plan executed exactly as written.**
-
-All tasks completed as specified. No bugs, missing functionality, or architectural changes required.
+**Post-execution refinements (approved in testing phase):**
+1. Reduced POIType from 10 types to 6 core types (removed TAVERN, LANDMARK, TOWER, SHRINE) to reduce clutter and focus on essential features
+2. Simplified createdByRule: Removed "terrain_landmark" value (no landmarks generated)
+3. Updated all tests to use only 6 valid POI types
+4. These changes ensure map readability and alignment with density reduction strategy
 
 ## Known Blockers
 
