@@ -92,9 +92,6 @@ public class MainPresenter {
         view.getDungeonDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
             poiDebounce.playFromStart();
         });
-        view.getLandmarkDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
-            poiDebounce.playFromStart();
-        });
         view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
             poiDebounce.playFromStart();
         });
@@ -115,13 +112,12 @@ public class MainPresenter {
         }
         
         double dungeonDensity = view.getDungeonDensitySlider().getValue();
-        double landmarkDensity = view.getLandmarkDensitySlider().getValue();
         double settlementDensity = view.getSettlementDensitySlider().getValue();
         
         // Regenerate POIs with current density settings using PointOfInterestGenerator
         grid.setPointsOfInterest(
             com.mapbuilder.mapbuilder.core.map.PointOfInterestGenerator.generatePointsOfInterest(
-                grid, parsedSeed, dungeonDensity, landmarkDensity, settlementDensity
+                grid, parsedSeed, dungeonDensity, 0.0, settlementDensity
             )
         );
         
@@ -175,17 +171,16 @@ public class MainPresenter {
         final int lloydPasses = (int) view.getLloydPassesSlider().getValue();
 
         Task<Void> task = new Task<>() {
-            @Override
+             @Override
             protected Void call() {
                 // Read POI density parameters from sliders
                 double dungeonDensity = view.getDungeonDensitySlider().getValue();
-                double landmarkDensity = view.getLandmarkDensitySlider().getValue();
                 double settlementDensity = view.getSettlementDensitySlider().getValue();
                 
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
                                   kingdomCount, lloydPasses,
-                                  dungeonDensity, landmarkDensity, settlementDensity);
+                                  dungeonDensity, 0.0, settlementDensity);
                 return null;
             }
         };

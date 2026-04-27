@@ -55,7 +55,6 @@ public class MainView extends AnchorPane {
     private ToggleButton poiToggle;
     
     private Slider dungeonDensitySlider;
-    private Slider landmarkDensitySlider;
     private Slider settlementDensitySlider;
     
     private POIListPanel poiListPanel;
@@ -227,14 +226,6 @@ public class MainView extends AnchorPane {
         dungeonDensitySlider.setMinorTickCount(4);
         dungeonDensitySlider.setSnapToTicks(true);
 
-        // Landmark Density Slider
-        landmarkDensitySlider = new Slider(0.0, 1.0, 0.3);
-        landmarkDensitySlider.setShowTickMarks(true);
-        landmarkDensitySlider.setShowTickLabels(true);
-        landmarkDensitySlider.setMajorTickUnit(0.5);
-        landmarkDensitySlider.setMinorTickCount(4);
-        landmarkDensitySlider.setSnapToTicks(true);
-
         // Settlement Density Slider
         settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
         settlementDensitySlider.setShowTickMarks(true);
@@ -245,7 +236,6 @@ public class MainView extends AnchorPane {
 
         poisContent.getChildren().addAll(
                 new Label("Dungeon Density"), dungeonDensitySlider,
-                new Label("Landmark Density"), landmarkDensitySlider,
                 new Label("Settlement Density"), settlementDensitySlider,
                 new Separator(),
                 new Label("Points of Interest")
@@ -531,7 +521,6 @@ public class MainView extends AnchorPane {
     public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
     
     public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
-    public Slider getLandmarkDensitySlider() { return landmarkDensitySlider; }
     public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
     
     public POIListPanel getPOIListPanel() { return poiListPanel; }

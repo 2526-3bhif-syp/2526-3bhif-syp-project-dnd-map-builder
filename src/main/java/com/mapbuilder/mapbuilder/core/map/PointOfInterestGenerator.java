@@ -103,7 +103,7 @@ public class PointOfInterestGenerator {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
         int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.015);
-        int targetCount = Math.max(1, baseCount);  // Ensure at least 1 dungeon attempt
+        int targetCount = Math.max(0, baseCount);  // Allow zero dungeons at zero density
         
         Random rand = new Random(seed + 1001);
         int placed = 0;
@@ -141,12 +141,12 @@ public class PointOfInterestGenerator {
     private static boolean isDungeonLocation(MapGrid grid, MapCell cell) {
         if (cell.getElevation() <= 0.3) return false; // Must be above water level baseline
         
-        // Check for multi-kingdom border (3+ adjacent kingdoms)
+        // Check for multi-kingdom border (2+ adjacent kingdoms)
         int uniqueKingdoms = countAdjacentKingdoms(grid, cell);
-        if (uniqueKingdoms >= 3) return true;
+        if (uniqueKingdoms >= 2) return true;
         
-        // Check for high cave/mountain with low kingdom probability
-        if (cell.getElevation() > 0.5 && cell.getKingdom() == null) {
+        // Check for high cave/mountain (elevated, not ocean, more lenient)
+        if (cell.getElevation() > 0.4) {
             return true;
         }
         
@@ -178,14 +178,15 @@ public class PointOfInterestGenerator {
      * Improved algorithm samples annulus around each point, not just 8 directions.
      */
     private static void addSettlements(
-            List<PointOfInterest> pois, MapGrid grid, int seed, double settlementDensity, AtomicInteger idCounter) {
+            List<PointOfInterest> pois, MapGrid grid, int seedValue, double settlementDensity, AtomicInteger idCounter) {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
         // Use 0.003 multiplier to get reasonable settlement counts (e.g., 800x800 map at 0.5 density = ~960 settlements max)
         // After Poisson-disc sampling, typically 30-50% of target count actually placed
-        int targetCount = Math.max(1, (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.0015));
+        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.0015);
+        if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
-        Random rand = new Random(seed + 1003);
+        Random rand = new Random(seedValue + 1003);
         List<MapCell> habitableCells = new ArrayList<>();
         
         // Collect habitable cells from interior only (avoid edges)
@@ -201,39 +202,54 @@ public class PointOfInterestGenerator {
         
         if (habitableCells.isEmpty()) return;
         
-        // Improved Poisson-disc sampling with annulus sampling
-        int minDistance = 12;  // Minimum distance between settlements (increased for sparser distribution)
+        // Poisson-disc sampling with multiple seed points for better distribution across map
+        int minDistance = 12;
         Set<MapCell> selected = new HashSet<>();
         List<MapCell> active = new ArrayList<>();
         
-        // Start with a random cell from interior
-        MapCell first = habitableCells.get(rand.nextInt(habitableCells.size()));
-        selected.add(first);
-        active.add(first);
+        // Plant multiple seed points across the map for better coverage (not just one)
+        int numSeeds = Math.max(1, targetCount / 20);  // ~1 seed per 20 target settlements
+        for (int s = 0; s < numSeeds && selected.size() < targetCount; s++) {
+            MapCell seed = habitableCells.get(rand.nextInt(habitableCells.size()));
+            
+            // Check if seed is far enough from existing selected
+            boolean tooClose = false;
+            for (MapCell sel : selected) {
+                int dx = sel.getX() - seed.getX();
+                int dy = sel.getY() - seed.getY();
+                double dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < minDistance) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            
+            if (!tooClose) {
+                selected.add(seed);
+                active.add(seed);
+            }
+        }
         
-        int searchRadius = minDistance * 3;  // Search within 3x minimum distance
+        int searchRadius = minDistance * 3;
         
         while (!active.isEmpty() && selected.size() < targetCount) {
             int idx = rand.nextInt(active.size());
             MapCell current = active.get(idx);
             boolean found = false;
             
-            // Sample random points around current in annulus (minDistance, searchRadius)
-            int samples = 30;  // Try 30 random samples around this point
+            // Sample random points around current in annulus
+            int samples = 30;
             for (int i = 0; i < samples && !found && selected.size() < targetCount; i++) {
-                // Random point in annulus: minDistance <= r <= searchRadius
                 double angle = rand.nextDouble() * Math.PI * 2;
                 double radius = minDistance + rand.nextDouble() * (searchRadius - minDistance);
                 int nx = (int) (current.getX() + radius * Math.cos(angle));
                 int ny = (int) (current.getY() + radius * Math.sin(angle));
                 
-                // Clamp to map bounds and margin
                 nx = Math.max(margin, Math.min(nx, grid.getWidth() - margin - 1));
                 ny = Math.max(margin, Math.min(ny, grid.getHeight() - margin - 1));
                 
                 MapCell neighbor = grid.getCell(nx, ny);
                 if (neighbor != null && isHabitableBiome(neighbor.getBiome()) && !selected.contains(neighbor)) {
-                    // Verify minimum distance to all selected cells
                     boolean tooClose = false;
                     for (MapCell sel : selected) {
                         int dx = sel.getX() - neighbor.getX();
@@ -261,7 +277,7 @@ public class PointOfInterestGenerator {
         // Create POIs from selected cells
         int villageCount = 0;
         for (MapCell cell : selected) {
-            String villageName = generateVillageName(villageCount, seed);
+            String villageName = generateVillageName(villageCount, seedValue);
             
             PointOfInterest settlement = new PointOfInterest(
                 idCounter.getAndIncrement(),
