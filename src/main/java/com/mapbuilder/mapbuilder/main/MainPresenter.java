@@ -121,9 +121,15 @@ public class MainPresenter {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
+                // Default POI density parameters (will be controlled by sliders in Phase 3.4)
+                double dungeonDensity = 0.5;
+                double landmarkDensity = 0.3;
+                double settlementDensity = 0.4;
+                
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
-                                  kingdomCount, lloydPasses);
+                                  kingdomCount, lloydPasses,
+                                  dungeonDensity, landmarkDensity, settlementDensity);
                 return null;
             }
         };
