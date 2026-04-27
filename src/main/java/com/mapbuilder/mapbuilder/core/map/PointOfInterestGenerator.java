@@ -51,10 +51,9 @@ public class PointOfInterestGenerator {
         landmarkDensity = Math.max(0.0, Math.min(1.0, landmarkDensity));
         settlementDensity = Math.max(0.0, Math.min(1.0, settlementDensity));
         
-        // Generate in order: cities, dungeons, landmarks, settlements
+        // Generate in order: cities, dungeons, settlements
         addKingdomCities(pois, grid, seed, idCounter);
         addDungeonAndRuins(pois, grid, seed, dungeonDensity, idCounter);
-        addLandmarks(pois, grid, seed, landmarkDensity, idCounter);
         addSettlements(pois, grid, seed, settlementDensity, idCounter);
         
         return pois;
@@ -171,109 +170,6 @@ public class PointOfInterestGenerator {
         }
         
         return adjacentKingdoms.size();
-    }
-
-    /**
-     * D-05: Place LANDMARK at waterfalls and peaks.
-     * Uses grid area and landmarkDensity to calculate count.
-     */
-    private static void addLandmarks(
-            List<PointOfInterest> pois, MapGrid grid, int seed, double landmarkDensity, AtomicInteger idCounter) {
-        
-        // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * landmarkDensity * 0.01);
-        int targetCount = Math.max(0, baseCount);
-        
-        Random rand = new Random(seed + 1002);
-        int placed = 0;
-        int attempts = 0;
-        int maxAttempts = Math.max(100, targetCount * 5);
-        
-        while (placed < targetCount && attempts < maxAttempts) {
-            attempts++;
-            
-            int x = rand.nextInt(grid.getWidth());
-            int y = rand.nextInt(grid.getHeight());
-            MapCell cell = grid.getCell(x, y);
-            
-            if (cell != null && isLandmarkLocation(grid, cell)) {
-                String landmarkName = generateLandmarkName(cell, seed + placed);
-                
-                PointOfInterest landmark = new PointOfInterest(
-                    idCounter.getAndIncrement(),
-                    x,
-                    y,
-                    POIType.LANDMARK,
-                    landmarkName,
-                    "landmark_natural"
-                );
-                pois.add(landmark);
-                placed++;
-            }
-        }
-    }
-
-    /**
-     * Check if a cell qualifies as a landmark location (peak or waterfall).
-     */
-    private static boolean isLandmarkLocation(MapGrid grid, MapCell cell) {
-        if (cell.getElevation() <= 0.3) return false; // Must be elevated
-        
-        // Check if adjacent to water
-        boolean nearWater = isAdjacentToWater(grid, cell);
-        if (cell.getElevation() > 0.6 && nearWater) return true; // Waterfall
-        
-        // Check if peak (highest in local cluster)
-        if (isLocalPeak(grid, cell)) return true;
-        
-        return false;
-    }
-
-    /**
-     * Check if cell is adjacent to water (river or coast).
-     */
-    private static boolean isAdjacentToWater(MapGrid grid, MapCell cell) {
-        int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-        
-        for (int[] dir : dirs) {
-            int nx = cell.getX() + dir[0];
-            int ny = cell.getY() + dir[1];
-            MapCell neighbor = grid.getCell(nx, ny);
-            if (neighbor != null && (neighbor.isRiver() || neighbor.isLake() || neighbor.getElevation() <= 0.3)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    /**
-     * Check if this cell is a local elevation peak.
-     */
-    private static boolean isLocalPeak(MapGrid grid, MapCell cell) {
-        double cellElev = cell.getElevation();
-        int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-        
-        for (int[] dir : dirs) {
-            int nx = cell.getX() + dir[0];
-            int ny = cell.getY() + dir[1];
-            MapCell neighbor = grid.getCell(nx, ny);
-            if (neighbor != null && neighbor.getElevation() > cellElev) {
-                return false; // Found a higher neighbor
-            }
-        }
-        
-        return true; // No higher neighbors found
-    }
-
-    /**
-     * Generate a human-readable landmark name.
-     */
-    private static String generateLandmarkName(MapCell cell, int seed) {
-        if (cell.getKingdom() != null) {
-            return "Peak of " + cell.getKingdom().getId();
-        }
-        return "Landmark_" + cell.getX() + "_" + cell.getY();
     }
 
     /**

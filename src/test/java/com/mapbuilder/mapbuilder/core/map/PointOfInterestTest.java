@@ -36,7 +36,7 @@ class PointOfInterestTest {
 
     @Test
     void testPointOfInterestSettersModifyEditableFields() {
-        PointOfInterest poi = new PointOfInterest(3, 5, 15, POIType.TAVERN, "The Prancing Pony", "user_placed");
+        PointOfInterest poi = new PointOfInterest(3, 5, 15, POIType.VILLAGE, "The Prancing Pony", "user_placed");
         
         // Test name setter
         poi.setName("The Silver Stag");
@@ -63,7 +63,7 @@ class PointOfInterestTest {
         POIType originalType = poi.getType();
         
         // Verify we can't change immutable fields by trying to create similar POI with different values
-        PointOfInterest poi2 = new PointOfInterest(4, 31, 41, POIType.SHRINE, "Ancient Ruin", "border_dungeon");
+        PointOfInterest poi2 = new PointOfInterest(4, 31, 41, POIType.DUNGEON, "Ancient Ruin", "border_dungeon");
         assertNotEquals(originalX, poi2.getX(), "Different POI should have different X");
         assertNotEquals(originalY, poi2.getY(), "Different POI should have different Y");
         assertNotEquals(originalType, poi2.getType(), "Different POI should have different type");
@@ -71,11 +71,11 @@ class PointOfInterestTest {
 
     @Test
     void testPointOfInterestToString() {
-        PointOfInterest poi = new PointOfInterest(5, 50, 60, POIType.TOWER, "Wizard Tower", "rule_based");
+        PointOfInterest poi = new PointOfInterest(5, 50, 60, POIType.CAVE, "Wizard Tower", "rule_based");
         String str = poi.toString();
         
         assertTrue(str.contains("id=5"), "toString should contain id");
-        assertTrue(str.contains("type=TOWER"), "toString should contain type");
+        assertTrue(str.contains("type=CAVE"), "toString should contain type");
         assertTrue(str.contains("name='Wizard Tower'"), "toString should contain name");
         assertTrue(str.contains("x=50"), "toString should contain x");
         assertTrue(str.contains("y=60"), "toString should contain y");

@@ -124,61 +124,7 @@ class PointOfInterestGeneratorTest {
                 "Max density should produce more dungeons than default");
     }
 
-    // ===== Test 5: Landmarks generated at high-elevation peaks =====
-    @Test
-    void testLandmarksGeneratedAtPeaks() {
-        List<PointOfInterest> pois = grid.getPointsOfInterest();
-        long landmarkCount = pois.stream().filter(p -> p.getType() == POIType.LANDMARK).count();
-        
-        // With default density, should have some landmarks
-        assertTrue(landmarkCount >= 0, "Landmarks may be generated with default density");
-        
-        // Verify landmarks are at reasonable elevations
-        for (PointOfInterest poi : pois) {
-            if (poi.getType() == POIType.LANDMARK) {
-                MapCell cell = grid.getCell(poi.getX(), poi.getY());
-                assertTrue(cell.getElevation() > 0.3, "Landmarks should be at higher elevations");
-            }
-        }
-    }
-
-    // ===== Test 6: Landmarks placed adjacent to water (rivers or coasts) =====
-    @Test
-    void testLandmarksAdjacentToWater() {
-        List<PointOfInterest> pois = grid.getPointsOfInterest();
-        
-        for (PointOfInterest poi : pois) {
-            if (poi.getType() == POIType.LANDMARK) {
-                MapCell cell = grid.getCell(poi.getX(), poi.getY());
-                
-                // Check if adjacent to water
-                boolean adjacentToWater = false;
-                int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-                for (int[] dir : dirs) {
-                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
-                    if (neighbor != null && (neighbor.isRiver() || neighbor.isLake() || neighbor.getElevation() <= 0.3)) {
-                        adjacentToWater = true;
-                        break;
-                    }
-                }
-                
-                // Landmarks should be either at peak or near water
-                boolean isPeak = true;
-                for (int[] dir : dirs) {
-                    MapCell neighbor = grid.getCell(cell.getX() + dir[0], cell.getY() + dir[1]);
-                    if (neighbor != null && neighbor.getElevation() > cell.getElevation()) {
-                        isPeak = false;
-                        break;
-                    }
-                }
-                
-                assertTrue(adjacentToWater || isPeak, 
-                        "Landmark at (" + poi.getX() + "," + poi.getY() + ") should be at peak or near water");
-            }
-        }
-    }
-
-    // ===== Test 7: Settlements use Poisson-disc sampling =====
+    // ===== Test 5: Settlements use Poisson-disc sampling =====
     @Test
     void testSettlementsUsePoissonDiscSampling() {
         List<PointOfInterest> pois = grid.getPointsOfInterest();
@@ -301,7 +247,6 @@ class PointOfInterestGeneratorTest {
         
         List<PointOfInterest> poisMax = gridMax.getPointsOfInterest();
         long dungeonsMax = poisMax.stream().filter(p -> p.getType() == POIType.DUNGEON || p.getType() == POIType.RUIN).count();
-        long landmarksMax = poisMax.stream().filter(p -> p.getType() == POIType.LANDMARK).count();
         long settlementsMax = poisMax.stream().filter(p -> p.getType() == POIType.VILLAGE).count();
         
         assertTrue(dungeonsMax > 0, "Max density should produce at least some dungeons");

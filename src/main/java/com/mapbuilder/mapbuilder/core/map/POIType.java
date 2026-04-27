@@ -10,15 +10,9 @@ public enum POIType {
     CITY,           // Kingdom capitals and major settlements
     VILLAGE,        // Small settlements and towns
     CASTLE,         // Fortified strongholds and castles
-    TAVERN,         // Taverns, inns, and gathering places
     
     // Dungeon & Danger Types
     DUNGEON,        // Underground complexes and monster lairs
     CAVE,           // Natural caves and rock formations
-    RUIN,           // Abandoned structures and ancient ruins
-    
-    // Natural & Special Landmarks
-    LANDMARK,       // Notable natural or constructed features
-    TOWER,          // Towers and tall structures
-    SHRINE          // Religious sites and sacred places
+    RUIN            // Abandoned structures and ancient ruins
 }

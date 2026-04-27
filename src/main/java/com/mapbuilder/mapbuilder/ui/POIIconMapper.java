@@ -43,22 +43,14 @@ public class POIIconMapper {
                 return 0xFF4CAF50; // Green
             case DUNGEON:
                 return 0xFF3F51B5; // Dark blue
-            case LANDMARK:
-                return 0xFFFF9800; // Orange
             case RUIN:
                 return 0xFF795548; // Brown
             case VILLAGE:
                 return 0xFFFFC107; // Amber
             case CASTLE:
                 return 0xFF9C27B0; // Purple
-            case TOWER:
-                return 0xFF607D8B; // Blue-grey
             case CAVE:
                 return 0xFF424242; // Dark grey
-            case SHRINE:
-                return 0xFFE91E63; // Pink
-            case TAVERN:
-                return 0xFF8B4513; // Saddle-brown
             default:
                 return 0xFF9E9E9E; // Grey (fallback)
         }
@@ -78,20 +70,12 @@ public class POIIconMapper {
                 return "Village";
             case CASTLE:
                 return "Castle";
-            case TAVERN:
-                return "Tavern";
             case DUNGEON:
                 return "Dungeon";
             case CAVE:
                 return "Cave";
             case RUIN:
                 return "Ruin";
-            case LANDMARK:
-                return "Landmark";
-            case TOWER:
-                return "Tower";
-            case SHRINE:
-                return "Shrine";
             default:
                 return "Unknown";
         }
@@ -108,17 +92,13 @@ public class POIIconMapper {
         switch (type) {
             case CITY:       return 0;
             case DUNGEON:    return 1;
-            case LANDMARK:   return 2;
-            case RUIN:       return 3;
-            case VILLAGE:    return 4;
-            case CASTLE:     return 5;
-            case TOWER:      return 6;
-            case CAVE:       return 7;
-            case SHRINE:     return 8;
-            case TAVERN:     return 9;
+            case RUIN:       return 2;
+            case VILLAGE:    return 3;
+            case CASTLE:     return 4;
+            case CAVE:       return 5;
             default:
                 // For any future types, cycle through remaining indices
-                return 10;
+                return 6;
         }
     }
 }
