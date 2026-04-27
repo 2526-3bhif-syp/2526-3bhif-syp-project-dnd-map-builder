@@ -22,11 +22,11 @@
 
 ## Phase 3: Interactive Elements (POIs & Labels)
 - **Goal:** Implement Points of Interest auto-generation, rendering, and editing UI.
-- **Plans:** 4 plans
-  - [ ] 03-01-PLAN.md — POI data model (PointOfInterest, POIType enum, MapGrid integration)
-  - [ ] 03-02-PLAN.md — POI auto-generation rules (kingdoms, dungeons, landmarks, settlements)
-  - [ ] 03-03-PLAN.md — POI rendering and layer integration (overlay canvas, hover labels)
-  - [ ] 03-04-PLAN.md — POI UI controls (density sliders, list panel, editor modal)
+- **Plans:** 4/4 plans complete
+  - [x] 03-01-PLAN.md — POI data model (PointOfInterest, POIType enum, MapGrid integration)
+  - [x] 03-02-PLAN.md — POI auto-generation rules (kingdoms, dungeons, landmarks, settlements)
+  - [x] 03-03-PLAN.md — POI rendering and layer integration (overlay canvas, hover labels)
+  - [x] 03-04-PLAN.md — POI UI controls (density sliders, list panel, editor modal)
 - **Tasks:**
   - Implement POI data model and auto-generation rules.
   - Render POIs with colored circles and sprite icons.
