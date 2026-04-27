@@ -142,6 +142,7 @@ public class MainPresenter {
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return;
         Canvas canvas = view.getCanvas();
+        Canvas poiCanvas = view.getPoiCanvas();
         
         int width = grid.getWidth();
         int height = grid.getHeight();
@@ -149,6 +150,8 @@ public class MainPresenter {
         if (canvas.getWidth() != width || canvas.getHeight() != height) {
             canvas.setWidth(width);
             canvas.setHeight(height);
+            poiCanvas.setWidth(width);
+            poiCanvas.setHeight(height);
             needsCentering = true;
         }
 
