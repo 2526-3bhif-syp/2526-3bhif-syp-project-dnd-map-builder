@@ -14,7 +14,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 import java.util.List;
@@ -337,7 +336,6 @@ public class MainPresenter {
 
             // Draw label with shadow for legibility
             gc.setFont(new Font("Arial", 11));
-            gc.setTextAlignment(TextAlignment.CENTER);
 
             // Black shadow
             gc.setFill(javafx.scene.paint.Color.BLACK);
