@@ -213,7 +213,53 @@ public class MainView extends AnchorPane {
         );
         kingdomsTab.setContent(kingdomsContent);
 
-        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab);
+        // Create POIs Tab
+        Tab poisTab = new Tab("POIs");
+        poisTab.setClosable(false);
+        VBox poisContent = new VBox(10);
+        poisContent.setPadding(new Insets(10, 0, 10, 0));
+
+        // Dungeon Density Slider
+        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
+        dungeonDensitySlider.setShowTickMarks(true);
+        dungeonDensitySlider.setShowTickLabels(true);
+        dungeonDensitySlider.setMajorTickUnit(0.5);
+        dungeonDensitySlider.setMinorTickCount(4);
+        dungeonDensitySlider.setSnapToTicks(true);
+
+        // Landmark Density Slider
+        landmarkDensitySlider = new Slider(0.0, 1.0, 0.3);
+        landmarkDensitySlider.setShowTickMarks(true);
+        landmarkDensitySlider.setShowTickLabels(true);
+        landmarkDensitySlider.setMajorTickUnit(0.5);
+        landmarkDensitySlider.setMinorTickCount(4);
+        landmarkDensitySlider.setSnapToTicks(true);
+
+        // Settlement Density Slider
+        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
+        settlementDensitySlider.setShowTickMarks(true);
+        settlementDensitySlider.setShowTickLabels(true);
+        settlementDensitySlider.setMajorTickUnit(0.5);
+        settlementDensitySlider.setMinorTickCount(4);
+        settlementDensitySlider.setSnapToTicks(true);
+
+        poisContent.getChildren().addAll(
+                new Label("Dungeon Density"), dungeonDensitySlider,
+                new Label("Landmark Density"), landmarkDensitySlider,
+                new Label("Settlement Density"), settlementDensitySlider,
+                new Separator(),
+                new Label("Points of Interest")
+        );
+
+        // Add POI List Panel to POIs tab
+        poiListPanel = new POIListPanel(null);  // Presenter will be set later
+        poiListPanel.setPrefHeight(200);
+        VBox.setVgrow(poiListPanel, Priority.ALWAYS);
+        poisContent.getChildren().add(poiListPanel);
+
+        poisTab.setContent(poisContent);
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab);
         tabPane.setStyle("-fx-background-color: transparent;");
 
         seedField = new TextField("12345");
@@ -410,68 +456,6 @@ public class MainView extends AnchorPane {
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
             layersPanel.getChildren().add(row);
         }
-
-        // Add POI Density Controls
-        layersPanel.getChildren().add(new Separator());
-        Label poiDensityHeader = new Label("POI Density Controls");
-        poiDensityHeader.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 0 5 0;");
-        layersPanel.getChildren().add(poiDensityHeader);
-
-        // Dungeon Density Slider
-        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
-        dungeonDensitySlider.setShowTickMarks(true);
-        dungeonDensitySlider.setShowTickLabels(true);
-        dungeonDensitySlider.setMajorTickUnit(0.5);
-        dungeonDensitySlider.setMinorTickCount(4);
-        dungeonDensitySlider.setSnapToTicks(true);
-        HBox dungeonBox = new HBox(5);
-        dungeonBox.setAlignment(Pos.CENTER_LEFT);
-        Label dungeonLabel = new Label("Dungeon:");
-        dungeonLabel.setStyle("-fx-text-fill: white;");
-        dungeonLabel.setPrefWidth(70);
-        dungeonBox.getChildren().addAll(dungeonLabel, dungeonDensitySlider);
-        layersPanel.getChildren().add(dungeonBox);
-
-        // Landmark Density Slider
-        landmarkDensitySlider = new Slider(0.0, 1.0, 0.3);
-        landmarkDensitySlider.setShowTickMarks(true);
-        landmarkDensitySlider.setShowTickLabels(true);
-        landmarkDensitySlider.setMajorTickUnit(0.5);
-        landmarkDensitySlider.setMinorTickCount(4);
-        landmarkDensitySlider.setSnapToTicks(true);
-        HBox landmarkBox = new HBox(5);
-        landmarkBox.setAlignment(Pos.CENTER_LEFT);
-        Label landmarkLabel = new Label("Landmark:");
-        landmarkLabel.setStyle("-fx-text-fill: white;");
-        landmarkLabel.setPrefWidth(70);
-        landmarkBox.getChildren().addAll(landmarkLabel, landmarkDensitySlider);
-        layersPanel.getChildren().add(landmarkBox);
-
-        // Settlement Density Slider
-        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
-        settlementDensitySlider.setShowTickMarks(true);
-        settlementDensitySlider.setShowTickLabels(true);
-        settlementDensitySlider.setMajorTickUnit(0.5);
-        settlementDensitySlider.setMinorTickCount(4);
-        settlementDensitySlider.setSnapToTicks(true);
-        HBox settlementBox = new HBox(5);
-        settlementBox.setAlignment(Pos.CENTER_LEFT);
-        Label settlementLabel = new Label("Settlement:");
-        settlementLabel.setStyle("-fx-text-fill: white;");
-        settlementLabel.setPrefWidth(70);
-        settlementBox.getChildren().addAll(settlementLabel, settlementDensitySlider);
-        layersPanel.getChildren().add(settlementBox);
-
-        // Add POI List Panel
-        layersPanel.getChildren().add(new Separator());
-        Label poiListHeader = new Label("Points of Interest");
-        poiListHeader.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 0 5 0;");
-        layersPanel.getChildren().add(poiListHeader);
-        
-        poiListPanel = new POIListPanel(null);  // Presenter will be set later
-        poiListPanel.setPrefHeight(150);
-        VBox.setVgrow(poiListPanel, Priority.ALWAYS);
-        layersPanel.getChildren().add(poiListPanel);
 
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
