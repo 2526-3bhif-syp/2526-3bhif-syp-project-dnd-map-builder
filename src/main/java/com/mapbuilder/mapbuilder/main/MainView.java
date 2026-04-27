@@ -435,6 +435,7 @@ public class MainView extends AnchorPane {
             ToggleButton toggle = new ToggleButton("(o)");
             toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
             toggle.setSelected(true);  // All layers visible by default
+            int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
                 if (newV) {
                     toggle.setText("(/)");
@@ -443,7 +444,7 @@ public class MainView extends AnchorPane {
                 }
                 
                 // Wire POI toggle to control POI canvas opacity
-                if (i == 1) {  // "Punkte von Interesse"
+                if (finalI == 1) {
                     poiCanvas.setOpacity(newV ? 1.0 : 0.0);
                 }
             });

@@ -79,15 +79,54 @@ public class MainPresenter {
     }
     
     /**
-     * Sets up listeners for POI density sliders with 300ms debounce.
-     * Changes to density sliders trigger map regeneration after a short delay
-     * to avoid excessive recalculation while user is adjusting sliders.
+     * Sets up listeners for POI density sliders.
+     * Changes to density sliders trigger POI regeneration only (not full map regeneration).
+     * This allows adjusting POI density without affecting terrain, hydrology, or kingdoms.
      */
     private void setupPOIDensityListeners() {
-        // Use the same debounce mechanism for all density slider changes
-        view.getDungeonDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
-        view.getLandmarkDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
-        view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        // POI sliders trigger only POI regeneration, not full map generation
+        // Use a debounce to avoid excessive recalculation while user is adjusting sliders
+        PauseTransition poiDebounce = new PauseTransition(Duration.millis(300));
+        poiDebounce.setOnFinished(e -> generatePOIsOnly());
+        
+        view.getDungeonDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            poiDebounce.playFromStart();
+        });
+        view.getLandmarkDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            poiDebounce.playFromStart();
+        });
+        view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            poiDebounce.playFromStart();
+        });
+    }
+    
+    /**
+     * Regenerates only POIs without affecting terrain, hydrology, or kingdoms.
+     */
+    private void generatePOIsOnly() {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
+        
+        int parsedSeed;
+        try {
+            parsedSeed = Integer.parseInt(view.getSeedField().getText());
+        } catch (NumberFormatException e) {
+            parsedSeed = view.getSeedField().getText().hashCode();
+        }
+        
+        double dungeonDensity = view.getDungeonDensitySlider().getValue();
+        double landmarkDensity = view.getLandmarkDensitySlider().getValue();
+        double settlementDensity = view.getSettlementDensitySlider().getValue();
+        
+        // Regenerate POIs with current density settings using PointOfInterestGenerator
+        grid.setPointsOfInterest(
+            com.mapbuilder.mapbuilder.core.map.PointOfInterestGenerator.generatePointsOfInterest(
+                grid, parsedSeed, dungeonDensity, landmarkDensity, settlementDensity
+            )
+        );
+        
+        // Re-render the map with new POIs
+        renderMap();
     }
 
     private void triggerGeneration() {

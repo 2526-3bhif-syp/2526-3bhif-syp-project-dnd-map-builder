@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class POIListPanel extends VBox {
     
-    private final MainPresenter presenter;
+    private MainPresenter presenter;
     private ListView<PointOfInterest> poiListView;
     
     /**
