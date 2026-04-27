@@ -55,10 +55,12 @@ public class POIListPanel extends VBox {
     private void initializeListView() {
         poiListView = new ListView<>();
         poiListView.setPrefHeight(200);
+        poiListView.setStyle("-fx-background-color: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-text-fill: white;");
         poiListView.setCellFactory(param -> new ListCell<PointOfInterest>() {
             @Override
             protected void updateItem(PointOfInterest poi, boolean empty) {
                 super.updateItem(poi, empty);
+                setStyle("-fx-background-color: #1e1e1e; -fx-text-fill: white;");
                 if (empty || poi == null) {
                     setText(null);
                     setGraphic(null);
@@ -66,6 +68,7 @@ public class POIListPanel extends VBox {
                     // Create HBox with icon color square + name + coordinates
                     HBox cell = new HBox(5);
                     cell.setAlignment(Pos.CENTER_LEFT);
+                    cell.setStyle("-fx-background-color: #1e1e1e;");
                     
                     // Color square (16x16px, type color)
                     Rectangle colorSquare = new Rectangle(16, 16);
@@ -77,7 +80,7 @@ public class POIListPanel extends VBox {
                     String displayText = String.format("%s (%s) @ %d,%d", 
                         poi.getName(), poi.getType(), poi.getX(), poi.getY());
                     Label label = new Label(displayText);
-                    label.setStyle("-fx-text-fill: white;");
+                    label.setStyle("-fx-text-fill: #e0e0e0;");
                     
                     cell.getChildren().addAll(colorSquare, label);
                     setGraphic(cell);
@@ -99,7 +102,7 @@ public class POIListPanel extends VBox {
         // Wrap in scroll pane for better rendering
         ScrollPane scrollPane = new ScrollPane(poiListView);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-padding: 0;");
+        scrollPane.setStyle("-fx-background: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-padding: 0;");
         
         this.getChildren().add(scrollPane);
     }

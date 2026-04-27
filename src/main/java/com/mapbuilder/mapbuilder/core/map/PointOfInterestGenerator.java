@@ -102,7 +102,7 @@ public class PointOfInterestGenerator {
             List<PointOfInterest> pois, MapGrid grid, int seed, double dungeonDensity, AtomicInteger idCounter) {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.015);
+        int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.003);
         int targetCount = Math.max(0, baseCount);  // Allow zero dungeons at zero density
         
         Random rand = new Random(seed + 1001);
@@ -181,9 +181,9 @@ public class PointOfInterestGenerator {
             List<PointOfInterest> pois, MapGrid grid, int seedValue, double settlementDensity, AtomicInteger idCounter) {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        // Use 0.003 multiplier to get reasonable settlement counts (e.g., 800x800 map at 0.5 density = ~960 settlements max)
-        // After Poisson-disc sampling, typically 30-50% of target count actually placed
-        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.0015);
+        // Use 0.0003 multiplier to get reasonable settlement counts
+        // For 800x800 map at 0.5 density: ~96 target, after sampling ~30-50 placed
+        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.0003);
         if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
         Random rand = new Random(seedValue + 1003);

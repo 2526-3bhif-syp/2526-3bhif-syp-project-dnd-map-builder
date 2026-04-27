@@ -141,11 +141,13 @@ public class MainView extends AnchorPane {
 
         Tab terrainTab = new Tab("Terrain");
         terrainTab.setClosable(false);
+        terrainTab.setStyle("-fx-text-fill: white;");
         VBox terrainContent = new VBox(10);
         terrainContent.setPadding(new Insets(10, 0, 10, 0));
 
         Tab hydrologyTab = new Tab("Hydrology");
         hydrologyTab.setClosable(false);
+        hydrologyTab.setStyle("-fx-text-fill: white;");
         VBox hydrologyContent = new VBox(10);
         hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
         
@@ -182,6 +184,7 @@ public class MainView extends AnchorPane {
 
         Tab kingdomsTab = new Tab("Kingdoms");
         kingdomsTab.setClosable(false);
+        kingdomsTab.setStyle("-fx-text-fill: white;");
         VBox kingdomsContent = new VBox(10);
         kingdomsContent.setPadding(new Insets(10, 0, 10, 0));
 
@@ -215,6 +218,7 @@ public class MainView extends AnchorPane {
         // Create POIs Tab
         Tab poisTab = new Tab("POIs");
         poisTab.setClosable(false);
+        poisTab.setStyle("-fx-text-fill: white;");
         VBox poisContent = new VBox(10);
         poisContent.setPadding(new Insets(10, 0, 10, 0));
 
@@ -250,7 +254,12 @@ public class MainView extends AnchorPane {
         poisTab.setContent(poisContent);
 
         TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab);
-        tabPane.setStyle("-fx-background-color: transparent;");
+        tabPane.setStyle("-fx-background-color: #2b2b2b; " +
+                "-fx-control-inner-background: #2b2b2b; " +
+                "-fx-tab-header-background: #2b2b2b; " +
+                "-fx-text-fill: white; " +
+                "-fx-text-base-color: white;");
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
 
         seedField = new TextField("12345");
         seedField.setPrefWidth(100);
