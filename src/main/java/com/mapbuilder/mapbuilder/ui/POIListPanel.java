@@ -9,6 +9,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -94,6 +95,9 @@ public class POIListPanel extends VBox {
                 presenter.openPOIEditor(selected);
             }
         });
+        
+        // Make list view grow to fill available space
+        VBox.setVgrow(poiListView, Priority.ALWAYS);
         
         // Wrap in scroll pane for better rendering
         ScrollPane scrollPane = new ScrollPane(poiListView);
