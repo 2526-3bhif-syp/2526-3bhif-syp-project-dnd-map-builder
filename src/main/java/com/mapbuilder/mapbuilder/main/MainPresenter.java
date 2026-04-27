@@ -358,10 +358,10 @@ public class MainPresenter {
     private javafx.scene.paint.Color toFXColor(int argb) {
         int a = (argb >> 24) & 0xFF;
         int r = (argb >> 16) & 0xFF;
-         int g = (argb >> 8) & 0xFF;
-         int b = argb & 0xFF;
-         return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-     }
+        int g = (argb >> 8) & 0xFF;
+        int b = argb & 0xFF;
+        return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+    }
     
     /**
      * Opens the POI editor modal dialog for the given POI.

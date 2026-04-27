@@ -88,7 +88,7 @@ public class POIListPanel extends VBox {
         // Handle selection: click to open editor
         poiListView.setOnMouseClicked(event -> {
             PointOfInterest selected = poiListView.getSelectionModel().getSelectedItem();
-            if (selected != null) {
+            if (selected != null && presenter != null) {
                 presenter.openPOIEditor(selected);
             }
         });
