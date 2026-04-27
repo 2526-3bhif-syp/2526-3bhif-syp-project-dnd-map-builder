@@ -52,6 +52,10 @@ public class MainView extends AnchorPane {
     private CheckBox enableBordersToggle;
     private CheckBox enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
+    
+    private Slider dungeonDensitySlider;
+    private Slider landmarkDensitySlider;
+    private Slider settlementDensitySlider;
 
     public MainView() {
         setupCanvasContainer();
@@ -404,6 +408,58 @@ public class MainView extends AnchorPane {
             layersPanel.getChildren().add(row);
         }
 
+        // Add POI Density Controls
+        layersPanel.getChildren().add(new Separator());
+        Label poiDensityHeader = new Label("POI Density Controls");
+        poiDensityHeader.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 0 5 0;");
+        layersPanel.getChildren().add(poiDensityHeader);
+
+        // Dungeon Density Slider
+        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
+        dungeonDensitySlider.setShowTickMarks(true);
+        dungeonDensitySlider.setShowTickLabels(true);
+        dungeonDensitySlider.setMajorTickUnit(0.5);
+        dungeonDensitySlider.setMinorTickCount(4);
+        dungeonDensitySlider.setSnapToTicks(true);
+        HBox dungeonBox = new HBox(5);
+        dungeonBox.setAlignment(Pos.CENTER_LEFT);
+        Label dungeonLabel = new Label("Dungeon:");
+        dungeonLabel.setStyle("-fx-text-fill: white;");
+        dungeonLabel.setPrefWidth(70);
+        dungeonBox.getChildren().addAll(dungeonLabel, dungeonDensitySlider);
+        layersPanel.getChildren().add(dungeonBox);
+
+        // Landmark Density Slider
+        landmarkDensitySlider = new Slider(0.0, 1.0, 0.3);
+        landmarkDensitySlider.setShowTickMarks(true);
+        landmarkDensitySlider.setShowTickLabels(true);
+        landmarkDensitySlider.setMajorTickUnit(0.5);
+        landmarkDensitySlider.setMinorTickCount(4);
+        landmarkDensitySlider.setSnapToTicks(true);
+        HBox landmarkBox = new HBox(5);
+        landmarkBox.setAlignment(Pos.CENTER_LEFT);
+        Label landmarkLabel = new Label("Landmark:");
+        landmarkLabel.setStyle("-fx-text-fill: white;");
+        landmarkLabel.setPrefWidth(70);
+        landmarkBox.getChildren().addAll(landmarkLabel, landmarkDensitySlider);
+        layersPanel.getChildren().add(landmarkBox);
+
+        // Settlement Density Slider
+        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
+        settlementDensitySlider.setShowTickMarks(true);
+        settlementDensitySlider.setShowTickLabels(true);
+        settlementDensitySlider.setMajorTickUnit(0.5);
+        settlementDensitySlider.setMinorTickCount(4);
+        settlementDensitySlider.setSnapToTicks(true);
+        HBox settlementBox = new HBox(5);
+        settlementBox.setAlignment(Pos.CENTER_LEFT);
+        Label settlementLabel = new Label("Settlement:");
+        settlementLabel.setStyle("-fx-text-fill: white;");
+        settlementLabel.setPrefWidth(70);
+        settlementBox.getChildren().addAll(settlementLabel, settlementDensitySlider);
+        layersPanel.getChildren().add(settlementBox);
+
+
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
 
@@ -475,4 +531,8 @@ public class MainView extends AnchorPane {
     public Slider getLloydPassesSlider() { return lloydPassesSlider; }
     public CheckBox getEnableBordersToggle() { return enableBordersToggle; }
     public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
+    
+    public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
+    public Slider getLandmarkDensitySlider() { return landmarkDensitySlider; }
+    public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
 }
