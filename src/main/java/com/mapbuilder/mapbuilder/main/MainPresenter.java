@@ -237,10 +237,17 @@ public class MainPresenter {
         // Load sprite sheet if not cached
         if (spriteSheet == null) {
             try {
-                spriteSheet = new Image("file:src/main/resources/assets/poi-icons.png");
-            } catch (Exception e) {
-                System.err.println("Failed to load POI sprite sheet: " + e.getMessage());
-                return;
+                // Try loading from resources first (for packaged app)
+                String resourcePath = getClass().getResource("/assets/poi-icons.png").toExternalForm();
+                spriteSheet = new Image(resourcePath);
+            } catch (Exception e1) {
+                // Fallback to file path for development
+                try {
+                    spriteSheet = new Image("file:src/main/resources/assets/poi-icons.png");
+                } catch (Exception e2) {
+                    System.err.println("Failed to load POI sprite sheet: " + e2.getMessage());
+                    return;
+                }
             }
         }
 
