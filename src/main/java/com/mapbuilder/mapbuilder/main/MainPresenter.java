@@ -2,15 +2,21 @@ package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
+import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
+import com.mapbuilder.mapbuilder.ui.POIIconMapper;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MainPresenter {
@@ -21,6 +27,7 @@ public class MainPresenter {
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
+    private Image spriteSheet; // Cached sprite sheet for POI rendering
 
     public MainPresenter() {
         this.model = new MainModel();
@@ -199,9 +206,126 @@ public class MainPresenter {
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
+        
+        // Render POI overlay after main map
+        renderPOIs();
+        
         if (needsCentering) {
             Platform.runLater(() -> view.centerMap());
         }
+    }
+
+    /**
+     * Renders the POI overlay canvas with colored circles and sprite icons.
+     * Called after renderMap() to draw POIs on a separate canvas layer.
+     * This prevents flickering when map parameters change.
+     */
+    private void renderPOIs() {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
+
+        Canvas poiCanvas = view.getPoiCanvas();
+        if (poiCanvas == null) return;
+
+        int width = (int) poiCanvas.getWidth();
+        int height = (int) poiCanvas.getHeight();
+        GraphicsContext gc = poiCanvas.getGraphicsContext2D();
+
+        // Clear canvas
+        gc.clearRect(0, 0, width, height);
+
+        // Load sprite sheet if not cached
+        if (spriteSheet == null) {
+            try {
+                spriteSheet = new Image("file:src/main/resources/assets/poi-icons.png");
+            } catch (Exception e) {
+                System.err.println("Failed to load POI sprite sheet: " + e.getMessage());
+                return;
+            }
+        }
+
+        // Get list of POIs from grid
+        List<PointOfInterest> pois = grid.getPointsOfInterest();
+        if (pois == null || pois.isEmpty()) return;
+
+        // Track mouse position for hover labels
+        double mouseX = view.getMouseX();
+        double mouseY = view.getMouseY();
+        PointOfInterest hoveredPOI = null;
+
+        // Render each POI
+        for (PointOfInterest poi : pois) {
+            // Convert map coordinates to screen coordinates
+            // (In a real app with zoom/pan, this would apply scale and translation)
+            double screenX = poi.getX();
+            double screenY = poi.getY();
+
+            // Skip if off-screen
+            if (screenX < 0 || screenX >= width || screenY < 0 || screenY >= height) {
+                continue;
+            }
+
+            // Get color for this POI
+            Integer customColor = poi.getCustomColor();
+            int poiColor = customColor != null ? customColor : POIIconMapper.getDefaultColor(poi.getType());
+
+            // Draw colored circle (12-16px diameter, using 14px)
+            gc.setFill(toFXColor(poiColor));
+            gc.fillOval(screenX - 7, screenY - 7, 14, 14);
+
+            // Draw sprite icon (16x16px centered on circle)
+            int[] spriteCoords = POIIconMapper.getSpriteCoordinates(poi.getType());
+            if (spriteCoords != null && spriteSheet != null && !spriteSheet.isError()) {
+                gc.drawImage(
+                    spriteSheet,
+                    spriteCoords[0], spriteCoords[1], 32, 32,  // Source rect (32x32 from 512x512 sheet)
+                    screenX - 8, screenY - 8, 16, 16           // Destination rect (16x16 on canvas)
+                );
+            }
+
+            // Check if mouse is hovering over this POI (within 20px)
+            double distance = Math.sqrt(
+                Math.pow(mouseX - screenX, 2) + Math.pow(mouseY - screenY, 2)
+            );
+            if (distance < 20 && (hoveredPOI == null || distance < 
+                Math.sqrt(Math.pow(mouseX - hoveredPOI.getX(), 2) + Math.pow(mouseY - hoveredPOI.getY(), 2)))) {
+                hoveredPOI = poi;
+            }
+        }
+
+        // Render label for hovered POI
+        if (hoveredPOI != null) {
+            double labelX = hoveredPOI.getX();
+            double labelY = hoveredPOI.getY() - 20; // Above the POI
+
+            // Draw label with shadow for legibility
+            gc.setFont(new Font("Arial", 11));
+            gc.setTextAlignment(TextAlignment.CENTER);
+
+            // Black shadow
+            gc.setFill(javafx.scene.paint.Color.BLACK);
+            gc.fillText(hoveredPOI.getName(), labelX + 1, labelY + 1);
+
+            // White text
+            gc.setFill(javafx.scene.paint.Color.WHITE);
+            gc.fillText(hoveredPOI.getName(), labelX, labelY);
+        }
+    }
+
+    /**
+     * Converts an ARGB integer color to JavaFX Color.
+     *
+     * @param argb ARGB color value
+     * @return JavaFX Color
+     */
+    private javafx.scene.paint.Color toFXColor(int argb) {
+        int a = (argb >> 24) & 0xFF;
+        int r = (argb >> 16) & 0xFF;
+        int g = (argb >> 8) & 0xFF;
+        int b = argb & 0xFF;
+        return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+    }
+}
     }
 }
 

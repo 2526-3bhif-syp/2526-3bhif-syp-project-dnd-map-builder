@@ -25,8 +25,11 @@ import javafx.util.Duration;
 public class MainView extends AnchorPane {
     
     private Canvas canvas;
+    private Canvas poiCanvas;
     private Pane canvasContainer;
     private Group canvasGroup;
+    private double mouseX = 0;
+    private double mouseY = 0;
     private TextField seedField;
     private Button randomSeedButton;
 
@@ -48,6 +51,7 @@ public class MainView extends AnchorPane {
     private Slider lloydPassesSlider;
     private CheckBox enableBordersToggle;
     private CheckBox enableKingdomOverlayToggle;
+    private ToggleButton poiToggle;
 
     public MainView() {
         setupCanvasContainer();
@@ -64,8 +68,10 @@ public class MainView extends AnchorPane {
         canvasContainer = new Pane();
         canvasContainer.setStyle("-fx-background-color: #333333;");
         canvas = new Canvas(800, 800);
+        poiCanvas = new Canvas(800, 800);
+        poiCanvas.setMouseTransparent(false);
         
-        canvasGroup = new Group(canvas);
+        canvasGroup = new Group(canvas, poiCanvas);
         canvasContainer.getChildren().add(canvasGroup);
         
         AnchorPane.setTopAnchor(canvasContainer, 0.0);
@@ -101,6 +107,12 @@ public class MainView extends AnchorPane {
         canvasContainer.setOnMouseDragged(event -> {
             canvasGroup.setTranslateX(event.getSceneX() - dragStart[0]);
             canvasGroup.setTranslateY(event.getSceneY() - dragStart[1]);
+        });
+
+        // Track mouse position for POI hover labels
+        canvasContainer.setOnMouseMoved(event -> {
+            mouseX = event.getX();
+            mouseY = event.getY();
         });
     }
 
@@ -369,13 +381,24 @@ public class MainView extends AnchorPane {
 
             ToggleButton toggle = new ToggleButton("(o)");
             toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+            toggle.setSelected(true);  // All layers visible by default
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
                 if (newV) {
                     toggle.setText("(/)");
                 } else {
                     toggle.setText("(o)");
                 }
+                
+                // Wire POI toggle to control POI canvas opacity
+                if (i == 1) {  // "Punkte von Interesse"
+                    poiCanvas.setOpacity(newV ? 1.0 : 0.0);
+                }
             });
+
+            // Store reference to POI toggle
+            if (i == 1) {
+                poiToggle = toggle;
+            }
 
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
             layersPanel.getChildren().add(row);
@@ -429,6 +452,10 @@ public class MainView extends AnchorPane {
     }
 
     public Canvas getCanvas() { return canvas; }
+    public Canvas getPoiCanvas() { return poiCanvas; }
+    public double getMouseX() { return mouseX; }
+    public double getMouseY() { return mouseY; }
+    public ToggleButton getPoiToggle() { return poiToggle; }
     public TextField getSeedField() { return seedField; }
     public Slider getSizeSlider() { return sizeSlider; }
     public Slider getOctavesSlider() { return octavesSlider; }
