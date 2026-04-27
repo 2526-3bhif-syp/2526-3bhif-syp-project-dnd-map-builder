@@ -71,6 +71,21 @@ public class MainPresenter {
         
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        
+        // Wire POI density sliders to trigger generation
+        setupPOIDensityListeners();
+    }
+    
+    /**
+     * Sets up listeners for POI density sliders with 300ms debounce.
+     * Changes to density sliders trigger map regeneration after a short delay
+     * to avoid excessive recalculation while user is adjusting sliders.
+     */
+    private void setupPOIDensityListeners() {
+        // Use the same debounce mechanism for all density slider changes
+        view.getDungeonDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLandmarkDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
     }
 
     private void triggerGeneration() {
@@ -121,10 +136,10 @@ public class MainPresenter {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                // Default POI density parameters (will be controlled by sliders in Phase 3.4)
-                double dungeonDensity = 0.5;
-                double landmarkDensity = 0.3;
-                double settlementDensity = 0.4;
+                // Read POI density parameters from sliders
+                double dungeonDensity = view.getDungeonDensitySlider().getValue();
+                double landmarkDensity = view.getLandmarkDensitySlider().getValue();
+                double settlementDensity = view.getSettlementDensitySlider().getValue();
                 
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
@@ -337,11 +352,9 @@ public class MainPresenter {
     private javafx.scene.paint.Color toFXColor(int argb) {
         int a = (argb >> 24) & 0xFF;
         int r = (argb >> 16) & 0xFF;
-        int g = (argb >> 8) & 0xFF;
-        int b = argb & 0xFF;
-        return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
-    }
-}
-    }
+         int g = (argb >> 8) & 0xFF;
+         int b = argb & 0xFF;
+         return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+     }
 }
 
