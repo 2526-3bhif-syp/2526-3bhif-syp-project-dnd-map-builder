@@ -102,13 +102,14 @@ public class PointOfInterestGenerator {
     private static void addDungeonAndRuins(
             List<PointOfInterest> pois, MapGrid grid, int seed, double dungeonDensity, AtomicInteger idCounter) {
         
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * (dungeonDensity / 100.0) * 0.15);
-        int targetCount = baseCount;
+        // Density is already 0.0-1.0, multiply directly (not by 1/100)
+        int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.015);
+        int targetCount = Math.max(1, baseCount);  // Ensure at least 1 dungeon attempt
         
         Random rand = new Random(seed + 1001);
         int placed = 0;
         int attempts = 0;
-        int maxAttempts = Math.max(100, targetCount * 3);
+        int maxAttempts = Math.max(100, targetCount * 5);
         
         while (placed < targetCount && attempts < maxAttempts) {
             attempts++;
@@ -179,13 +180,14 @@ public class PointOfInterestGenerator {
     private static void addLandmarks(
             List<PointOfInterest> pois, MapGrid grid, int seed, double landmarkDensity, AtomicInteger idCounter) {
         
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * (landmarkDensity / 100.0) * 0.1);
-        int targetCount = baseCount;
+        // Density is already 0.0-1.0, multiply directly (not by 1/100)
+        int baseCount = (int) (grid.getWidth() * grid.getHeight() * landmarkDensity * 0.01);
+        int targetCount = Math.max(0, baseCount);
         
         Random rand = new Random(seed + 1002);
         int placed = 0;
         int attempts = 0;
-        int maxAttempts = Math.max(100, targetCount * 3);
+        int maxAttempts = Math.max(100, targetCount * 5);
         
         while (placed < targetCount && attempts < maxAttempts) {
             attempts++;
@@ -277,19 +279,22 @@ public class PointOfInterestGenerator {
     /**
      * D-06: Scatter VILLAGE/TOWN POIs using Poisson-disc sampling.
      * Uses grid area and settlementDensity to calculate count.
+     * Improved algorithm samples annulus around each point, not just 8 directions.
      */
     private static void addSettlements(
             List<PointOfInterest> pois, MapGrid grid, int seed, double settlementDensity, AtomicInteger idCounter) {
         
-        int targetCount = (int) (grid.getWidth() * grid.getHeight() * (settlementDensity / 100.0) * 0.25);
+        // Density is already 0.0-1.0, multiply directly (not by 1/100)
+        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.025);
         if (targetCount <= 0) return;
         
         Random rand = new Random(seed + 1003);
         List<MapCell> habitableCells = new ArrayList<>();
         
-        // Collect habitable cells
-        for (int x = 0; x < grid.getWidth(); x++) {
-            for (int y = 0; y < grid.getHeight(); y++) {
+        // Collect habitable cells from interior only (avoid edges)
+        int margin = 10;  // Avoid placing settlements too close to map edges
+        for (int x = margin; x < grid.getWidth() - margin; x++) {
+            for (int y = margin; y < grid.getHeight() - margin; y++) {
                 MapCell cell = grid.getCell(x, y);
                 if (cell != null && isHabitableBiome(cell.getBiome())) {
                     habitableCells.add(cell);
@@ -299,35 +304,45 @@ public class PointOfInterestGenerator {
         
         if (habitableCells.isEmpty()) return;
         
-        // Poisson-disc sampling with minimum distance
-        int minDistance = 5;
+        // Improved Poisson-disc sampling with annulus sampling
+        int minDistance = 8;  // Minimum distance between settlements
         Set<MapCell> selected = new HashSet<>();
         List<MapCell> active = new ArrayList<>();
         
-        // Start with a random cell
+        // Start with a random cell from interior
         MapCell first = habitableCells.get(rand.nextInt(habitableCells.size()));
         selected.add(first);
         active.add(first);
+        
+        int searchRadius = minDistance * 3;  // Search within 3x minimum distance
         
         while (!active.isEmpty() && selected.size() < targetCount) {
             int idx = rand.nextInt(active.size());
             MapCell current = active.get(idx);
             boolean found = false;
             
-            // Try to add neighbors
-            int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
-            for (int[] dir : dirs) {
-                int nx = current.getX() + dir[0] * (minDistance + 1);
-                int ny = current.getY() + dir[1] * (minDistance + 1);
+            // Sample random points around current in annulus (minDistance, searchRadius)
+            int samples = 30;  // Try 30 random samples around this point
+            for (int i = 0; i < samples && !found && selected.size() < targetCount; i++) {
+                // Random point in annulus: minDistance <= r <= searchRadius
+                double angle = rand.nextDouble() * Math.PI * 2;
+                double radius = minDistance + rand.nextDouble() * (searchRadius - minDistance);
+                int nx = (int) (current.getX() + radius * Math.cos(angle));
+                int ny = (int) (current.getY() + radius * Math.sin(angle));
+                
+                // Clamp to map bounds and margin
+                nx = Math.max(margin, Math.min(nx, grid.getWidth() - margin - 1));
+                ny = Math.max(margin, Math.min(ny, grid.getHeight() - margin - 1));
                 
                 MapCell neighbor = grid.getCell(nx, ny);
                 if (neighbor != null && isHabitableBiome(neighbor.getBiome()) && !selected.contains(neighbor)) {
-                    // Check minimum distance constraint
+                    // Verify minimum distance to all selected cells
                     boolean tooClose = false;
                     for (MapCell sel : selected) {
                         int dx = sel.getX() - neighbor.getX();
                         int dy = sel.getY() - neighbor.getY();
-                        if (Math.sqrt(dx*dx + dy*dy) < minDistance) {
+                        double dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < minDistance) {
                             tooClose = true;
                             break;
                         }
@@ -337,7 +352,6 @@ public class PointOfInterestGenerator {
                         selected.add(neighbor);
                         active.add(neighbor);
                         found = true;
-                        break;
                     }
                 }
             }
