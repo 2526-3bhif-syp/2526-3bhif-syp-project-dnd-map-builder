@@ -247,8 +247,8 @@ public class MainView extends AnchorPane {
 
         // Add POI List Panel to POIs tab
         poiListPanel = new POIListPanel(null);  // Presenter will be set later
-        poiListPanel.setPrefHeight(200);
-        VBox.setVgrow(poiListPanel, Priority.ALWAYS);
+        poiListPanel.setPrefHeight(100);
+        poiListPanel.setMaxHeight(150);
         poisContent.getChildren().add(poiListPanel);
 
         poisTab.setContent(poisContent);
