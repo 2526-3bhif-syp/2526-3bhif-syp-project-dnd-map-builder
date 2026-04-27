@@ -285,8 +285,9 @@ public class PointOfInterestGenerator {
             List<PointOfInterest> pois, MapGrid grid, int seed, double settlementDensity, AtomicInteger idCounter) {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.025);
-        if (targetCount <= 0) return;
+        // Use 0.003 multiplier to get reasonable settlement counts (e.g., 800x800 map at 0.5 density = ~960 settlements max)
+        // After Poisson-disc sampling, typically 30-50% of target count actually placed
+        int targetCount = Math.max(1, (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.0015));
         
         Random rand = new Random(seed + 1003);
         List<MapCell> habitableCells = new ArrayList<>();
@@ -305,7 +306,7 @@ public class PointOfInterestGenerator {
         if (habitableCells.isEmpty()) return;
         
         // Improved Poisson-disc sampling with annulus sampling
-        int minDistance = 8;  // Minimum distance between settlements
+        int minDistance = 12;  // Minimum distance between settlements (increased for sparser distribution)
         Set<MapCell> selected = new HashSet<>();
         List<MapCell> active = new ArrayList<>();
         
