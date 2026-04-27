@@ -30,7 +30,7 @@ public class POIListPanel extends VBox {
     /**
      * Constructs a POIListPanel with a reference to the MainPresenter for callbacks.
      * 
-     * @param presenter The MainPresenter instance for handling POI editor callbacks
+     * @param presenter The MainPresenter instance for handling POI editor callbacks (can be null)
      */
     public POIListPanel(MainPresenter presenter) {
         super(5);
@@ -38,6 +38,15 @@ public class POIListPanel extends VBox {
         this.setStyle("-fx-padding: 5; -fx-border-color: transparent;");
         this.setFillWidth(true);
         initializeListView();
+    }
+    
+    /**
+     * Sets the presenter for this panel (used if created with null presenter).
+     * 
+     * @param presenter The MainPresenter instance
+     */
+    public void setPresenter(MainPresenter presenter) {
+        this.presenter = presenter;
     }
     
     /**

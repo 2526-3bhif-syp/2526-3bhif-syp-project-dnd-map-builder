@@ -1,5 +1,6 @@
 package com.mapbuilder.mapbuilder.main;
 
+import com.mapbuilder.mapbuilder.ui.POIListPanel;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -56,6 +57,8 @@ public class MainView extends AnchorPane {
     private Slider dungeonDensitySlider;
     private Slider landmarkDensitySlider;
     private Slider settlementDensitySlider;
+    
+    private POIListPanel poiListPanel;
 
     public MainView() {
         setupCanvasContainer();
@@ -459,6 +462,16 @@ public class MainView extends AnchorPane {
         settlementBox.getChildren().addAll(settlementLabel, settlementDensitySlider);
         layersPanel.getChildren().add(settlementBox);
 
+        // Add POI List Panel
+        layersPanel.getChildren().add(new Separator());
+        Label poiListHeader = new Label("Points of Interest");
+        poiListHeader.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 0 5 0;");
+        layersPanel.getChildren().add(poiListHeader);
+        
+        poiListPanel = new POIListPanel(null);  // Presenter will be set later
+        poiListPanel.setPrefHeight(150);
+        VBox.setVgrow(poiListPanel, Priority.ALWAYS);
+        layersPanel.getChildren().add(poiListPanel);
 
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
@@ -535,4 +548,6 @@ public class MainView extends AnchorPane {
     public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
     public Slider getLandmarkDensitySlider() { return landmarkDensitySlider; }
     public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
+    
+    public POIListPanel getPOIListPanel() { return poiListPanel; }
 }

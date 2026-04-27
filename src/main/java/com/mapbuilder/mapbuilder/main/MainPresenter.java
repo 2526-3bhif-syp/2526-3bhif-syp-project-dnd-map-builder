@@ -3,6 +3,7 @@ package com.mapbuilder.mapbuilder.main;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
+import com.mapbuilder.mapbuilder.ui.POIEditorDialog;
 import com.mapbuilder.mapbuilder.ui.POIIconMapper;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -37,6 +38,8 @@ public class MainPresenter {
 
     public void setView(MainView view) {
         this.view = view;
+        // Set presenter for POI list panel callbacks
+        view.getPOIListPanel().setPresenter(this);
         bind();
         triggerGeneration(); // initial generation
     }
@@ -234,6 +237,9 @@ public class MainPresenter {
         // Render POI overlay after main map
         renderPOIs();
         
+        // Update POI list panel
+        view.getPOIListPanel().updatePOIList(grid.getPointsOfInterest());
+        
         if (needsCentering) {
             Platform.runLater(() -> view.centerMap());
         }
@@ -356,5 +362,47 @@ public class MainPresenter {
          int b = argb & 0xFF;
          return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
      }
+    
+    /**
+     * Opens the POI editor modal dialog for the given POI.
+     * 
+     * @param poi The POI to edit
+     */
+    public void openPOIEditor(PointOfInterest poi) {
+        if (poi == null || view == null) return;
+        
+        POIEditorDialog dialog = new POIEditorDialog(poi, view.getScene().getWindow(), this);
+        dialog.showAndWait();
+    }
+    
+    /**
+     * Saves changes to a POI and updates the map display.
+     * 
+     * @param poi The POI to save (assumed to already have changes applied)
+     */
+    public void savePOI(PointOfInterest poi) {
+        if (poi == null) return;
+        
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
+        
+        // POI is already in the list and modified in-place, just trigger re-render
+        renderMap();
+    }
+    
+    /**
+     * Deletes a POI from the map and updates the display.
+     * 
+     * @param poi The POI to delete
+     */
+    public void deletePOI(PointOfInterest poi) {
+        if (poi == null) return;
+        
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
+        
+        grid.removePointOfInterest(poi.getId());
+        renderMap();
+    }
 }
 
