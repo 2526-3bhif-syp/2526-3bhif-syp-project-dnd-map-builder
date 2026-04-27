@@ -202,31 +202,53 @@ public class PointOfInterestGenerator {
         
         if (habitableCells.isEmpty()) return;
         
-        // Poisson-disc sampling with multiple seed points for better distribution across map
+        // Grid-based seed distribution for even coverage across entire map
         int minDistance = 12;
         Set<MapCell> selected = new HashSet<>();
         List<MapCell> active = new ArrayList<>();
         
-        // Plant multiple seed points across the map for better coverage (not just one)
-        int numSeeds = Math.max(1, targetCount / 20);  // ~1 seed per 20 target settlements
-        for (int s = 0; s < numSeeds && selected.size() < targetCount; s++) {
-            MapCell seed = habitableCells.get(rand.nextInt(habitableCells.size()));
-            
-            // Check if seed is far enough from existing selected
-            boolean tooClose = false;
-            for (MapCell sel : selected) {
-                int dx = sel.getX() - seed.getX();
-                int dy = sel.getY() - seed.getY();
-                double dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < minDistance) {
-                    tooClose = true;
-                    break;
+        // Divide map into cells, place 1 seed per grid cell for uniform coverage
+        int gridSize = (int) Math.sqrt(targetCount) + 1;
+        int cellWidth = grid.getWidth() / gridSize;
+        int cellHeight = grid.getHeight() / gridSize;
+        
+        for (int gx = 0; gx < gridSize && selected.size() < targetCount; gx++) {
+            for (int gy = 0; gy < gridSize && selected.size() < targetCount; gy++) {
+                // Random point in this grid cell
+                int minX = Math.max(margin, gx * cellWidth);
+                int maxX = Math.min(grid.getWidth() - margin - 1, (gx + 1) * cellWidth);
+                int minY = Math.max(margin, gy * cellHeight);
+                int maxY = Math.min(grid.getHeight() - margin - 1, (gy + 1) * cellHeight);
+                
+                if (maxX <= minX || maxY <= minY) continue;
+                
+                // Find habitable cell in this grid cell
+                boolean foundSeed = false;
+                for (int attempt = 0; attempt < 10 && !foundSeed; attempt++) {
+                    int x = minX + rand.nextInt(maxX - minX + 1);
+                    int y = minY + rand.nextInt(maxY - minY + 1);
+                    MapCell cell = grid.getCell(x, y);
+                    
+                    if (cell != null && isHabitableBiome(cell.getBiome())) {
+                        // Check distance to existing seeds
+                        boolean tooClose = false;
+                        for (MapCell sel : selected) {
+                            int dx = sel.getX() - cell.getX();
+                            int dy = sel.getY() - cell.getY();
+                            double dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < minDistance) {
+                                tooClose = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!tooClose) {
+                            selected.add(cell);
+                            active.add(cell);
+                            foundSeed = true;
+                        }
+                    }
                 }
-            }
-            
-            if (!tooClose) {
-                selected.add(seed);
-                active.add(seed);
             }
         }
         
