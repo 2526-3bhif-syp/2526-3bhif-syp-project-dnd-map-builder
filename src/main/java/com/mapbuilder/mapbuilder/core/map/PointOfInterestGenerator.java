@@ -101,36 +101,58 @@ public class PointOfInterestGenerator {
     private static void addDungeonAndRuins(
             List<PointOfInterest> pois, MapGrid grid, int seed, double dungeonDensity, AtomicInteger idCounter) {
         
-        // Density is already 0.0-1.0, multiply directly (not by 1/100)
         int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.0005);
-        int targetCount = Math.max(0, baseCount);  // Allow zero dungeons at zero density
+        int targetCount = Math.max(0, baseCount);
+        if (targetCount <= 0) return;
         
         Random rand = new Random(seed + 1001);
-        int placed = 0;
-        int attempts = 0;
-        int maxAttempts = Math.max(100, targetCount * 5);
+        int margin = 5;
         
-        while (placed < targetCount && attempts < maxAttempts) {
-            attempts++;
-            
-            int x = rand.nextInt(grid.getWidth());
-            int y = rand.nextInt(grid.getHeight());
-            MapCell cell = grid.getCell(x, y);
-            
-            if (cell != null && isDungeonLocation(grid, cell)) {
-                String dungeonName = "Dungeon_" + placed;
-                POIType type = rand.nextBoolean() ? POIType.DUNGEON : POIType.RUIN;
+        // Deterministic quadrant-based distribution for dungeons
+        // Divide map into sqrt(targetCount*2) x grid, place ~1 dungeon per quadrant
+        int gridSize = (int) Math.ceil(Math.sqrt(targetCount * 2));
+        int quadrantWidth = grid.getWidth() / gridSize;
+        int quadrantHeight = grid.getHeight() / gridSize;
+        
+        int placed = 0;
+        for (int gx = 0; gx < gridSize && placed < targetCount; gx++) {
+            for (int gy = 0; gy < gridSize && placed < targetCount; gy++) {
+                // Bounds for this quadrant
+                int minX = gx * quadrantWidth + margin;
+                int maxX = ((gx + 1) * quadrantWidth) - margin;
+                int minY = gy * quadrantHeight + margin;
+                int maxY = ((gy + 1) * quadrantHeight) - margin;
                 
-                PointOfInterest dungeon = new PointOfInterest(
-                    idCounter.getAndIncrement(),
-                    x,
-                    y,
-                    type,
-                    dungeonName,
-                    "dungeon_border_cave"
-                );
-                pois.add(dungeon);
-                placed++;
+                // Clamp to map bounds
+                minX = Math.max(minX, margin);
+                maxX = Math.min(maxX, grid.getWidth() - margin - 1);
+                minY = Math.max(minY, margin);
+                maxY = Math.min(maxY, grid.getHeight() - margin - 1);
+                
+                if (maxX <= minX || maxY <= minY) continue;
+                
+                // Find a dungeon-valid cell in this quadrant
+                for (int attempt = 0; attempt < 15; attempt++) {
+                    int x = minX + rand.nextInt(maxX - minX + 1);
+                    int y = minY + rand.nextInt(maxY - minY + 1);
+                    MapCell cell = grid.getCell(x, y);
+                    
+                    if (cell != null && isDungeonLocation(grid, cell)) {
+                        String dungeonName = "Dungeon_" + placed;
+                        POIType type = rand.nextBoolean() ? POIType.DUNGEON : POIType.RUIN;
+                        
+                        PointOfInterest dungeon = new PointOfInterest(
+                            idCounter.getAndIncrement(),
+                            x, y,
+                            type,
+                            dungeonName,
+                            "dungeon_border_cave"
+                        );
+                        pois.add(dungeon);
+                        placed++;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -139,14 +161,19 @@ public class PointOfInterestGenerator {
      * Check if a cell qualifies as a dungeon location (border or high cave).
      */
     private static boolean isDungeonLocation(MapGrid grid, MapCell cell) {
-        if (cell.getElevation() <= 0.3) return false; // Must be above water level baseline
+        // Relaxed rules: allow any non-water cell with elevation > 0.2
+        if (cell.getElevation() <= 0.2) return false;
         
-        // Check for multi-kingdom border (2+ adjacent kingdoms)
+        // Border kingdoms always valid
         int uniqueKingdoms = countAdjacentKingdoms(grid, cell);
-        if (uniqueKingdoms >= 2) return true;
+        if (uniqueKingdoms >= 1) return true;  // Loosened from 2+ to 1+
         
-        // Check for high cave/mountain (elevated, not ocean, more lenient)
-        if (cell.getElevation() > 0.4) {
+        // High elevation always valid (caves, peaks)
+        if (cell.getElevation() > 0.35) return true;  // Loosened from 0.4
+        
+        // Terrain-based: consider biome too (not just elevation)
+        Biome biome = cell.getBiome();
+        if (biome == Biome.BARE_ROCK || biome == Biome.SNOW_PEAKS || biome == Biome.SCORCHED || biome == Biome.TUNDRA) {
             return true;
         }
         
