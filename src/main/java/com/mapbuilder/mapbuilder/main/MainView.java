@@ -324,7 +324,7 @@ public class MainView extends AnchorPane {
         topActionBar.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
         
-        Label hintLabel = new Label("Labels: Double-click to add/edit. Right-click to remove.");
+        Label hintLabel = new Label("Labels: Double-click to add/edit, Drag to move, Right-click to remove.");
         hintLabel.setStyle("-fx-text-fill: #aaaaaa; -fx-padding: 0 15 0 0;");
 
         String btnStyle = "-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;";
