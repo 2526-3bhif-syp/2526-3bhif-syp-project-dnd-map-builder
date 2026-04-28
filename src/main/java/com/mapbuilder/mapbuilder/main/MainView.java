@@ -84,20 +84,32 @@ public class MainView extends AnchorPane {
         AnchorPane.setBottomAnchor(canvasContainer, 0.0);
         AnchorPane.setLeftAnchor(canvasContainer, 0.0);
         AnchorPane.setRightAnchor(canvasContainer, 0.0);
-        
+
+        // On Windows, scroll events are routed to the focused node rather than
+        // the node under the cursor. Making the canvas focusable and requesting
+        // focus on mouse enter ensures zoom works the same as on macOS.
+        canvasContainer.setFocusTraversable(true);
+        canvasContainer.setOnMouseEntered(event -> canvasContainer.requestFocus());
+
         // Zoom functionality
         canvasContainer.setOnScroll(event -> {
-            double zoomFactor = 1.05;
             double deltaY = event.getDeltaY();
+            // Linux/X11 fires a zero-delta ghost event before each real scroll tick;
+            // skipping it prevents every zoom-out from being cancelled by an accidental zoom-in.
+            if (deltaY == 0) {
+                event.consume();
+                return;
+            }
+            double zoomFactor = 1.05;
             if (deltaY < 0) {
                 zoomFactor = 1 / zoomFactor;
             }
             double newScaleX = canvasGroup.getScaleX() * zoomFactor;
             double newScaleY = canvasGroup.getScaleY() * zoomFactor;
-            
+
             newScaleX = Math.max(0.1, Math.min(newScaleX, 10.0));
             newScaleY = Math.max(0.1, Math.min(newScaleY, 10.0));
-            
+
             canvasGroup.setScaleX(newScaleX);
             canvasGroup.setScaleY(newScaleY);
             event.consume();
@@ -106,6 +118,7 @@ public class MainView extends AnchorPane {
         // Panning functionality
         final double[] dragStart = new double[2];
         canvasContainer.setOnMousePressed(event -> {
+            canvasContainer.requestFocus();
             dragStart[0] = event.getSceneX() - canvasGroup.getTranslateX();
             dragStart[1] = event.getSceneY() - canvasGroup.getTranslateY();
         });
