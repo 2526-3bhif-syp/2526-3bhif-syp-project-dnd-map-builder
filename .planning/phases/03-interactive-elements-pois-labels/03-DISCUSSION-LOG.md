@@ -232,6 +232,16 @@
 
 **Result:** POI list and tab headers now readable; UI simplified.
 
+### Additional Refinements (Post-Documentation)
+
+| Change | Details | Commits |
+|--------|---------|---------|
+| Dungeon distribution | Replaced random placement with quadrant seeding (sqrt(targetCount*2) grid) | `0ee6790` |
+| Dungeon placement rules | Relaxed: kingdom borders 2+→1+, elevation 0.4→0.35, added biome checks | `0ee6790` |
+| Settlement algorithm | Fixed remaining center-clustering by proper quadrant iteration | `10a17a7` |
+
+**Result:** All POI types (settlements, dungeons) now uniformly distributed; no center clustering.
+
 ### Summary of Refinements
 
 **Goal:** Reduce visual clutter, improve map readability, simplify UI, enable sparse POI distribution.

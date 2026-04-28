@@ -60,24 +60,20 @@ Implement world-building rules for automatic POI placement based on map topology
    - Tags generated POIs with `createdByRule="kingdom_capital"`
 
 2. **addDungeonAndRuins()** — D-04 Implementation
-   - **Original implementation:** Count: `(gridArea * dungeonDensity / 100.0) * 0.15`
-   - **Post-execution refinement:** Density multiplier reduced to 0.0005 (20x reduction from 0.015)
-   - **Placement criteria:**
-     - Multi-kingdom borders (2+ adjacent kingdoms, reduced from 3+), OR
-     - High caves/mountains (elevation > 0.4, relaxed from 0.5), with low kingdom ownership probability
-   - Uses seeded Random for deterministic selection
-   - Alternates DUNGEON ↔ RUIN type randomly
-   - **Result:** ~5–10 dungeons on typical 128×128 map at default slider value
+   - **Density multiplier:** 0.0005 (20x reduction from 0.015)
+   - **Algorithm (Post-execution refined):** Deterministic quadrant-based grid, ~1 dungeon per quadrant
+   - **Placement criteria (relaxed):**
+     - Kingdom borders: 1+ adjacent kingdoms (was 2+)
+     - Elevation: > 0.35 (was 0.4)
+     - Biome: BARE_ROCK, SNOW_PEAKS, SCORCHED, TUNDRA valid
+   - **Result:** ~5–10 dungeons uniformly distributed across map
 
-3. **addSettlements()** — D-05 Implementation (Post-execution: Changed algorithm)
-   - **Original implementation:** Poisson-disc sampling with minimum distance = 5 cells
-   - **Post-execution refinement:** Replaced with grid-based quadrant seeding for uniform distribution
-   - **Density multiplier:** Reduced to 0.00005 (30x reduction from 0.0015)
-   - **Algorithm:** Divide map into grid quadrants; place 1 settlement per quadrant to prevent clustering toward center
-   - **Filter:** Habitable biomes (Grassland, Temperate Forest, Savanna, Shrubland, Temperate Rainforest)
-   - Creates VILLAGE, CASTLE, CAVE, and RUIN POIs with deterministic fantasy names
-   - Tags with `createdByRule="settlement_scattered"`
-   - **Result:** ~2–5 settlements on typical 128×128 map at default slider value
+3. **addSettlements()** — D-05 Implementation
+   - **Density multiplier:** 0.00005 (30x reduction from 0.0015)
+   - **Algorithm:** Deterministic quadrant seeding, ~1 settlement per quadrant
+   - **Biome filter:** Grassland, Temperate Forest, Savanna, Shrubland, Temperate Rainforest
+   - **Types:** VILLAGE, CASTLE, CAVE, RUIN (random selection)
+   - **Result:** ~2–5 settlements uniformly distributed (no center clustering)
 
 **Helper Methods:**
 - `generateCityName(kingdomId, seed)` — Deterministic city names from seed
