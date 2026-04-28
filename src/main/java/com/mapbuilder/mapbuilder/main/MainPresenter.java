@@ -64,6 +64,61 @@ public class MainPresenter {
         
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+
+        view.getCanvas().setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                double x = event.getX();
+                double y = event.getY();
+                com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = null;
+                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
+                        clickedLabel = label;
+                        break;
+                    }
+                }
+                if (clickedLabel != null) {
+                    final com.mapbuilder.mapbuilder.core.map.MapLabel finalLabel = clickedLabel;
+                    if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                        model.removeLabel(finalLabel);
+                        renderMap();
+                    } else {
+                        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(finalLabel.getText());
+                        dialog.setTitle("Edit Map Label");
+                        dialog.setHeaderText("Edit the label text:");
+                        dialog.setContentText("Label:");
+                        dialog.showAndWait().ifPresent(text -> {
+                            finalLabel.setText(text);
+                            renderMap();
+                        });
+                    }
+                } else {
+                    if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog("New Label");
+                        dialog.setTitle("Add Map Label");
+                        dialog.setHeaderText("Enter label text:");
+                        dialog.setContentText("Label:");
+                        dialog.showAndWait().ifPresent(text -> {
+                            model.addLabel(new com.mapbuilder.mapbuilder.core.map.MapLabel(text, x, y));
+                            renderMap();
+                        });
+                    }
+                }
+            } else if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY && event.getClickCount() == 1) {
+                double x = event.getX();
+                double y = event.getY();
+                com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = null;
+                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
+                        clickedLabel = label;
+                        break;
+                    }
+                }
+                if (clickedLabel != null) {
+                     model.removeLabel(clickedLabel);
+                     renderMap();
+                }
+            }
+        });
     }
 
     private void triggerGeneration() {
@@ -199,6 +254,20 @@ public class MainPresenter {
         }
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
+
+        gc.save();
+        gc.setFill(javafx.scene.paint.Color.WHITE);
+        gc.setStroke(javafx.scene.paint.Color.BLACK);
+        gc.setLineWidth(1.0);
+        gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20));
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+            gc.fillText(label.getText(), label.getX(), label.getY());
+            gc.strokeText(label.getText(), label.getX(), label.getY());
+        }
+        gc.restore();
+
         if (needsCentering) {
             Platform.runLater(() -> view.centerMap());
         }
