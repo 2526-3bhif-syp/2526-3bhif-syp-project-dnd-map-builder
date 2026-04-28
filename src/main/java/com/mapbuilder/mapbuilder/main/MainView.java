@@ -1,5 +1,6 @@
 package com.mapbuilder.mapbuilder.main;
 
+import com.mapbuilder.mapbuilder.ui.POIListPanel;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -25,8 +26,11 @@ import javafx.util.Duration;
 public class MainView extends AnchorPane {
     
     private Canvas canvas;
+    private Canvas poiCanvas;
     private Pane canvasContainer;
     private Group canvasGroup;
+    private double mouseX = 0;
+    private double mouseY = 0;
     private TextField seedField;
     private Button randomSeedButton;
 
@@ -48,6 +52,12 @@ public class MainView extends AnchorPane {
     private Slider lloydPassesSlider;
     private CheckBox enableBordersToggle;
     private CheckBox enableKingdomOverlayToggle;
+    private ToggleButton poiToggle;
+    
+    private Slider dungeonDensitySlider;
+    private Slider settlementDensitySlider;
+    
+    private POIListPanel poiListPanel;
 
     public MainView() {
         setupCanvasContainer();
@@ -64,8 +74,10 @@ public class MainView extends AnchorPane {
         canvasContainer = new Pane();
         canvasContainer.setStyle("-fx-background-color: #333333;");
         canvas = new Canvas(800, 800);
+        poiCanvas = new Canvas(800, 800);
+        poiCanvas.setMouseTransparent(false);
         
-        canvasGroup = new Group(canvas);
+        canvasGroup = new Group(canvas, poiCanvas);
         canvasContainer.getChildren().add(canvasGroup);
         
         AnchorPane.setTopAnchor(canvasContainer, 0.0);
@@ -102,6 +114,12 @@ public class MainView extends AnchorPane {
             canvasGroup.setTranslateX(event.getSceneX() - dragStart[0]);
             canvasGroup.setTranslateY(event.getSceneY() - dragStart[1]);
         });
+
+        // Track mouse position for POI hover labels
+        canvasContainer.setOnMouseMoved(event -> {
+            mouseX = event.getX();
+            mouseY = event.getY();
+        });
     }
 
     private ScrollPane setupLeftPanel() {
@@ -123,11 +141,13 @@ public class MainView extends AnchorPane {
 
         Tab terrainTab = new Tab("Terrain");
         terrainTab.setClosable(false);
+        terrainTab.setStyle("-fx-text-fill: white;");
         VBox terrainContent = new VBox(10);
         terrainContent.setPadding(new Insets(10, 0, 10, 0));
 
         Tab hydrologyTab = new Tab("Hydrology");
         hydrologyTab.setClosable(false);
+        hydrologyTab.setStyle("-fx-text-fill: white;");
         VBox hydrologyContent = new VBox(10);
         hydrologyContent.setPadding(new Insets(10, 0, 10, 0));
         
@@ -164,6 +184,7 @@ public class MainView extends AnchorPane {
 
         Tab kingdomsTab = new Tab("Kingdoms");
         kingdomsTab.setClosable(false);
+        kingdomsTab.setStyle("-fx-text-fill: white;");
         VBox kingdomsContent = new VBox(10);
         kingdomsContent.setPadding(new Insets(10, 0, 10, 0));
 
@@ -194,8 +215,51 @@ public class MainView extends AnchorPane {
         );
         kingdomsTab.setContent(kingdomsContent);
 
-        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab);
-        tabPane.setStyle("-fx-background-color: transparent;");
+        // Create POIs Tab
+        Tab poisTab = new Tab("POIs");
+        poisTab.setClosable(false);
+        poisTab.setStyle("-fx-text-fill: white;");
+        VBox poisContent = new VBox(10);
+        poisContent.setPadding(new Insets(10, 0, 10, 0));
+
+        // Dungeon Density Slider
+        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
+        dungeonDensitySlider.setShowTickMarks(true);
+        dungeonDensitySlider.setShowTickLabels(true);
+        dungeonDensitySlider.setMajorTickUnit(0.5);
+        dungeonDensitySlider.setMinorTickCount(4);
+        dungeonDensitySlider.setSnapToTicks(true);
+
+        // Settlement Density Slider
+        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
+        settlementDensitySlider.setShowTickMarks(true);
+        settlementDensitySlider.setShowTickLabels(true);
+        settlementDensitySlider.setMajorTickUnit(0.5);
+        settlementDensitySlider.setMinorTickCount(4);
+        settlementDensitySlider.setSnapToTicks(true);
+
+        poisContent.getChildren().addAll(
+                new Label("Dungeon Density"), dungeonDensitySlider,
+                new Label("Settlement Density"), settlementDensitySlider,
+                new Separator(),
+                new Label("Points of Interest")
+        );
+
+        // Add POI List Panel to POIs tab
+        poiListPanel = new POIListPanel(null);  // Presenter will be set later
+        poiListPanel.setPrefHeight(200);
+        VBox.setVgrow(poiListPanel, Priority.ALWAYS);
+        poisContent.getChildren().add(poiListPanel);
+
+        poisTab.setContent(poisContent);
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab);
+        tabPane.setStyle("-fx-background-color: #2b2b2b; " +
+                "-fx-control-inner-background: #2b2b2b; " +
+                "-fx-tab-header-background: #2b2b2b; " +
+                "-fx-text-fill: white; " +
+                "-fx-text-base-color: white;");
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
 
         seedField = new TextField("12345");
         seedField.setPrefWidth(100);
@@ -369,13 +433,25 @@ public class MainView extends AnchorPane {
 
             ToggleButton toggle = new ToggleButton("(o)");
             toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+            toggle.setSelected(true);  // All layers visible by default
+            int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
                 if (newV) {
                     toggle.setText("(/)");
                 } else {
                     toggle.setText("(o)");
                 }
+                
+                // Wire POI toggle to control POI canvas opacity
+                if (finalI == 1) {
+                    poiCanvas.setOpacity(newV ? 1.0 : 0.0);
+                }
             });
+
+            // Store reference to POI toggle
+            if (i == 1) {
+                poiToggle = toggle;
+            }
 
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
             layersPanel.getChildren().add(row);
@@ -429,6 +505,10 @@ public class MainView extends AnchorPane {
     }
 
     public Canvas getCanvas() { return canvas; }
+    public Canvas getPoiCanvas() { return poiCanvas; }
+    public double getMouseX() { return mouseX; }
+    public double getMouseY() { return mouseY; }
+    public ToggleButton getPoiToggle() { return poiToggle; }
     public TextField getSeedField() { return seedField; }
     public Slider getSizeSlider() { return sizeSlider; }
     public Slider getOctavesSlider() { return octavesSlider; }
@@ -448,4 +528,9 @@ public class MainView extends AnchorPane {
     public Slider getLloydPassesSlider() { return lloydPassesSlider; }
     public CheckBox getEnableBordersToggle() { return enableBordersToggle; }
     public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
+    
+    public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
+    public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
+    
+    public POIListPanel getPOIListPanel() { return poiListPanel; }
 }

@@ -29,7 +29,7 @@ public class MapGenerator {
 
     public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias,
                          boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea,
-                         int kingdomCount, int lloydPasses) {
+                         int kingdomCount, int lloydPasses, double dungeonDensity, double landmarkDensity, double settlementDensity) {
         int width = grid.getWidth();
         int height = grid.getHeight();
 
@@ -121,6 +121,12 @@ public class MapGenerator {
         if (kingdomCount > 0) {
             generateKingdoms(grid, seed, kingdomCount, Math.min(5, lloydPasses), waterLevel);
         }
+
+        // Generate Points of Interest after kingdoms
+        List<PointOfInterest> pois = PointOfInterestGenerator.generatePointsOfInterest(
+            grid, seed, dungeonDensity, landmarkDensity, settlementDensity
+        );
+        grid.setPointsOfInterest(pois);
     }
 
     private void generateHydrology(MapGrid grid, int seed, int targetRiverCount, double waterLevel, boolean enableRivers, boolean enableLakes, double lakeSizePercent, int customMinLakeArea) {
