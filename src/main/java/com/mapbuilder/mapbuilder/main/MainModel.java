@@ -2,10 +2,15 @@ package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.core.map.MapGenerator;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
+import com.mapbuilder.mapbuilder.core.map.MapLabel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainModel {
     private MapGrid currentGrid;
     private final MapGenerator generator;
+    private final List<MapLabel> labels = new ArrayList<>();
 
     public MainModel() {
         this.currentGrid = new MapGrid(800, 800);
@@ -23,6 +28,18 @@ public class MainModel {
 
     public MapGrid getCurrentGrid() {
         return currentGrid;
+    }
+
+    public List<MapLabel> getLabels() {
+        return labels;
+    }
+
+    public void addLabel(MapLabel label) {
+        labels.add(label);
+    }
+
+    public void removeLabel(MapLabel label) {
+        labels.remove(label);
     }
 }
 
