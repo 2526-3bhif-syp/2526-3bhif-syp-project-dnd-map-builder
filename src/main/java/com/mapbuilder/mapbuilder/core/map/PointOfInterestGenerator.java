@@ -182,136 +182,83 @@ public class PointOfInterestGenerator {
         
         // Density is already 0.0-1.0, multiply directly (not by 1/100)
         // Use 0.00005 multiplier for sparse distribution
-        // For 800x800 map at 0.5 density: ~16 target, after sampling ~5-10 placed
         int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.00005);
         if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
         Random rand = new Random(seedValue + 1003);
-        List<MapCell> habitableCells = new ArrayList<>();
+        int margin = 10;
         
-        // Collect habitable cells from interior only (avoid edges)
-        int margin = 10;  // Avoid placing settlements too close to map edges
-        for (int x = margin; x < grid.getWidth() - margin; x++) {
-            for (int y = margin; y < grid.getHeight() - margin; y++) {
-                MapCell cell = grid.getCell(x, y);
-                if (cell != null && isHabitableBiome(cell.getBiome())) {
-                    habitableCells.add(cell);
-                }
-            }
-        }
+        // Deterministic quadrant-based distribution: divide map into sqrt(targetCount) × sqrt(targetCount) grid
+        // Place at most 1 settlement per quadrant to ensure uniform coverage (no center clustering)
+        int gridSize = (int) Math.ceil(Math.sqrt(targetCount * 4)); // Ensure enough quadrants for all settlements
+        int quadrantWidth = grid.getWidth() / gridSize;
+        int quadrantHeight = grid.getHeight() / gridSize;
         
-        if (habitableCells.isEmpty()) return;
-        
-        // Grid-based seed distribution for even coverage across entire map
-        int minDistance = 12;
-        Set<MapCell> selected = new HashSet<>();
-        List<MapCell> active = new ArrayList<>();
-        
-        // Divide map into cells, place 1 seed per grid cell for uniform coverage
-        int gridSize = (int) Math.sqrt(targetCount) + 1;
-        int cellWidth = grid.getWidth() / gridSize;
-        int cellHeight = grid.getHeight() / gridSize;
-        
-        for (int gx = 0; gx < gridSize && selected.size() < targetCount; gx++) {
-            for (int gy = 0; gy < gridSize && selected.size() < targetCount; gy++) {
-                // Random point in this grid cell
-                int minX = Math.max(margin, gx * cellWidth);
-                int maxX = Math.min(grid.getWidth() - margin - 1, (gx + 1) * cellWidth);
-                int minY = Math.max(margin, gy * cellHeight);
-                int maxY = Math.min(grid.getHeight() - margin - 1, (gy + 1) * cellHeight);
+        int placed = 0;
+        for (int gx = 0; gx < gridSize && placed < targetCount; gx++) {
+            for (int gy = 0; gy < gridSize && placed < targetCount; gy++) {
+                // Bounds for this quadrant
+                int minX = gx * quadrantWidth + margin;
+                int maxX = ((gx + 1) * quadrantWidth) - margin;
+                int minY = gy * quadrantHeight + margin;
+                int maxY = ((gy + 1) * quadrantHeight) - margin;
+                
+                // Clamp to map bounds
+                minX = Math.max(minX, margin);
+                maxX = Math.min(maxX, grid.getWidth() - margin - 1);
+                minY = Math.max(minY, margin);
+                maxY = Math.min(maxY, grid.getHeight() - margin - 1);
                 
                 if (maxX <= minX || maxY <= minY) continue;
                 
-                // Find habitable cell in this grid cell
-                boolean foundSeed = false;
-                for (int attempt = 0; attempt < 10 && !foundSeed; attempt++) {
+                // Find a habitable cell in this quadrant (with retries)
+                for (int attempt = 0; attempt < 20; attempt++) {
                     int x = minX + rand.nextInt(maxX - minX + 1);
                     int y = minY + rand.nextInt(maxY - minY + 1);
                     MapCell cell = grid.getCell(x, y);
                     
                     if (cell != null && isHabitableBiome(cell.getBiome())) {
-                        // Check distance to existing seeds
-                        boolean tooClose = false;
-                        for (MapCell sel : selected) {
-                            int dx = sel.getX() - cell.getX();
-                            int dy = sel.getY() - cell.getY();
-                            double dist = Math.sqrt(dx*dx + dy*dy);
-                            if (dist < minDistance) {
-                                tooClose = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!tooClose) {
-                            selected.add(cell);
-                            active.add(cell);
-                            foundSeed = true;
-                        }
+                        // Place settlement in this quadrant
+                        String name = generateSettlementName(placed + 100 * seedValue, rand);
+                        PointOfInterest poi = new PointOfInterest(
+                            idCounter.getAndIncrement(),
+                            x, y,
+                            selectSettlementType(rand),
+                            name,
+                            "",
+                            null,
+                            null,
+                            System.currentTimeMillis(),
+                            "settlement_scattered"
+                        );
+                        pois.add(poi);
+                        placed++;
+                        break;
                     }
                 }
             }
         }
+    }
+    
+    /**
+     * Select a random settlement type (VILLAGE, CASTLE, CAVE, or RUIN).
+     */
+    private static POIType selectSettlementType(Random rand) {
+        POIType[] types = {POIType.VILLAGE, POIType.CASTLE, POIType.CAVE, POIType.RUIN};
+        return types[rand.nextInt(types.length)];
+    }
+    
+    /**
+     * Generate a deterministic settlement name.
+     */
+    private static String generateSettlementName(int seed, Random rand) {
+        String[] prefixes = {"North", "South", "East", "West", "High", "Low", "New", "Old", "Far", "Near"};
+        String[] suffixes = {"haven", "ford", "field", "hill", "dale", "wood", "stone", "rest", "fall", "spring"};
         
-        int searchRadius = minDistance * 3;
+        int prefix = Math.abs(seed) % prefixes.length;
+        int suffix = Math.abs(seed / 11) % suffixes.length;
         
-        while (!active.isEmpty() && selected.size() < targetCount) {
-            int idx = rand.nextInt(active.size());
-            MapCell current = active.get(idx);
-            boolean found = false;
-            
-            // Sample random points around current in annulus
-            int samples = 30;
-            for (int i = 0; i < samples && !found && selected.size() < targetCount; i++) {
-                double angle = rand.nextDouble() * Math.PI * 2;
-                double radius = minDistance + rand.nextDouble() * (searchRadius - minDistance);
-                int nx = (int) (current.getX() + radius * Math.cos(angle));
-                int ny = (int) (current.getY() + radius * Math.sin(angle));
-                
-                nx = Math.max(margin, Math.min(nx, grid.getWidth() - margin - 1));
-                ny = Math.max(margin, Math.min(ny, grid.getHeight() - margin - 1));
-                
-                MapCell neighbor = grid.getCell(nx, ny);
-                if (neighbor != null && isHabitableBiome(neighbor.getBiome()) && !selected.contains(neighbor)) {
-                    boolean tooClose = false;
-                    for (MapCell sel : selected) {
-                        int dx = sel.getX() - neighbor.getX();
-                        int dy = sel.getY() - neighbor.getY();
-                        double dist = Math.sqrt(dx*dx + dy*dy);
-                        if (dist < minDistance) {
-                            tooClose = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!tooClose) {
-                        selected.add(neighbor);
-                        active.add(neighbor);
-                        found = true;
-                    }
-                }
-            }
-            
-            if (!found) {
-                active.remove(idx);
-            }
-        }
-        
-        // Create POIs from selected cells
-        int villageCount = 0;
-        for (MapCell cell : selected) {
-            String villageName = generateVillageName(villageCount, seedValue);
-            
-            PointOfInterest settlement = new PointOfInterest(
-                idCounter.getAndIncrement(),
-                cell.getX(),
-                cell.getY(),
-                POIType.VILLAGE,
-                villageName,
-                "settlement_scattered"
-            );
-            pois.add(settlement);
-            villageCount++;
-        }
+        return prefixes[prefix] + suffixes[suffix].substring(0, 1).toUpperCase() + suffixes[suffix].substring(1);
     }
 
     /**
