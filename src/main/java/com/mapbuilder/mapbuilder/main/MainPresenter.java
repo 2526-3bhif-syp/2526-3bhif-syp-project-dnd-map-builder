@@ -3,6 +3,7 @@ package com.mapbuilder.mapbuilder.main;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
+import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
 import com.mapbuilder.mapbuilder.ui.POIEditorDialog;
 import com.mapbuilder.mapbuilder.ui.POIIconMapper;
 import javafx.animation.PauseTransition;
@@ -27,12 +28,25 @@ public class MainPresenter {
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
-    private Image spriteSheet; // Cached sprite sheet for POI rendering
+    private final PauseTransition viewportDebounce;
+    private Image spriteSheet;
+
+    // Viewport state — zoom/pan handled in software, no Group transforms
+    private double viewOffsetX = 0;
+    private double viewOffsetY = 0;
+    private double pixelsPerCell = 1.0;
+
+    // Noise generator for organic biome-border perturbation at high zoom
+    private final FastNoiseLite borderNoise;
 
     public MainPresenter() {
         this.model = new MainModel();
         this.debounce = new PauseTransition(Duration.millis(300));
         this.debounce.setOnFinished(e -> generateMapAsync());
+        this.viewportDebounce = new PauseTransition(Duration.millis(100));
+        this.viewportDebounce.setOnFinished(e -> renderMap());
+        this.borderNoise = new FastNoiseLite(42);
+        this.borderNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
     }
 
     public void setView(MainView view) {
@@ -48,6 +62,28 @@ public class MainPresenter {
     }
 
     private void bind() {
+        final double[] dragStart = new double[2];
+        view.getCanvasContainer().setOnScroll(event -> {
+            double deltaY = event.getDeltaY();
+            // Linux/X11 fires a zero-delta ghost event before each real scroll tick
+            if (deltaY == 0) { event.consume(); return; }
+            double factor = deltaY > 0 ? 1.05 : 1.0 / 1.05;
+            onZoom(factor, event.getX(), event.getY());
+            event.consume();
+        });
+        view.getCanvasContainer().setOnMousePressed(event -> {
+            view.getCanvasContainer().requestFocus();
+            dragStart[0] = event.getSceneX();
+            dragStart[1] = event.getSceneY();
+        });
+        view.getCanvasContainer().setOnMouseDragged(event -> {
+            double dx = event.getSceneX() - dragStart[0];
+            double dy = event.getSceneY() - dragStart[1];
+            dragStart[0] = event.getSceneX();
+            dragStart[1] = event.getSceneY();
+            onPan(dx, dy);
+        });
+
         view.getRandomSeedButton().setOnAction(e -> {
             int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
             view.getSeedField().setText(String.valueOf(randomSeed));
@@ -185,97 +221,157 @@ public class MainPresenter {
             }
         };
 
-        task.setOnSucceeded(e -> renderMap());
+        task.setOnSucceeded(e -> {
+            pendingViewportInit = true;
+            renderMap();
+        });
         new Thread(task).start();
     }
+
+    private void onZoom(double factor, double mouseX, double mouseY) {
+        double mapFocusX = viewOffsetX + mouseX / pixelsPerCell;
+        double mapFocusY = viewOffsetY + mouseY / pixelsPerCell;
+        pixelsPerCell = Math.max(0.1, Math.min(pixelsPerCell * factor, 32.0));
+        viewOffsetX = mapFocusX - mouseX / pixelsPerCell;
+        viewOffsetY = mapFocusY - mouseY / pixelsPerCell;
+        viewportDebounce.playFromStart();
+    }
+
+    private void onPan(double dx, double dy) {
+        viewOffsetX -= dx / pixelsPerCell;
+        viewOffsetY -= dy / pixelsPerCell;
+        viewportDebounce.playFromStart();
+    }
+
+    private void initViewport(int gridW, int gridH) {
+        double canvasW = view.getCanvas().getWidth();
+        double canvasH = view.getCanvas().getHeight();
+        if (canvasW <= 0 || canvasH <= 0) return;
+        pixelsPerCell = Math.min(canvasW / gridW, canvasH / gridH);
+        viewOffsetX = (gridW - canvasW / pixelsPerCell) / 2.0;
+        viewOffsetY = (gridH - canvasH / pixelsPerCell) / 2.0;
+        renderMap();
+    }
+
+    private boolean pendingViewportInit = false;
 
     private void renderMap() {
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return;
         Canvas canvas = view.getCanvas();
-        Canvas poiCanvas = view.getPoiCanvas();
-        
-        int width = grid.getWidth();
-        int height = grid.getHeight();
-        boolean needsCentering = false;
-        if (canvas.getWidth() != width || canvas.getHeight() != height) {
-            canvas.setWidth(width);
-            canvas.setHeight(height);
-            poiCanvas.setWidth(width);
-            poiCanvas.setHeight(height);
-            needsCentering = true;
-        }
 
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        PixelWriter pixelWriter = gc.getPixelWriter();
+        int canvasW = (int) canvas.getWidth();
+        int canvasH = (int) canvas.getHeight();
+        if (canvasW <= 0 || canvasH <= 0) return;
+
+        int gridW = grid.getWidth();
+        int gridH = grid.getHeight();
+
+        if (pendingViewportInit) {
+            pendingViewportInit = false;
+            pixelsPerCell = Math.min((double) canvasW / gridW, (double) canvasH / gridH);
+            viewOffsetX = (gridW - canvasW / pixelsPerCell) / 2.0;
+            viewOffsetY = (gridH - canvasH / pixelsPerCell) / 2.0;
+        }
 
         boolean showBorders = view.getEnableBordersToggle().isSelected();
         boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
 
-        int[] pixels = new int[width * height];
+        int[] pixels = new int[canvasW * canvasH];
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                MapCell cell = grid.getCell(x, y);
-                int color = cell.getMixedColorARGB();
-                
-                if (cell.isLake()) {
-                    color = COLOR_LAKE;
-                } else if (cell.isRiver()) {
-                    color = COLOR_RIVER;
+        for (int py = 0; py < canvasH; py++) {
+            for (int px = 0; px < canvasW; px++) {
+                double mapX = viewOffsetX + px / pixelsPerCell;
+                double mapY = viewOffsetY + py / pixelsPerCell;
+
+                int color;
+                if (pixelsPerCell >= 8.0) {
+                    // Bilinear + noise-perturbed sampling for organic borders
+                    float noise = borderNoise.GetNoise((float)(mapX * 6), (float)(mapY * 6));
+                    double perturbedX = mapX + noise * 0.45;
+                    double perturbedY = mapY + noise * 0.45;
+                    color = sampleBilinear(perturbedX, perturbedY, grid, showBorders, showOverlay);
+                } else if (pixelsPerCell >= 3.0) {
+                    // Bilinear interpolation for smooth color gradients
+                    color = sampleBilinear(mapX, mapY, grid, showBorders, showOverlay);
+                } else {
+                    // Nearest-neighbor — fast path for zoomed-out view
+                    color = getColorAt((int) mapX, (int) mapY, grid, showBorders, showOverlay);
                 }
 
-                if (cell.getKingdom() != null) {
-                    if (showOverlay) {
-                        int kColor = cell.getKingdom().getColorARGB();
-                        int a = (kColor >> 24) & 0xFF;
-                        int r = (kColor >> 16) & 0xFF;
-                        int g = (kColor >> 8) & 0xFF;
-                        int b = kColor & 0xFF;
-                        int cr = (color >> 16) & 0xFF;
-                        int cg = (color >> 8) & 0xFF;
-                        int cb = color & 0xFF;
-                        cr = (cr + r) / 2;
-                        cg = (cg + g) / 2;
-                        cb = (cb + b) / 2;
-                        color = (0xFF << 24) | (cr << 16) | (cg << 8) | cb;
-                    }
-
-                    if (showBorders) {
-                        boolean isBorder = false;
-                        int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}};
-                        for (int[] dir : dirs) {
-                            int nx = x + dir[0];
-                            int ny = y + dir[1];
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                                MapCell neighbor = grid.getCell(nx, ny);
-                                if (neighbor.getKingdom() != cell.getKingdom()) {
-                                    isBorder = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (isBorder) {
-                            color = 0xFF000000; // Black border
-                        }
-                    }
-                }
-                
-                pixels[y * width + x] = color;
+                pixels[py * canvasW + px] = color;
             }
         }
 
-        pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
-        
-        // Render POI overlay after main map
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.getPixelWriter().setPixels(0, 0, canvasW, canvasH,
+                PixelFormat.getIntArgbPreInstance(), pixels, 0, canvasW);
+
         renderPOIs();
-        
-        // Update POI list panel
         view.getPOIListPanel().updatePOIList(grid.getPointsOfInterest());
-        
-        if (needsCentering) {
-            Platform.runLater(() -> view.centerMap());
+    }
+
+    private int sampleBilinear(double mapX, double mapY, MapGrid grid, boolean showBorders, boolean showOverlay) {
+        int x0 = (int) Math.floor(mapX);
+        int y0 = (int) Math.floor(mapY);
+        double tx = mapX - x0;
+        double ty = mapY - y0;
+        int c00 = getColorAt(x0,     y0,     grid, showBorders, showOverlay);
+        int c10 = getColorAt(x0 + 1, y0,     grid, showBorders, showOverlay);
+        int c01 = getColorAt(x0,     y0 + 1, grid, showBorders, showOverlay);
+        int c11 = getColorAt(x0 + 1, y0 + 1, grid, showBorders, showOverlay);
+        return blendColors(c00, c10, c01, c11, tx, ty);
+    }
+
+    private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay) {
+        if (cx < 0 || cx >= grid.getWidth() || cy < 0 || cy >= grid.getHeight()) {
+            return 0xFF333333;
         }
+        MapCell cell = grid.getCell(cx, cy);
+        int color = cell.getMixedColorARGB();
+        if (cell.isLake()) {
+            color = COLOR_LAKE;
+        } else if (cell.isRiver()) {
+            color = COLOR_RIVER;
+        }
+        if (cell.getKingdom() != null) {
+            if (showOverlay) {
+                int kColor = cell.getKingdom().getColorARGB();
+                int r = (kColor >> 16) & 0xFF;
+                int g = (kColor >> 8) & 0xFF;
+                int b = kColor & 0xFF;
+                int cr = (color >> 16) & 0xFF;
+                int cg = (color >> 8) & 0xFF;
+                int cb = color & 0xFF;
+                color = (0xFF << 24) | (((cr + r) / 2) << 16) | (((cg + g) / 2) << 8) | ((cb + b) / 2);
+            }
+            if (showBorders) {
+                int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
+                for (int[] dir : dirs) {
+                    int nx = cx + dir[0], ny = cy + dir[1];
+                    if (nx >= 0 && nx < grid.getWidth() && ny >= 0 && ny < grid.getHeight()) {
+                        if (grid.getCell(nx, ny).getKingdom() != cell.getKingdom()) {
+                            return 0xFF000000;
+                        }
+                    }
+                }
+            }
+        }
+        return color;
+    }
+
+    private int blendColors(int c00, int c10, int c01, int c11, double tx, double ty) {
+        int r = (int) (lerp(lerp((c00 >> 16) & 0xFF, (c10 >> 16) & 0xFF, tx),
+                            lerp((c01 >> 16) & 0xFF, (c11 >> 16) & 0xFF, tx), ty));
+        int g = (int) (lerp(lerp((c00 >> 8) & 0xFF, (c10 >> 8) & 0xFF, tx),
+                            lerp((c01 >> 8) & 0xFF, (c11 >> 8) & 0xFF, tx), ty));
+        int b = (int) (lerp(lerp(c00 & 0xFF, c10 & 0xFF, tx),
+                            lerp(c01 & 0xFF, c11 & 0xFF, tx), ty));
+        return (0xFF << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    private double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
     }
 
     /**
@@ -323,15 +419,22 @@ public class MainPresenter {
         double mouseY = view.getMouseY();
         PointOfInterest hoveredPOI = null;
 
+        // Scale icon size with zoom, clamped to a sensible range
+        double iconSize = Math.max(8, Math.min(32, 14 * pixelsPerCell));
+        double halfIcon = iconSize / 2.0;
+        double spriteSize = Math.max(8, Math.min(32, 16 * pixelsPerCell));
+        double halfSprite = spriteSize / 2.0;
+        double hoverRadius = Math.max(12, Math.min(28, 20 * pixelsPerCell));
+
         // Render each POI
         for (PointOfInterest poi : pois) {
-            // Convert map coordinates to screen coordinates
-            // (In a real app with zoom/pan, this would apply scale and translation)
-            double screenX = poi.getX();
-            double screenY = poi.getY();
+            // Transform map coordinates to screen coordinates via viewport
+            double screenX = (poi.getX() - viewOffsetX) * pixelsPerCell;
+            double screenY = (poi.getY() - viewOffsetY) * pixelsPerCell;
 
-            // Skip if off-screen
-            if (screenX < 0 || screenX >= width || screenY < 0 || screenY >= height) {
+            // Skip if off-screen (with margin for icon size)
+            if (screenX < -halfIcon || screenX >= width + halfIcon
+                    || screenY < -halfIcon || screenY >= height + halfIcon) {
                 continue;
             }
 
@@ -339,34 +442,35 @@ public class MainPresenter {
             Integer customColor = poi.getCustomColor();
             int poiColor = customColor != null ? customColor : POIIconMapper.getDefaultColor(poi.getType());
 
-            // Draw colored circle (12-16px diameter, using 14px)
+            // Draw colored circle scaled with zoom
             gc.setFill(toFXColor(poiColor));
-            gc.fillOval(screenX - 7, screenY - 7, 14, 14);
+            gc.fillOval(screenX - halfIcon, screenY - halfIcon, iconSize, iconSize);
 
-            // Draw sprite icon (16x16px centered on circle)
+            // Draw sprite icon scaled with zoom
             int[] spriteCoords = POIIconMapper.getSpriteCoordinates(poi.getType());
             if (spriteCoords != null && spriteSheet != null && !spriteSheet.isError()) {
                 gc.drawImage(
                     spriteSheet,
-                    spriteCoords[0], spriteCoords[1], 32, 32,  // Source rect (32x32 from 512x512 sheet)
-                    screenX - 8, screenY - 8, 16, 16           // Destination rect (16x16 on canvas)
+                    spriteCoords[0], spriteCoords[1], 32, 32,
+                    screenX - halfSprite, screenY - halfSprite, spriteSize, spriteSize
                 );
             }
 
-            // Check if mouse is hovering over this POI (within 20px)
+            // Check if mouse is hovering over this POI
             double distance = Math.sqrt(
                 Math.pow(mouseX - screenX, 2) + Math.pow(mouseY - screenY, 2)
             );
-            if (distance < 20 && (hoveredPOI == null || distance < 
-                Math.sqrt(Math.pow(mouseX - hoveredPOI.getX(), 2) + Math.pow(mouseY - hoveredPOI.getY(), 2)))) {
+            if (distance < hoverRadius && (hoveredPOI == null || distance <
+                Math.sqrt(Math.pow(mouseX - (hoveredPOI.getX() - viewOffsetX) * pixelsPerCell, 2)
+                        + Math.pow(mouseY - (hoveredPOI.getY() - viewOffsetY) * pixelsPerCell, 2)))) {
                 hoveredPOI = poi;
             }
         }
 
         // Render label for hovered POI
         if (hoveredPOI != null) {
-            double labelX = hoveredPOI.getX();
-            double labelY = hoveredPOI.getY() - 20; // Above the POI
+            double labelX = (hoveredPOI.getX() - viewOffsetX) * pixelsPerCell;
+            double labelY = (hoveredPOI.getY() - viewOffsetY) * pixelsPerCell - 20;
 
             // Draw label with shadow for legibility
             gc.setFont(new Font("Arial", 11));
