@@ -21,6 +21,7 @@ public class MainPresenter {
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
+    private com.mapbuilder.mapbuilder.core.map.MapLabel draggedLabel = null;
 
     public MainPresenter() {
         this.model = new MainModel();
@@ -118,6 +119,33 @@ public class MainPresenter {
                      renderMap();
                 }
             }
+        });
+
+        view.getCanvas().setOnMousePressed(event -> {
+            if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                double x = event.getX();
+                double y = event.getY();
+                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
+                        draggedLabel = label;
+                        event.consume();
+                        break;
+                    }
+                }
+            }
+        });
+
+        view.getCanvas().setOnMouseDragged(event -> {
+            if (draggedLabel != null) {
+                draggedLabel.setX(event.getX());
+                draggedLabel.setY(event.getY());
+                renderMap();
+                event.consume();
+            }
+        });
+
+        view.getCanvas().setOnMouseReleased(event -> {
+            draggedLabel = null;
         });
     }
 
