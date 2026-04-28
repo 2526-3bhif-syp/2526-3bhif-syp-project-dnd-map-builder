@@ -225,10 +225,6 @@ public class PointOfInterestGenerator {
                             x, y,
                             selectSettlementType(rand),
                             name,
-                            "",
-                            null,
-                            null,
-                            System.currentTimeMillis(),
                             "settlement_scattered"
                         );
                         pois.add(poi);
