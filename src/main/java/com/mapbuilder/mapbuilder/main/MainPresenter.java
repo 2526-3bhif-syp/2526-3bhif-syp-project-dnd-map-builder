@@ -84,8 +84,7 @@ public class MainPresenter {
                 if (clickedLabel != null) {
                     final com.mapbuilder.mapbuilder.core.map.MapLabel finalLabel = clickedLabel;
                     if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                        model.removeLabel(finalLabel);
-                        renderMap();
+                        confirmAndRemoveLabel(finalLabel);
                     } else {
                         javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(finalLabel.getText());
                         dialog.setTitle("Edit Map Label");
@@ -110,8 +109,7 @@ public class MainPresenter {
                 }
             } else if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY && event.getClickCount() == 1) {
                 if (clickedLabel != null) {
-                     model.removeLabel(clickedLabel);
-                     renderMap();
+                     confirmAndRemoveLabel(clickedLabel);
                 }
             }
         });
@@ -155,6 +153,19 @@ public class MainPresenter {
             }
         }
         return null;
+    }
+
+    private void confirmAndRemoveLabel(com.mapbuilder.mapbuilder.core.map.MapLabel label) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Label");
+        alert.setHeaderText("Are you sure you want to delete this label?");
+        alert.setContentText("Label text: " + label.getText());
+        
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            model.removeLabel(label);
+            renderMap();
+        }
     }
     
     /**
