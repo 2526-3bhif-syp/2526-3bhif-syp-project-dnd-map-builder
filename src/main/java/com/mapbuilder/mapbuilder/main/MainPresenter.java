@@ -135,10 +135,8 @@ public class MainPresenter {
 
     private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double x, double y) {
         if (model.getCurrentGrid() == null) return null;
-        double gridWidth = model.getCurrentGrid().getWidth();
-        double gridHeight = model.getCurrentGrid().getHeight();
-        double hitRadiusX = 40.0 * (gridWidth / 800.0);
-        double hitRadiusY = 20.0 * (gridHeight / 800.0);
+        double hitRadiusX = 40.0;
+        double hitRadiusY = 20.0;
         for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
             if (Math.abs(label.getX() - x) < hitRadiusX && Math.abs(label.getY() - y) < hitRadiusY) {
                 return label;
@@ -281,19 +279,31 @@ public class MainPresenter {
 
         pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
 
-        gc.save();
-        gc.setFill(javafx.scene.paint.Color.WHITE);
-        gc.setStroke(javafx.scene.paint.Color.BLACK);
-        double scaleRatio = (double) width / 800.0;
-        gc.setLineWidth(1.0 * scaleRatio);
-        gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20 * scaleRatio));
-        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
-        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        // Update map labels using JavaFX nodes to keep them crisp and fixed-size during zoom
+        javafx.scene.Group canvasGroup = view.getCanvasGroup();
+        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.layout.StackPane);
+
         for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-            gc.fillText(label.getText(), label.getX(), label.getY());
-            gc.strokeText(label.getText(), label.getX(), label.getY());
+            javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
+            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20));
+            textNode.setFill(javafx.scene.paint.Color.WHITE);
+            textNode.setStroke(javafx.scene.paint.Color.BLACK);
+            textNode.setStrokeWidth(1.0);
+
+            javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
+            labelContainer.setLayoutX(label.getX() - 100); // Center around X (assuming max width 200)
+            labelContainer.setLayoutY(label.getY() - 20);  // Center around Y
+            labelContainer.setPrefSize(200, 40);
+            
+            // Inverse scale the container so the label stays the same visual size when zooming in/out
+            labelContainer.scaleXProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleXProperty()));
+            labelContainer.scaleYProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleYProperty()));
+
+            // Pass mouse events down to the canvas
+            labelContainer.setMouseTransparent(true);
+            
+            canvasGroup.getChildren().add(labelContainer);
         }
-        gc.restore();
 
         if (needsCentering) {
             Platform.runLater(() -> view.centerMap());
