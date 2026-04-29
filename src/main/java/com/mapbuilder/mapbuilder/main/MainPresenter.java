@@ -75,7 +75,7 @@ public class MainPresenter {
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
-        view.getCanvas().setOnMouseClicked(event -> {
+        view.getCanvasGroup().setOnMouseClicked(event -> {
             double x = event.getX();
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
@@ -116,7 +116,7 @@ public class MainPresenter {
             }
         });
 
-        view.getCanvas().setOnMousePressed(event -> {
+        view.getCanvasGroup().setOnMousePressed(event -> {
             if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                 double x = event.getX();
                 double y = event.getY();
@@ -128,7 +128,7 @@ public class MainPresenter {
             }
         });
 
-        view.getCanvas().setOnMouseDragged(event -> {
+        view.getCanvasGroup().setOnMouseDragged(event -> {
             if (draggedLabel != null) {
                 draggedLabel.setX(event.getX());
                 draggedLabel.setY(event.getY());
@@ -137,9 +137,12 @@ public class MainPresenter {
             }
         });
 
-        view.getCanvas().setOnMouseReleased(event -> {
+        view.getCanvasGroup().setOnMouseReleased(event -> {
             draggedLabel = null;
         });
+        
+        // Wire POI density sliders to trigger generation
+        setupPOIDensityListeners();
     }
 
     private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double x, double y) {
@@ -152,9 +155,6 @@ public class MainPresenter {
             }
         }
         return null;
-        
-        // Wire POI density sliders to trigger generation
-        setupPOIDensityListeners();
     }
     
     /**
