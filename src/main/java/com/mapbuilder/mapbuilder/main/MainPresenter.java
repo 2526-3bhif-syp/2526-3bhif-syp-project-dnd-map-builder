@@ -67,16 +67,11 @@ public class MainPresenter {
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
         view.getCanvas().setOnMouseClicked(event -> {
+            double x = event.getX();
+            double y = event.getY();
+            com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
+
             if (event.getClickCount() == 2) {
-                double x = event.getX();
-                double y = event.getY();
-                com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = null;
-                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
-                        clickedLabel = label;
-                        break;
-                    }
-                }
                 if (clickedLabel != null) {
                     final com.mapbuilder.mapbuilder.core.map.MapLabel finalLabel = clickedLabel;
                     if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
@@ -105,15 +100,6 @@ public class MainPresenter {
                     }
                 }
             } else if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY && event.getClickCount() == 1) {
-                double x = event.getX();
-                double y = event.getY();
-                com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = null;
-                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
-                        clickedLabel = label;
-                        break;
-                    }
-                }
                 if (clickedLabel != null) {
                      model.removeLabel(clickedLabel);
                      renderMap();
@@ -125,12 +111,10 @@ public class MainPresenter {
             if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                 double x = event.getX();
                 double y = event.getY();
-                for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-                    if (Math.abs(label.getX() - x) < 40 && Math.abs(label.getY() - y) < 20) {
-                        draggedLabel = label;
-                        event.consume();
-                        break;
-                    }
+                com.mapbuilder.mapbuilder.core.map.MapLabel label = getLabelAt(x, y);
+                if (label != null) {
+                    draggedLabel = label;
+                    event.consume();
                 }
             }
         });
@@ -147,6 +131,20 @@ public class MainPresenter {
         view.getCanvas().setOnMouseReleased(event -> {
             draggedLabel = null;
         });
+    }
+
+    private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double x, double y) {
+        if (model.getCurrentGrid() == null) return null;
+        double gridWidth = model.getCurrentGrid().getWidth();
+        double gridHeight = model.getCurrentGrid().getHeight();
+        double hitRadiusX = 40.0 * (gridWidth / 800.0);
+        double hitRadiusY = 20.0 * (gridHeight / 800.0);
+        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+            if (Math.abs(label.getX() - x) < hitRadiusX && Math.abs(label.getY() - y) < hitRadiusY) {
+                return label;
+            }
+        }
+        return null;
     }
 
     private void triggerGeneration() {
@@ -286,8 +284,9 @@ public class MainPresenter {
         gc.save();
         gc.setFill(javafx.scene.paint.Color.WHITE);
         gc.setStroke(javafx.scene.paint.Color.BLACK);
-        gc.setLineWidth(1.0);
-        gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20));
+        double scaleRatio = (double) width / 800.0;
+        gc.setLineWidth(1.0 * scaleRatio);
+        gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20 * scaleRatio));
         gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
         gc.setTextBaseline(javafx.geometry.VPos.CENTER);
         for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
