@@ -20,9 +20,12 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
+import javafx.scene.image.WritableImage;
 
 public class MainPresenter {
     
@@ -41,8 +44,9 @@ public class MainPresenter {
     private double viewOffsetY = 0;
     private double pixelsPerCell = 1.0;
 
-    // Background render task — cancelled when a new render is requested
-    private volatile Task<int[]> runningRenderTask;
+    // Image Caching
+    private WritableImage baseMapImage;
+    private final Map<LodGridCache.Key, WritableImage> lodImageCache = new HashMap<>();
 
     // LOD system
     private final LodGridCache lodCache = new LodGridCache();
@@ -118,8 +122,8 @@ public class MainPresenter {
         view.getKingdomCountSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getLloydPassesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         
-        view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
-        view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         
         // Wire POI density sliders to trigger generation
         setupPOIDensityListeners();
@@ -144,6 +148,18 @@ public class MainPresenter {
         });
     }
     
+    private void regenerateImages() {
+        MapGrid baseGrid = model.getCurrentGrid();
+        if (baseGrid == null) return;
+        boolean showBorders = view.getEnableBordersToggle().isSelected();
+        boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+        
+        baseMapImage = createImageFromGrid(baseGrid, showBorders, showOverlay);
+        lodImageCache.clear();
+        
+        renderMap();
+    }
+
     /**
      * Regenerates only POIs without affecting terrain, hydrology, or kingdoms.
      */
@@ -237,8 +253,18 @@ public class MainPresenter {
             Task<MapGrid> oldLod = runningLodTask;
             if (oldLod != null) oldLod.cancel(false);
             lodCache.invalidateAll();
+            lodImageCache.clear();
             activeLodLevel = LodLevel.LOD_0;
             pendingViewportInit = true;
+            
+            // Generate the base map image once
+            MapGrid grid = model.getCurrentGrid();
+            if (grid != null) {
+                boolean showBorders = view.getEnableBordersToggle().isSelected();
+                boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+                baseMapImage = createImageFromGrid(grid, showBorders, showOverlay);
+            }
+            
             renderMap();
         });
         new Thread(task).start();
@@ -275,7 +301,7 @@ public class MainPresenter {
 
     private void renderMap() {
         MapGrid baseGrid = model.getCurrentGrid();
-        if (baseGrid == null) return;
+        if (baseGrid == null || baseMapImage == null) return;
         Canvas canvas = view.getCanvas();
 
         int canvasW = (int) canvas.getWidth();
@@ -291,93 +317,37 @@ public class MainPresenter {
             viewOffsetY = (gridH - canvasH / pixelsPerCell) / 2.0;
         }
 
-        // Determine active grid: cached LOD grid or base grid fallback
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvasW, canvasH);
+        
+        // Determine active image: cached LOD image or base map image fallback
         LodRegion region = computeRequiredLOD(canvasW, canvasH, baseGrid);
-        final MapGrid activeGrid;
-        final double activeOffX, activeOffY, activePPC;
+        Image activeImage;
+        double sourceX, sourceY, sourceW, sourceH;
 
-        if (region != null) {
-            MapGrid lodGrid = lodCache.get(region.cacheKey());
-            if (lodGrid != null) {
-                int mult = region.lod.multiplier;
-                activeGrid  = lodGrid;
-                activeOffX  = (viewOffsetX - region.wx0) * mult;
-                activeOffY  = (viewOffsetY - region.wy0) * mult;
-                // pixelsPerCell is in world-units; LOD cells are 1/mult world units each,
-                // so there are mult times as many LOD pixels per canvas pixel
-                activePPC   = pixelsPerCell / mult;
-            } else {
-                // LOD pending — render base grid immediately so the screen isn't blank
-                activeGrid  = baseGrid;
-                activeOffX  = viewOffsetX;
-                activeOffY  = viewOffsetY;
-                activePPC   = pixelsPerCell;
-            }
+        if (region != null && lodImageCache.containsKey(region.cacheKey())) {
+            activeImage = lodImageCache.get(region.cacheKey());
+            int mult = region.lod.multiplier;
+            double activePPC = pixelsPerCell / mult;
+            
+            sourceX = (viewOffsetX - region.wx0) * mult;
+            sourceY = (viewOffsetY - region.wy0) * mult;
+            sourceW = canvasW / activePPC;
+            sourceH = canvasH / activePPC;
         } else {
-            activeGrid  = baseGrid;
-            activeOffX  = viewOffsetX;
-            activeOffY  = viewOffsetY;
-            activePPC   = pixelsPerCell;
+            // Base grid fallback
+            activeImage = baseMapImage;
+            sourceX = viewOffsetX;
+            sourceY = viewOffsetY;
+            sourceW = canvasW / pixelsPerCell;
+            sourceH = canvasH / pixelsPerCell;
         }
 
-        final boolean showBorders = view.getEnableBordersToggle().isSelected();
-        final boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
-        final int w = canvasW;
-        final int h = canvasH;
-        final int gW = activeGrid.getWidth();
-        final int gH = activeGrid.getHeight();
-
-        // Cancel any running render before starting a new one
-        Task<int[]> prev = runningRenderTask;
-        if (prev != null) prev.cancel(false);
-
-        Task<int[]> task = new Task<>() {
-            @Override
-            protected int[] call() {
-                // Pre-compute one color per grid cell — eliminates redundant getColorAt calls
-                // Each grid cell is shared by multiple canvas pixels in bilinear sampling.
-                int[] colorCache = buildColorCache(activeGrid, gW, gH, showBorders, showOverlay);
-                if (isCancelled()) return null;
-
-                final int[] pixels = new int[w * h];
-                final boolean bilinear = activePPC >= 3.0;
-                final int[] cc = colorCache; // local alias for lambda capture
-
-                // Parallel horizontal strips — each row writes to a non-overlapping
-                // region of pixels[] so no synchronisation is needed.
-                IntStream.range(0, h).parallel().forEach(py -> {
-                    for (int px = 0; px < w; px++) {
-                        double mapX = activeOffX + px / activePPC;
-                        double mapY = activeOffY + py / activePPC;
-                        int color;
-                        if (bilinear) {
-                            color = sampleBilinearFast(mapX, mapY, cc, gW, gH);
-                        } else {
-                            int ix = Math.max(0, Math.min(gW - 1, (int) mapX));
-                            int iy = Math.max(0, Math.min(gH - 1, (int) mapY));
-                            color = cc[iy * gW + ix];
-                        }
-                        pixels[py * w + px] = color;
-                    }
-                });
-                return isCancelled() ? null : pixels;
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            int[] pixels = task.getValue();
-            if (pixels == null) return;
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-            gc.getPixelWriter().setPixels(0, 0, w, h,
-                    PixelFormat.getIntArgbPreInstance(), pixels, 0, w);
-            renderPOIs();
-            view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
-        });
-
-        runningRenderTask = task;
-        Thread t = new Thread(task);
-        t.setDaemon(true);
-        t.start();
+        // Draw hardware-accelerated image
+        gc.drawImage(activeImage, sourceX, sourceY, sourceW, sourceH, 0, 0, canvasW, canvasH);
+        
+        renderPOIs();
+        view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
     }
 
     /**
@@ -491,6 +461,11 @@ public class MainPresenter {
             if (lodGrid == null) return;
             propagateBaseGridState(lodGrid, region, baseGrid);
             lodCache.put(region.cacheKey(), lodGrid);
+            
+            boolean showBorders = view.getEnableBordersToggle().isSelected();
+            boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+            lodImageCache.put(region.cacheKey(), createImageFromGrid(lodGrid, showBorders, showOverlay));
+            
             activeLodLevel = region.lod;
             renderMap(); // re-render with the freshly cached LOD grid
         });
@@ -546,6 +521,15 @@ public class MainPresenter {
         }
     }
 
+    private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay) {
+        int w = grid.getWidth();
+        int h = grid.getHeight();
+        int[] pixels = buildColorCache(grid, w, h, showBorders, showOverlay);
+        WritableImage image = new WritableImage(w, h);
+        image.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), pixels, 0, w);
+        return image;
+    }
+
     /** Pre-computes one ARGB color per grid cell into a flat array [y*gW+x]. */
     private int[] buildColorCache(MapGrid grid, int gW, int gH,
                                   boolean showBorders, boolean showOverlay) {
@@ -556,35 +540,6 @@ public class MainPresenter {
             }
         }
         return cache;
-    }
-
-    /** Bilinear sample from pre-computed color cache — no MapGrid access in the hot loop. */
-    private int sampleBilinearFast(double mapX, double mapY,
-                                   int[] colorCache, int gW, int gH) {
-        int x0 = (int) mapX;
-        int y0 = (int) mapY;
-        // Clamp so bilinear never reads outside the cache
-        if (x0 < 0) x0 = 0; else if (x0 >= gW - 1) x0 = gW - 2;
-        if (y0 < 0) y0 = 0; else if (y0 >= gH - 1) y0 = gH - 2;
-        int tx256 = (int)((mapX - x0) * 256);
-        int ty256 = (int)((mapY - y0) * 256);
-        int c00 = colorCache[ y0      * gW + x0    ];
-        int c10 = colorCache[ y0      * gW + x0 + 1];
-        int c01 = colorCache[(y0 + 1) * gW + x0    ];
-        int c11 = colorCache[(y0 + 1) * gW + x0 + 1];
-        return blendColorsInt(c00, c10, c01, c11, tx256, ty256);
-    }
-
-    private int sampleBilinear(double mapX, double mapY, MapGrid grid, boolean showBorders, boolean showOverlay) {
-        int x0 = (int) Math.floor(mapX);
-        int y0 = (int) Math.floor(mapY);
-        double tx = mapX - x0;
-        double ty = mapY - y0;
-        int c00 = getColorAt(x0,     y0,     grid, showBorders, showOverlay);
-        int c10 = getColorAt(x0 + 1, y0,     grid, showBorders, showOverlay);
-        int c01 = getColorAt(x0,     y0 + 1, grid, showBorders, showOverlay);
-        int c11 = getColorAt(x0 + 1, y0 + 1, grid, showBorders, showOverlay);
-        return blendColors(c00, c10, c01, c11, tx, ty);
     }
 
     private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay) {
@@ -622,32 +577,6 @@ public class MainPresenter {
             }
         }
         return color;
-    }
-
-    /** Integer bilinear blend — avoids FP division in the hot path. t256 in [0,256]. */
-    private static int blendColorsInt(int c00, int c10, int c01, int c11,
-                                      int tx256, int ty256) {
-        int r = iLerp2(c00 >> 16, c10 >> 16, c01 >> 16, c11 >> 16, tx256, ty256) & 0xFF;
-        int g = iLerp2(c00 >>  8, c10 >>  8, c01 >>  8, c11 >>  8, tx256, ty256) & 0xFF;
-        int b = iLerp2(c00,       c10,       c01,       c11,        tx256, ty256) & 0xFF;
-        return (0xFF << 24) | (r << 16) | (g << 8) | b;
-    }
-
-    private static int iLerp2(int v00, int v10, int v01, int v11,
-                               int tx256, int ty256) {
-        int top    = (v00 & 0xFF) + (((( v10 & 0xFF) - (v00 & 0xFF)) * tx256) >> 8);
-        int bottom = (v01 & 0xFF) + ((((v11 & 0xFF) - (v01 & 0xFF)) * tx256) >> 8);
-        return top + (((bottom - top) * ty256) >> 8);
-    }
-
-    private int blendColors(int c00, int c10, int c01, int c11, double tx, double ty) {
-        int tx256 = (int)(tx * 256);
-        int ty256 = (int)(ty * 256);
-        return blendColorsInt(c00, c10, c01, c11, tx256, ty256);
-    }
-
-    private double lerp(double a, double b, double t) {
-        return a + (b - a) * t;
     }
 
     /**
