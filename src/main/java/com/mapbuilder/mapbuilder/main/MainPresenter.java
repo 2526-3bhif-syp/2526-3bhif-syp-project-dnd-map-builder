@@ -285,15 +285,29 @@ public class MainPresenter {
 
         for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
             javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
-            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 20));
-            textNode.setFill(javafx.scene.paint.Color.WHITE);
-            textNode.setStroke(javafx.scene.paint.Color.BLACK);
-            textNode.setStrokeWidth(1.0);
+            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
+            textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
+
+            // Use a dense soft glow instead of a hard pixelated stroke
+            javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
+            glow.setRadius(5.0);
+            glow.setSpread(0.8);
+            glow.setOffsetX(0);
+            glow.setOffsetY(0);
+            glow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
+            textNode.setEffect(glow);
 
             javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
-            labelContainer.setLayoutX(label.getX() - 100); // Center around X (assuming max width 200)
-            labelContainer.setLayoutY(label.getY() - 20);  // Center around Y
-            labelContainer.setPrefSize(200, 40);
+            
+            // Add a semi-transparent dark background "pill" to ensure it's always readable
+            labelContainer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-background-radius: 12px; -fx-padding: 4px 10px;");
+            
+            labelContainer.setLayoutX(label.getX());
+            labelContainer.setLayoutY(label.getY());
+            
+            // Dynamically center the container based on its actual width/height
+            labelContainer.translateXProperty().bind(labelContainer.widthProperty().divide(-2));
+            labelContainer.translateYProperty().bind(labelContainer.heightProperty().divide(-2));
             
             // Inverse scale the container so the label stays the same visual size when zooming in/out
             labelContainer.scaleXProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleXProperty()));
