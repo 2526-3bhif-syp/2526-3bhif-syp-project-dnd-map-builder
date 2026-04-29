@@ -432,6 +432,7 @@ public class MainView extends AnchorPane {
     }
 
     public Canvas getCanvas() { return canvas; }
+    public Group getCanvasGroup() { return canvasGroup; }
     public TextField getSeedField() { return seedField; }
     public Slider getSizeSlider() { return sizeSlider; }
     public Slider getOctavesSlider() { return octavesSlider; }
