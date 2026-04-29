@@ -13,6 +13,7 @@
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
 - 4.4.26 - 2 Hours - Core Map Generation
 - 28.4.26 - 2 Hours - LOD
+- 29.4.26 - 2 Hours - LOD improvements & fixes
 
 # Ali
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure

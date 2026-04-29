@@ -1,9 +1,12 @@
 package com.mapbuilder.mapbuilder.main;
 
+import com.mapbuilder.mapbuilder.core.map.LodGridCache;
+import com.mapbuilder.mapbuilder.core.map.LodLevel;
+import com.mapbuilder.mapbuilder.core.map.LodRegion;
 import com.mapbuilder.mapbuilder.core.map.MapCell;
+import com.mapbuilder.mapbuilder.core.map.MapGenerator;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
-import com.mapbuilder.mapbuilder.core.math.FastNoiseLite;
 import com.mapbuilder.mapbuilder.ui.POIEditorDialog;
 import com.mapbuilder.mapbuilder.ui.POIIconMapper;
 import javafx.animation.PauseTransition;
@@ -19,16 +22,18 @@ import javafx.util.Duration;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 public class MainPresenter {
     
     public static final int COLOR_RIVER = 0xFF00BFFF; // Deep Sky Blue
     public static final int COLOR_LAKE = 0xFF1E90FF;  // Dodger Blue
+    private static final int[][] BORDER_DIRS = {{-1,0},{1,0},{0,-1},{0,1}};
 
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
-    private final PauseTransition viewportDebounce;
+    private final PauseTransition lodDebounce;
     private Image spriteSheet;
 
     // Viewport state — zoom/pan handled in software, no Group transforms
@@ -36,17 +41,23 @@ public class MainPresenter {
     private double viewOffsetY = 0;
     private double pixelsPerCell = 1.0;
 
-    // Noise generator for organic biome-border perturbation at high zoom
-    private final FastNoiseLite borderNoise;
+    // Background render task — cancelled when a new render is requested
+    private volatile Task<int[]> runningRenderTask;
+
+    // LOD system
+    private final LodGridCache lodCache = new LodGridCache();
+    private volatile Task<MapGrid> runningLodTask;
+    private final MapGenerator lodGenerator = new MapGenerator();
+    // Tracks the LOD level of the last committed LOD generation so we only
+    // regenerate when the user crosses a zoom threshold, not on every pan.
+    private LodLevel activeLodLevel = LodLevel.LOD_0;
 
     public MainPresenter() {
         this.model = new MainModel();
         this.debounce = new PauseTransition(Duration.millis(300));
         this.debounce.setOnFinished(e -> generateMapAsync());
-        this.viewportDebounce = new PauseTransition(Duration.millis(100));
-        this.viewportDebounce.setOnFinished(e -> renderMap());
-        this.borderNoise = new FastNoiseLite(42);
-        this.borderNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        this.lodDebounce = new PauseTransition(Duration.millis(300));
+        this.lodDebounce.setOnFinished(e -> checkLodNeeded());
     }
 
     public void setView(MainView view) {
@@ -67,7 +78,7 @@ public class MainPresenter {
             double deltaY = event.getDeltaY();
             // Linux/X11 fires a zero-delta ghost event before each real scroll tick
             if (deltaY == 0) { event.consume(); return; }
-            double factor = deltaY > 0 ? 1.05 : 1.0 / 1.05;
+            double factor = deltaY > 0 ? 1.15 : 1.0 / 1.15;
             onZoom(factor, event.getX(), event.getY());
             event.consume();
         });
@@ -222,6 +233,11 @@ public class MainPresenter {
         };
 
         task.setOnSucceeded(e -> {
+            // Invalidate all cached LOD grids — they belong to the old map
+            Task<MapGrid> oldLod = runningLodTask;
+            if (oldLod != null) oldLod.cancel(false);
+            lodCache.invalidateAll();
+            activeLodLevel = LodLevel.LOD_0;
             pendingViewportInit = true;
             renderMap();
         });
@@ -231,16 +247,18 @@ public class MainPresenter {
     private void onZoom(double factor, double mouseX, double mouseY) {
         double mapFocusX = viewOffsetX + mouseX / pixelsPerCell;
         double mapFocusY = viewOffsetY + mouseY / pixelsPerCell;
-        pixelsPerCell = Math.max(0.1, Math.min(pixelsPerCell * factor, 32.0));
+        pixelsPerCell = Math.max(0.1, Math.min(pixelsPerCell * factor, 64.0));
         viewOffsetX = mapFocusX - mouseX / pixelsPerCell;
         viewOffsetY = mapFocusY - mouseY / pixelsPerCell;
-        viewportDebounce.playFromStart();
+        renderMap();          // immediate visual response
+        lodDebounce.playFromStart(); // LOD check after settling
     }
 
     private void onPan(double dx, double dy) {
         viewOffsetX -= dx / pixelsPerCell;
         viewOffsetY -= dy / pixelsPerCell;
-        viewportDebounce.playFromStart();
+        renderMap();          // immediate visual response
+        lodDebounce.playFromStart(); // LOD check after settling
     }
 
     private void initViewport(int gridW, int gridH) {
@@ -256,59 +274,305 @@ public class MainPresenter {
     private boolean pendingViewportInit = false;
 
     private void renderMap() {
-        MapGrid grid = model.getCurrentGrid();
-        if (grid == null) return;
+        MapGrid baseGrid = model.getCurrentGrid();
+        if (baseGrid == null) return;
         Canvas canvas = view.getCanvas();
 
         int canvasW = (int) canvas.getWidth();
         int canvasH = (int) canvas.getHeight();
         if (canvasW <= 0 || canvasH <= 0) return;
 
-        int gridW = grid.getWidth();
-        int gridH = grid.getHeight();
-
         if (pendingViewportInit) {
             pendingViewportInit = false;
+            int gridW = baseGrid.getWidth();
+            int gridH = baseGrid.getHeight();
             pixelsPerCell = Math.min((double) canvasW / gridW, (double) canvasH / gridH);
             viewOffsetX = (gridW - canvasW / pixelsPerCell) / 2.0;
             viewOffsetY = (gridH - canvasH / pixelsPerCell) / 2.0;
         }
 
-        boolean showBorders = view.getEnableBordersToggle().isSelected();
-        boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+        // Determine active grid: cached LOD grid or base grid fallback
+        LodRegion region = computeRequiredLOD(canvasW, canvasH, baseGrid);
+        final MapGrid activeGrid;
+        final double activeOffX, activeOffY, activePPC;
 
-        int[] pixels = new int[canvasW * canvasH];
-
-        for (int py = 0; py < canvasH; py++) {
-            for (int px = 0; px < canvasW; px++) {
-                double mapX = viewOffsetX + px / pixelsPerCell;
-                double mapY = viewOffsetY + py / pixelsPerCell;
-
-                int color;
-                if (pixelsPerCell >= 8.0) {
-                    // Bilinear + noise-perturbed sampling for organic borders
-                    float noise = borderNoise.GetNoise((float)(mapX * 6), (float)(mapY * 6));
-                    double perturbedX = mapX + noise * 0.45;
-                    double perturbedY = mapY + noise * 0.45;
-                    color = sampleBilinear(perturbedX, perturbedY, grid, showBorders, showOverlay);
-                } else if (pixelsPerCell >= 3.0) {
-                    // Bilinear interpolation for smooth color gradients
-                    color = sampleBilinear(mapX, mapY, grid, showBorders, showOverlay);
-                } else {
-                    // Nearest-neighbor — fast path for zoomed-out view
-                    color = getColorAt((int) mapX, (int) mapY, grid, showBorders, showOverlay);
-                }
-
-                pixels[py * canvasW + px] = color;
+        if (region != null) {
+            MapGrid lodGrid = lodCache.get(region.cacheKey());
+            if (lodGrid != null) {
+                int mult = region.lod.multiplier;
+                activeGrid  = lodGrid;
+                activeOffX  = (viewOffsetX - region.wx0) * mult;
+                activeOffY  = (viewOffsetY - region.wy0) * mult;
+                // pixelsPerCell is in world-units; LOD cells are 1/mult world units each,
+                // so there are mult times as many LOD pixels per canvas pixel
+                activePPC   = pixelsPerCell / mult;
+            } else {
+                // LOD pending — render base grid immediately so the screen isn't blank
+                activeGrid  = baseGrid;
+                activeOffX  = viewOffsetX;
+                activeOffY  = viewOffsetY;
+                activePPC   = pixelsPerCell;
             }
+        } else {
+            activeGrid  = baseGrid;
+            activeOffX  = viewOffsetX;
+            activeOffY  = viewOffsetY;
+            activePPC   = pixelsPerCell;
         }
 
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.getPixelWriter().setPixels(0, 0, canvasW, canvasH,
-                PixelFormat.getIntArgbPreInstance(), pixels, 0, canvasW);
+        final boolean showBorders = view.getEnableBordersToggle().isSelected();
+        final boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+        final int w = canvasW;
+        final int h = canvasH;
+        final int gW = activeGrid.getWidth();
+        final int gH = activeGrid.getHeight();
 
-        renderPOIs();
-        view.getPOIListPanel().updatePOIList(grid.getPointsOfInterest());
+        // Cancel any running render before starting a new one
+        Task<int[]> prev = runningRenderTask;
+        if (prev != null) prev.cancel(false);
+
+        Task<int[]> task = new Task<>() {
+            @Override
+            protected int[] call() {
+                // Pre-compute one color per grid cell — eliminates redundant getColorAt calls
+                // Each grid cell is shared by multiple canvas pixels in bilinear sampling.
+                int[] colorCache = buildColorCache(activeGrid, gW, gH, showBorders, showOverlay);
+                if (isCancelled()) return null;
+
+                final int[] pixels = new int[w * h];
+                final boolean bilinear = activePPC >= 3.0;
+                final int[] cc = colorCache; // local alias for lambda capture
+
+                // Parallel horizontal strips — each row writes to a non-overlapping
+                // region of pixels[] so no synchronisation is needed.
+                IntStream.range(0, h).parallel().forEach(py -> {
+                    for (int px = 0; px < w; px++) {
+                        double mapX = activeOffX + px / activePPC;
+                        double mapY = activeOffY + py / activePPC;
+                        int color;
+                        if (bilinear) {
+                            color = sampleBilinearFast(mapX, mapY, cc, gW, gH);
+                        } else {
+                            int ix = Math.max(0, Math.min(gW - 1, (int) mapX));
+                            int iy = Math.max(0, Math.min(gH - 1, (int) mapY));
+                            color = cc[iy * gW + ix];
+                        }
+                        pixels[py * w + px] = color;
+                    }
+                });
+                return isCancelled() ? null : pixels;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            int[] pixels = task.getValue();
+            if (pixels == null) return;
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            gc.getPixelWriter().setPixels(0, 0, w, h,
+                    PixelFormat.getIntArgbPreInstance(), pixels, 0, w);
+            renderPOIs();
+            view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
+        });
+
+        runningRenderTask = task;
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Computes the LOD region required for the current viewport.
+     * Returns null when LOD_0 (base grid is sufficient).
+     *
+     * Region is snapped to 64-world-cell blocks and covers 3× the visible area
+     * so that panning does not constantly invalidate the cache key.
+     */
+    private LodRegion computeRequiredLOD(int canvasW, int canvasH, MapGrid baseGrid) {
+        LodLevel lod = LodLevel.forZoom(pixelsPerCell);
+        if (lod == LodLevel.LOD_0) return null;
+
+        int gridW = baseGrid.getWidth();
+        int gridH = baseGrid.getHeight();
+
+        // Visible cells on screen
+        int visW = Math.max(1, (int) Math.ceil(canvasW / pixelsPerCell));
+        int visH = Math.max(1, (int) Math.ceil(canvasH / pixelsPerCell));
+
+        // Expand to 3× viewport so panning doesn't bust the cache immediately
+        int padW = visW;   // 1× padding each side → 3× total
+        int padH = visH;
+
+        int rawX0 = (int) viewOffsetX - padW;
+        int rawY0 = (int) viewOffsetY - padH;
+        int rawX1 = (int) viewOffsetX + visW + padW;
+        int rawY1 = (int) viewOffsetY + visH + padH;
+
+        // Snap to 64-cell boundaries so small movements keep the same cache key
+        final int SNAP = 64;
+        int wx0 = Math.max(0,     (rawX0 / SNAP) * SNAP);
+        int wy0 = Math.max(0,     (rawY0 / SNAP) * SNAP);
+        int wx1 = Math.min(gridW, ((rawX1 + SNAP - 1) / SNAP) * SNAP);
+        int wy1 = Math.min(gridH, ((rawY1 + SNAP - 1) / SNAP) * SNAP);
+
+        if (wx1 <= wx0 || wy1 <= wy0) return null;
+        return new LodRegion(wx0, wy0, wx1, wy1, lod);
+    }
+
+    /**
+     * Called by lodDebounce after the viewport has settled (300 ms of inactivity).
+     * Only triggers LOD generation on level-change or when the viewport has
+     * panned outside the currently cached region.
+     */
+    private void checkLodNeeded() {
+        MapGrid baseGrid = model.getCurrentGrid();
+        if (baseGrid == null) return;
+        int canvasW = (int) view.getCanvas().getWidth();
+        int canvasH = (int) view.getCanvas().getHeight();
+
+        LodLevel newLevel = LodLevel.forZoom(pixelsPerCell);
+
+        // Dropping back to base grid — cancel any running LOD task
+        if (newLevel == LodLevel.LOD_0) {
+            Task<MapGrid> old = runningLodTask;
+            if (old != null) old.cancel(false);
+            activeLodLevel = LodLevel.LOD_0;
+            return;
+        }
+
+        LodRegion region = computeRequiredLOD(canvasW, canvasH, baseGrid);
+        if (region == null) return;
+
+        // If the level didn't change AND the cache already has this region, skip
+        if (newLevel == activeLodLevel && lodCache.get(region.cacheKey()) != null) return;
+
+        requestLodGeneration(region, baseGrid);
+    }
+
+    /**
+     * Kicks off async LOD grid generation for the given region.
+     * Cancels any in-flight LOD task first.
+     */
+    private void requestLodGeneration(LodRegion region, MapGrid baseGrid) {
+        // Snapshot all slider values on the FX thread before handing off
+        int seed;
+        try { seed = Integer.parseInt(view.getSeedField().getText()); }
+        catch (NumberFormatException ex) { seed = view.getSeedField().getText().hashCode(); }
+
+        final int    fSeed      = seed;
+        final int    fOctaves   = (int) view.getOctavesSlider().getValue();
+        final float  fScale     = (float) view.getScaleSlider().getValue();
+        final double fFalloff   = view.getFalloffSlider().getValue();
+        final double fWaterLevel= view.getWaterLevelSlider().getValue();
+        final double fTempBias  = view.getTempBiasSlider().getValue();
+        final double fRainBias  = view.getRainBiasSlider().getValue();
+        final int    fWorldW    = baseGrid.getWidth();
+        final int    fWorldH    = baseGrid.getHeight();
+
+        Task<MapGrid> prev = runningLodTask;
+        if (prev != null) prev.cancel(false);
+
+        Task<MapGrid> task = new Task<>() {
+            @Override
+            protected MapGrid call() {
+                if (isCancelled()) return null;
+                MapGrid lodGrid = new MapGrid(region.lodGridW, region.lodGridH);
+                lodGenerator.generateLOD(
+                        lodGrid, fSeed, fOctaves, fScale, fFalloff, fWaterLevel,
+                        fTempBias, fRainBias,
+                        region.wx0, region.wy0, region.cellWorldSize,
+                        fWorldW, fWorldH
+                );
+                return isCancelled() ? null : lodGrid;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            MapGrid lodGrid = task.getValue();
+            if (lodGrid == null) return;
+            propagateBaseGridState(lodGrid, region, baseGrid);
+            lodCache.put(region.cacheKey(), lodGrid);
+            activeLodLevel = region.lod;
+            renderMap(); // re-render with the freshly cached LOD grid
+        });
+
+        runningLodTask = task;
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * Copies kingdom, river, and lake state from the base grid into each LOD cell.
+     * At LOD_2 (mult >= 4), rivers are dilated by searching a 1-base-cell radius so
+     * that single-cell rivers appear mult pixels wide instead of 1.
+     */
+    private void propagateBaseGridState(MapGrid lodGrid, LodRegion region, MapGrid baseGrid) {
+        int mult   = region.lod.multiplier;
+        int lodW   = lodGrid.getWidth();
+        int lodH   = lodGrid.getHeight();
+        // For LOD_2+ we check a neighbourhood of base cells to widen rivers
+        int searchR = (mult >= 4) ? 1 : 0;
+
+        for (int cx = 0; cx < lodW; cx++) {
+            for (int cy = 0; cy < lodH; cy++) {
+                int bx = region.wx0 + cx / mult;
+                int by = region.wy0 + cy / mult;
+                MapCell baseCell = baseGrid.getCell(bx, by);
+                if (baseCell == null) continue;
+                MapCell lodCell = lodGrid.getCell(cx, cy);
+                lodCell.setKingdom(baseCell.getKingdom());
+
+                if (searchR == 0) {
+                    // LOD_1: 1:1 propagation
+                    lodCell.setRiver(baseCell.isRiver());
+                    lodCell.setLake(baseCell.isLake());
+                } else {
+                    // LOD_2: dilate — mark as river/lake if ANY neighbour within
+                    // searchR base-cells is river/lake
+                    boolean isRiver = false, isLake = false;
+                    outer:
+                    for (int dx = -searchR; dx <= searchR; dx++) {
+                        for (int dy = -searchR; dy <= searchR; dy++) {
+                            MapCell nb = baseGrid.getCell(bx + dx, by + dy);
+                            if (nb == null) continue;
+                            if (nb.isRiver()) { isRiver = true; break outer; }
+                            if (nb.isLake())  { isLake  = true; break outer; }
+                        }
+                    }
+                    lodCell.setRiver(isRiver);
+                    lodCell.setLake(isLake);
+                }
+            }
+        }
+    }
+
+    /** Pre-computes one ARGB color per grid cell into a flat array [y*gW+x]. */
+    private int[] buildColorCache(MapGrid grid, int gW, int gH,
+                                  boolean showBorders, boolean showOverlay) {
+        int[] cache = new int[gW * gH];
+        for (int cy = 0; cy < gH; cy++) {
+            for (int cx = 0; cx < gW; cx++) {
+                cache[cy * gW + cx] = getColorAt(cx, cy, grid, showBorders, showOverlay);
+            }
+        }
+        return cache;
+    }
+
+    /** Bilinear sample from pre-computed color cache — no MapGrid access in the hot loop. */
+    private int sampleBilinearFast(double mapX, double mapY,
+                                   int[] colorCache, int gW, int gH) {
+        int x0 = (int) mapX;
+        int y0 = (int) mapY;
+        // Clamp so bilinear never reads outside the cache
+        if (x0 < 0) x0 = 0; else if (x0 >= gW - 1) x0 = gW - 2;
+        if (y0 < 0) y0 = 0; else if (y0 >= gH - 1) y0 = gH - 2;
+        int tx256 = (int)((mapX - x0) * 256);
+        int ty256 = (int)((mapY - y0) * 256);
+        int c00 = colorCache[ y0      * gW + x0    ];
+        int c10 = colorCache[ y0      * gW + x0 + 1];
+        int c01 = colorCache[(y0 + 1) * gW + x0    ];
+        int c11 = colorCache[(y0 + 1) * gW + x0 + 1];
+        return blendColorsInt(c00, c10, c01, c11, tx256, ty256);
     }
 
     private int sampleBilinear(double mapX, double mapY, MapGrid grid, boolean showBorders, boolean showOverlay) {
@@ -360,14 +624,26 @@ public class MainPresenter {
         return color;
     }
 
-    private int blendColors(int c00, int c10, int c01, int c11, double tx, double ty) {
-        int r = (int) (lerp(lerp((c00 >> 16) & 0xFF, (c10 >> 16) & 0xFF, tx),
-                            lerp((c01 >> 16) & 0xFF, (c11 >> 16) & 0xFF, tx), ty));
-        int g = (int) (lerp(lerp((c00 >> 8) & 0xFF, (c10 >> 8) & 0xFF, tx),
-                            lerp((c01 >> 8) & 0xFF, (c11 >> 8) & 0xFF, tx), ty));
-        int b = (int) (lerp(lerp(c00 & 0xFF, c10 & 0xFF, tx),
-                            lerp(c01 & 0xFF, c11 & 0xFF, tx), ty));
+    /** Integer bilinear blend — avoids FP division in the hot path. t256 in [0,256]. */
+    private static int blendColorsInt(int c00, int c10, int c01, int c11,
+                                      int tx256, int ty256) {
+        int r = iLerp2(c00 >> 16, c10 >> 16, c01 >> 16, c11 >> 16, tx256, ty256) & 0xFF;
+        int g = iLerp2(c00 >>  8, c10 >>  8, c01 >>  8, c11 >>  8, tx256, ty256) & 0xFF;
+        int b = iLerp2(c00,       c10,       c01,       c11,        tx256, ty256) & 0xFF;
         return (0xFF << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    private static int iLerp2(int v00, int v10, int v01, int v11,
+                               int tx256, int ty256) {
+        int top    = (v00 & 0xFF) + (((( v10 & 0xFF) - (v00 & 0xFF)) * tx256) >> 8);
+        int bottom = (v01 & 0xFF) + ((((v11 & 0xFF) - (v01 & 0xFF)) * tx256) >> 8);
+        return top + (((bottom - top) * ty256) >> 8);
+    }
+
+    private int blendColors(int c00, int c10, int c01, int c11, double tx, double ty) {
+        int tx256 = (int)(tx * 256);
+        int ty256 = (int)(ty * 256);
+        return blendColorsInt(c00, c10, c01, c11, tx256, ty256);
     }
 
     private double lerp(double a, double b, double t) {
@@ -426,6 +702,13 @@ public class MainPresenter {
         double halfSprite = spriteSize / 2.0;
         double hoverRadius = Math.max(12, Math.min(28, 20 * pixelsPerCell));
 
+        // At high zoom show labels for all visible POIs; otherwise only hovered
+        boolean showAllLabels = pixelsPerCell >= 12.0;
+        double labelFontSize = Math.max(10, Math.min(16, 10 + (pixelsPerCell - 12) * 0.3));
+
+        java.util.List<double[]> labelPositions = showAllLabels ? new java.util.ArrayList<>() : null;
+        java.util.List<String>   labelTexts     = showAllLabels ? new java.util.ArrayList<>() : null;
+
         // Render each POI
         for (PointOfInterest poi : pois) {
             // Transform map coordinates to screen coordinates via viewport
@@ -456,6 +739,11 @@ public class MainPresenter {
                 );
             }
 
+            if (showAllLabels) {
+                labelPositions.add(new double[]{screenX, screenY});
+                labelTexts.add(poi.getName());
+            }
+
             // Check if mouse is hovering over this POI
             double distance = Math.sqrt(
                 Math.pow(mouseX - screenX, 2) + Math.pow(mouseY - screenY, 2)
@@ -467,19 +755,23 @@ public class MainPresenter {
             }
         }
 
-        // Render label for hovered POI
-        if (hoveredPOI != null) {
+        // Render labels — all visible POIs at high zoom, or just the hovered one
+        if (showAllLabels && labelPositions != null) {
+            gc.setFont(new Font("Arial", labelFontSize));
+            for (int i = 0; i < labelPositions.size(); i++) {
+                double lx = labelPositions.get(i)[0];
+                double ly = labelPositions.get(i)[1] - halfSprite - 4;
+                gc.setFill(javafx.scene.paint.Color.BLACK);
+                gc.fillText(labelTexts.get(i), lx + 1, ly + 1);
+                gc.setFill(javafx.scene.paint.Color.WHITE);
+                gc.fillText(labelTexts.get(i), lx, ly);
+            }
+        } else if (hoveredPOI != null) {
             double labelX = (hoveredPOI.getX() - viewOffsetX) * pixelsPerCell;
             double labelY = (hoveredPOI.getY() - viewOffsetY) * pixelsPerCell - 20;
-
-            // Draw label with shadow for legibility
             gc.setFont(new Font("Arial", 11));
-
-            // Black shadow
             gc.setFill(javafx.scene.paint.Color.BLACK);
             gc.fillText(hoveredPOI.getName(), labelX + 1, labelY + 1);
-
-            // White text
             gc.setFill(javafx.scene.paint.Color.WHITE);
             gc.fillText(hoveredPOI.getName(), labelX, labelY);
         }

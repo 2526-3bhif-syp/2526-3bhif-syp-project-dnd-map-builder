@@ -129,6 +129,82 @@ public class MapGenerator {
         grid.setPointsOfInterest(pois);
     }
 
+    /**
+     * Generates terrain for a LOD sub-region at higher resolution.
+     * Samples noise at fractional world coordinates so the same seed produces
+     * consistent, finer-grained detail when zoomed in.
+     * Rivers/lakes are NOT generated here — they are propagated from the base grid
+     * after generation to keep spatial consistency and avoid expensive re-tracing.
+     */
+    public void generateLOD(MapGrid lodGrid, int seed, int octaves, float scale,
+                            double falloff, double waterLevel,
+                            double temperatureBias, double rainfallBias,
+                            double worldOffsetX, double worldOffsetY,
+                            double cellWorldSize,
+                            int worldWidth, int worldHeight) {
+        int w = lodGrid.getWidth();
+        int h = lodGrid.getHeight();
+
+        FastNoiseLite elevationNoise = new FastNoiseLite(seed);
+        elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        elevationNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        elevationNoise.SetFractalOctaves(octaves);
+        elevationNoise.SetFrequency(scale);
+
+        FastNoiseLite tempNoise = new FastNoiseLite(seed + 1);
+        tempNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        tempNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        tempNoise.SetFractalOctaves(octaves);
+        tempNoise.SetFrequency(scale);
+
+        FastNoiseLite rainNoise = new FastNoiseLite(seed + 2);
+        rainNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        rainNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        rainNoise.SetFractalOctaves(octaves);
+        rainNoise.SetFrequency(scale);
+
+        for (int cx = 0; cx < w; cx++) {
+            for (int cy = 0; cy < h; cy++) {
+                MapCell cell = lodGrid.getCell(cx, cy);
+                cell.setRiver(false);
+                cell.setLake(false);
+
+                float wx = (float)(worldOffsetX + cx * cellWorldSize);
+                float wy = (float)(worldOffsetY + cy * cellWorldSize);
+
+                double e = elevationNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                // Island falloff uses the world position normalised against the original grid
+                double nx = wx / worldWidth;
+                double ny = wy / worldHeight;
+                double fcx = nx * 2 - 1;
+                double fcy = ny * 2 - 1;
+                double d2 = fcx * fcx + fcy * fcy;
+                e = e - d2 * (1.0 + falloff);
+                cell.setElevation(e);
+
+                double t = tempNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                double lat = 1.0 - Math.abs(ny * 2 - 1);
+                t = t + lat * 0.5 - Math.max(0, e - waterLevel) * 0.5 + temperatureBias;
+                if (Math.abs(e - waterLevel) < 0.1) t = (t + 0.5) / 2.0;
+                cell.setTemperature(t);
+
+                double r = rainNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                r = r + (1.0 - t) * 0.3 + rainfallBias;
+                if (cx > 0) {
+                    double prevE = lodGrid.getCell(cx - 1, cy).getElevation();
+                    if (e > prevE) r += 0.2;
+                    else if (e < prevE) r -= 0.2;
+                }
+                cell.setRainfall(r);
+
+                Biome biome = resolveBiome(e, t, r, waterLevel);
+                cell.setBiome(biome);
+                cell.setMixedColorARGB(biome.getColorARGB());
+            }
+        }
+
+    }
+
     private void generateHydrology(MapGrid grid, int seed, int targetRiverCount, double waterLevel, boolean enableRivers, boolean enableLakes, double lakeSizePercent, int customMinLakeArea) {
         int width = grid.getWidth();
         int height = grid.getHeight();
