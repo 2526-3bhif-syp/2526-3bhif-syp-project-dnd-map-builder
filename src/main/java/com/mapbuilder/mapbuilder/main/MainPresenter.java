@@ -90,6 +90,7 @@ public class MainPresenter {
                         dialog.setTitle("Edit Map Label");
                         dialog.setHeaderText("Edit the label text:");
                         dialog.setContentText("Label:");
+                        applyDarkTheme(dialog);
                         dialog.showAndWait().ifPresent(text -> {
                             finalLabel.setText(text);
                             renderMap();
@@ -101,6 +102,7 @@ public class MainPresenter {
                         dialog.setTitle("Add Map Label");
                         dialog.setHeaderText("Enter label text:");
                         dialog.setContentText("Label:");
+                        applyDarkTheme(dialog);
                         dialog.showAndWait().ifPresent(text -> {
                             model.addLabel(new com.mapbuilder.mapbuilder.core.map.MapLabel(text, x, y));
                             renderMap();
@@ -155,12 +157,18 @@ public class MainPresenter {
         return null;
     }
 
+    private void applyDarkTheme(javafx.scene.control.Dialog<?> dialog) {
+        String css = getClass().getResource("/styles.css").toExternalForm();
+        dialog.getDialogPane().getStylesheets().add(css);
+    }
+
     private void confirmAndRemoveLabel(com.mapbuilder.mapbuilder.core.map.MapLabel label) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Label");
         alert.setHeaderText("Are you sure you want to delete this label?");
         alert.setContentText("Label text: " + label.getText());
-        
+        applyDarkTheme(alert);
+
         java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
             model.removeLabel(label);
@@ -366,19 +374,16 @@ public class MainPresenter {
             textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
             textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
 
-            // Use a dense soft glow instead of a hard pixelated stroke
-            javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
-            glow.setRadius(5.0);
-            glow.setSpread(0.8);
-            glow.setOffsetX(0);
-            glow.setOffsetY(0);
-            glow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
-            textNode.setEffect(glow);
+            javafx.scene.effect.DropShadow shadow = new javafx.scene.effect.DropShadow();
+            shadow.setRadius(8.0);
+            shadow.setSpread(0.75);
+            shadow.setOffsetX(0);
+            shadow.setOffsetY(0);
+            shadow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
+            textNode.setEffect(shadow);
 
             javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
-            
-            // Add a semi-transparent dark background "pill" to ensure it's always readable
-            labelContainer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-background-radius: 12px; -fx-padding: 4px 10px;");
+            labelContainer.setStyle("-fx-padding: 4px 10px;");
             
             labelContainer.setLayoutX(label.getX());
             labelContainer.setLayoutY(label.getY());
