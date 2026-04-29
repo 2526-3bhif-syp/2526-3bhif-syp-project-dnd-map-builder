@@ -438,11 +438,6 @@ public class MainPresenter {
         List<PointOfInterest> pois = grid.getPointsOfInterest();
         if (pois == null || pois.isEmpty()) return;
 
-        // Track mouse position for hover labels
-        double mouseX = view.getMouseX();
-        double mouseY = view.getMouseY();
-        PointOfInterest hoveredPOI = null;
-
         // Render each POI
         for (PointOfInterest poi : pois) {
             // Convert map coordinates to screen coordinates
@@ -472,32 +467,6 @@ public class MainPresenter {
                     screenX - 8, screenY - 8, 16, 16           // Destination rect (16x16 on canvas)
                 );
             }
-
-            // Check if mouse is hovering over this POI (within 20px)
-            double distance = Math.sqrt(
-                Math.pow(mouseX - screenX, 2) + Math.pow(mouseY - screenY, 2)
-            );
-            if (distance < 20 && (hoveredPOI == null || distance < 
-                Math.sqrt(Math.pow(mouseX - hoveredPOI.getX(), 2) + Math.pow(mouseY - hoveredPOI.getY(), 2)))) {
-                hoveredPOI = poi;
-            }
-        }
-
-        // Render label for hovered POI
-        if (hoveredPOI != null) {
-            double labelX = hoveredPOI.getX();
-            double labelY = hoveredPOI.getY() - 20; // Above the POI
-
-            // Draw label with shadow for legibility
-            gc.setFont(new Font("Arial", 11));
-
-            // Black shadow
-            gc.setFill(javafx.scene.paint.Color.BLACK);
-            gc.fillText(hoveredPOI.getName(), labelX + 1, labelY + 1);
-
-            // White text
-            gc.setFill(javafx.scene.paint.Color.WHITE);
-            gc.fillText(hoveredPOI.getName(), labelX, labelY);
         }
     }
 

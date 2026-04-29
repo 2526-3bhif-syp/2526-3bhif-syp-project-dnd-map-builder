@@ -29,8 +29,6 @@ public class MainView extends AnchorPane {
     private Canvas poiCanvas;
     private Pane canvasContainer;
     private Group canvasGroup;
-    private double mouseX = 0;
-    private double mouseY = 0;
     private TextField seedField;
     private Button randomSeedButton;
 
@@ -126,12 +124,6 @@ public class MainView extends AnchorPane {
         canvasContainer.setOnMouseDragged(event -> {
             canvasGroup.setTranslateX(event.getSceneX() - dragStart[0]);
             canvasGroup.setTranslateY(event.getSceneY() - dragStart[1]);
-        });
-
-        // Track mouse position for POI hover labels
-        canvasContainer.setOnMouseMoved(event -> {
-            mouseX = event.getX();
-            mouseY = event.getY();
         });
     }
 
@@ -523,8 +515,6 @@ public class MainView extends AnchorPane {
     public Canvas getCanvas() { return canvas; }
     public Group getCanvasGroup() { return canvasGroup; }
     public Canvas getPoiCanvas() { return poiCanvas; }
-    public double getMouseX() { return mouseX; }
-    public double getMouseY() { return mouseY; }
     public ToggleButton getPoiToggle() { return poiToggle; }
     public TextField getSeedField() { return seedField; }
     public Slider getSizeSlider() { return sizeSlider; }
