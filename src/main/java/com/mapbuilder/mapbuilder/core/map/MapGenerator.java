@@ -68,12 +68,20 @@ public class MapGenerator {
                 // Island falloff
                 double cx = nx * 2 - 1;
                 double cy = ny * 2 - 1;
-                double d2 = cx * cx + cy * cy;
+                double d = Math.sqrt(cx * cx + cy * cy);
                 
-                if (falloff > 0) {
-                    e = e - d2 * falloff;
-                } else if (falloff < 0) {
-                    e = Math.pow(e, 1.0 + Math.abs(falloff) * 1.5);
+                // Base falloff guarantees an island shape (circular dropoff)
+                double baseFalloff = Math.pow(Math.max(0, d - 0.1), 2.0) * 2.5;
+                
+                if (falloff >= 0) {
+                    // Positive falloff: reduce base mask impact slightly for larger continents
+                    e = e - baseFalloff * (1.0 - falloff * 0.4);
+                } else {
+                    // Negative falloff (Archipelago): 
+                    // Increase noise variance to create deep channels, sink slightly
+                    double absF = Math.abs(falloff);
+                    e = (e - 0.5) * (1.0 + absF * 1.5) + 0.5; // Amplify peaks and valleys
+                    e = e - baseFalloff - absF * 0.2; // Sink overall elevation
                 }
                 cell.setElevation(e);
 
@@ -198,12 +206,16 @@ public class MapGenerator {
                 double ny = wy / worldHeight;
                 double fcx = nx * 2 - 1;
                 double fcy = ny * 2 - 1;
-                double d2 = fcx * fcx + fcy * fcy;
+                double d = Math.sqrt(fcx * fcx + fcy * fcy);
                 
-                if (falloff > 0) {
-                    e = e - d2 * falloff;
-                } else if (falloff < 0) {
-                    e = Math.pow(e, 1.0 + Math.abs(falloff) * 1.5);
+                double baseFalloff = Math.pow(Math.max(0, d - 0.1), 2.0) * 2.5;
+                
+                if (falloff >= 0) {
+                    e = e - baseFalloff * (1.0 - falloff * 0.4);
+                } else {
+                    double absF = Math.abs(falloff);
+                    e = (e - 0.5) * (1.0 + absF * 1.5) + 0.5;
+                    e = e - baseFalloff - absF * 0.2;
                 }
                 cell.setElevation(e);
 
