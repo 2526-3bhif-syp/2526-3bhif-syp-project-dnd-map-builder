@@ -36,10 +36,118 @@ public class MainPresenter {
     private MainView view;
     private final MainModel model;
     private final PauseTransition debounce;
-        view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
-        view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+    private final PauseTransition lodDebounce;
+    private Image spriteSheet;
+    private com.mapbuilder.mapbuilder.core.map.MapLabel draggedLabel = null;
 
-        view.getCanvasGroup().setOnMouseClicked(event -> {
+    // Viewport state — zoom/pan handled in software, no Group transforms
+    private double viewOffsetX = 0;
+    private double viewOffsetY = 0;
+    private double pixelsPerCell = 1.0;
+
+    // Image Caching
+    private WritableImage baseMapImage;
+    private final Map<LodGridCache.Key, WritableImage> lodImageCache = new HashMap<>();
+
+    // LOD system
+    private final LodGridCache lodCache = new LodGridCache();
+    private volatile Task<MapGrid> runningLodTask;
+    private final MapGenerator lodGenerator = new MapGenerator();
+    private LodLevel activeLodLevel = LodLevel.LOD_0;
+
+    public MainPresenter() {
+        this.model = new MainModel();
+        this.debounce = new PauseTransition(Duration.millis(300));
+        this.debounce.setOnFinished(e -> generateMapAsync());
+        this.lodDebounce = new PauseTransition(Duration.millis(300));
+        this.lodDebounce.setOnFinished(e -> checkLodNeeded());
+    }
+
+    public void setView(MainView view) {
+        this.view = view;
+        view.getPOIListPanel().setPresenter(this);
+        bind();
+        triggerGeneration();
+    }
+
+    public MainView getView() {
+        return view;
+    }
+
+    private void bind() {
+        final double[] dragStart = new double[2];
+        view.getCanvasContainer().setOnScroll(event -> {
+            double deltaY = event.getDeltaY();
+            if (deltaY == 0) { event.consume(); return; }
+            double factor = deltaY > 0 ? 1.15 : 1.0 / 1.15;
+            onZoom(factor, event.getX(), event.getY());
+            event.consume();
+        });
+        
+        view.getCanvasContainer().setOnMousePressed(event -> {
+            view.getCanvasContainer().requestFocus();
+            if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                double x = event.getX();
+                double y = event.getY();
+                com.mapbuilder.mapbuilder.core.map.MapLabel label = getLabelAt(x, y);
+                if (label != null) {
+                    draggedLabel = label;
+                    event.consume();
+                    return;
+                }
+            }
+            dragStart[0] = event.getSceneX();
+            dragStart[1] = event.getSceneY();
+        });
+        
+        view.getCanvasContainer().setOnMouseDragged(event -> {
+            if (draggedLabel != null) {
+                double worldX = viewOffsetX + event.getX() / pixelsPerCell;
+                double worldY = viewOffsetY + event.getY() / pixelsPerCell;
+                draggedLabel.setX(worldX);
+                draggedLabel.setY(worldY);
+                renderMap();
+                event.consume();
+                return;
+            }
+            double dx = event.getSceneX() - dragStart[0];
+            double dy = event.getSceneY() - dragStart[1];
+            dragStart[0] = event.getSceneX();
+            dragStart[1] = event.getSceneY();
+            onPan(dx, dy);
+        });
+        
+        view.getCanvasContainer().setOnMouseReleased(event -> {
+            draggedLabel = null;
+        });
+
+        view.getRandomSeedButton().setOnAction(e -> {
+            int randomSeed = ThreadLocalRandom.current().nextInt(10000000, 100000000);
+            view.getSeedField().setText(String.valueOf(randomSeed));
+        });
+        view.getRandomizeSettingsButton().setOnAction(e -> randomizeSettings());
+        view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getSeedField().textProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getFalloffSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getWaterLevelSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getTempBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRainBiasSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getEnableRiversToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getEnableLakesToggle().selectedProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getRiverDensitySlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLakeSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getMinLakeAreaSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getKingdomCountSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        view.getLloydPassesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
+        
+        view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+
+        view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
@@ -66,7 +174,9 @@ public class MainPresenter {
                         dialog.setHeaderText("Enter label text:");
                         dialog.setContentText("Label:");
                         dialog.showAndWait().ifPresent(text -> {
-                            model.addLabel(new com.mapbuilder.mapbuilder.core.map.MapLabel(text, x, y));
+                            double worldX = viewOffsetX + x / pixelsPerCell;
+                            double worldY = viewOffsetY + y / pixelsPerCell;
+                            model.addLabel(new com.mapbuilder.mapbuilder.core.map.MapLabel(text, worldX, worldY));
                             renderMap();
                         });
                     }
@@ -77,42 +187,18 @@ public class MainPresenter {
                 }
             }
         });
-
-        view.getCanvasGroup().setOnMousePressed(event -> {
-            if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
-                double x = event.getX();
-                double y = event.getY();
-                com.mapbuilder.mapbuilder.core.map.MapLabel label = getLabelAt(x, y);
-                if (label != null) {
-                    draggedLabel = label;
-                    event.consume();
-                }
-            }
-        });
-
-        view.getCanvasGroup().setOnMouseDragged(event -> {
-            if (draggedLabel != null) {
-                draggedLabel.setX(event.getX());
-                draggedLabel.setY(event.getY());
-                renderMap();
-                event.consume();
-            }
-        });
-
-        view.getCanvasGroup().setOnMouseReleased(event -> {
-            draggedLabel = null;
-        });
         
-        // Wire POI density sliders to trigger generation
         setupPOIDensityListeners();
     }
 
-    private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double x, double y) {
+    private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double screenX, double screenY) {
         if (model.getCurrentGrid() == null) return null;
         double hitRadiusX = 40.0;
         double hitRadiusY = 20.0;
         for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-            if (Math.abs(label.getX() - x) < hitRadiusX && Math.abs(label.getY() - y) < hitRadiusY) {
+            double labelScreenX = (label.getX() - viewOffsetX) * pixelsPerCell;
+            double labelScreenY = (label.getY() - viewOffsetY) * pixelsPerCell;
+            if (Math.abs(labelScreenX - screenX) < hitRadiusX && Math.abs(labelScreenY - screenY) < hitRadiusY) {
                 return label;
             }
         }
