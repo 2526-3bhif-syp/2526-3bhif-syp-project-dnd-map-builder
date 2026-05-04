@@ -375,13 +375,16 @@ public class MainView extends AnchorPane {
         topActionBar.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
         
+        Label hintLabel = new Label("Labels: Double-click to add/edit, Drag to move, Right-click to remove.");
+        hintLabel.setStyle("-fx-text-fill: #aaaaaa; -fx-padding: 0 15 0 0;");
+
         String btnStyle = "-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;";
         Button saveBtn = new Button("Save"); saveBtn.setStyle(btnStyle);
         Button loadBtn = new Button("Load"); loadBtn.setStyle(btnStyle);
         Button exportBtn = new Button("Export"); exportBtn.setStyle(btnStyle);
         Button printBtn = new Button("Print"); printBtn.setStyle(btnStyle);
         
-        topActionBar.getChildren().addAll(saveBtn, loadBtn, exportBtn, printBtn);
+        topActionBar.getChildren().addAll(hintLabel, saveBtn, loadBtn, exportBtn, printBtn);
         AnchorPane.setTopAnchor(topActionBar, 10.0);
         AnchorPane.setRightAnchor(topActionBar, 10.0);
         
@@ -479,6 +482,7 @@ public class MainView extends AnchorPane {
 
     public Canvas getCanvas() { return canvas; }
     public Pane getCanvasContainer() { return canvasContainer; }
+    public Group getCanvasGroup() { return canvasGroup; }
     public Canvas getPoiCanvas() { return poiCanvas; }
     public double getMouseX() { return mouseX; }
     public double getMouseY() { return mouseY; }
