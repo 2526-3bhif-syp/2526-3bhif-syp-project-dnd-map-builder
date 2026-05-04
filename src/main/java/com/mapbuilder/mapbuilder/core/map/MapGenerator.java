@@ -62,8 +62,9 @@ public class MapGenerator {
                 double nx = (double) x / width;
                 double ny = (double) y / height;
 
-                // Elevation
-                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5; 
+                // Elevation (offset by 0.5 to avoid integer grid artifacts in Perlin noise)
+                double eNoise = elevationNoise.GetNoise((float) x + 0.5f, (float) y + 0.5f) * 0.5 + 0.5;
+                double e = eNoise; 
                 // Island falloff
                 double cx = nx * 2 - 1;
                 double cy = ny * 2 - 1;
@@ -74,30 +75,44 @@ public class MapGenerator {
                 cell.setElevation(e);
 
                 // Temperature
-                double t = tempNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
-                // Latitude gradient
-                double lat = 1.0 - Math.abs(ny * 2 - 1);
-                t = t + lat * 0.5 - Math.max(0, e - waterLevel) * 0.5 + temperatureBias;
+                double tNoise = tempNoise.GetNoise((float) x + 0.5f, (float) y + 0.5f) * 0.5 + 0.5;
+                double t = tNoise;
+                // Latitude gradient (smooth cosine instead of sharp absolute value to prevent quadrant lines)
+                double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
+                
+                // Scale elevation penalty relative to max possible land height to prevent freezing at low water levels
+                double maxExpectedE = 1.0;
+                double elevationRange = Math.max(0.1, maxExpectedE - waterLevel);
+                double elevationPenalty = 0.0;
+                if (e > waterLevel) {
+                    elevationPenalty = ((e - waterLevel) / elevationRange) * 0.5;
+                }
+                
+                t = t + lat * 0.5 - elevationPenalty + temperatureBias;
                 // Ocean temp moderation
                 if (Math.abs(e - waterLevel) < 0.1) {
                     t = (t + 0.5) / 2.0; 
                 }
+                t = Math.clamp(t, 0.0, 1.0); // Clamp to standard range
                 cell.setTemperature(t);
 
                 // Rainfall
-                double r = rainNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
+                double rNoise = rainNoise.GetNoise((float) x + 0.5f, (float) y + 0.5f) * 0.5 + 0.5;
+                double r = rNoise;
                 // Inverse temp bias
                 r = r + (1.0 - t) * 0.3 + rainfallBias;
 
                 // Wind logic (rain shadow)
                 if (x > 0) {
-                    double prevE = grid.getCell(x - 1, y).getElevation();
-                    if (e > prevE) {
+                    // Use noise derivative to prevent macro-falloff from creating vertical stripes
+                    double prevNoise = elevationNoise.GetNoise((float) (x - 1) + 0.5f, (float) y + 0.5f) * 0.5 + 0.5;
+                    if (eNoise > prevNoise) {
                         r += 0.2;
-                    } else if (e < prevE) {
+                    } else if (eNoise < prevNoise) {
                         r -= 0.2;
                     }
                 }
+                r = Math.clamp(r, 0.0, 1.0); // Clamp to standard range
                 cell.setRainfall(r);
 
                 // Resolve Biome
@@ -172,7 +187,8 @@ public class MapGenerator {
                 float wx = (float)(worldOffsetX + cx * cellWorldSize);
                 float wy = (float)(worldOffsetY + cy * cellWorldSize);
 
-                double e = elevationNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                double eNoise = elevationNoise.GetNoise(wx + 0.5f, wy + 0.5f) * 0.5 + 0.5;
+                double e = eNoise;
                 // Island falloff uses the world position normalised against the original grid
                 double nx = wx / worldWidth;
                 double ny = wy / worldHeight;
@@ -182,19 +198,32 @@ public class MapGenerator {
                 e = e - d2 * (1.0 + falloff);
                 cell.setElevation(e);
 
-                double t = tempNoise.GetNoise(wx, wy) * 0.5 + 0.5;
-                double lat = 1.0 - Math.abs(ny * 2 - 1);
-                t = t + lat * 0.5 - Math.max(0, e - waterLevel) * 0.5 + temperatureBias;
+                double tNoise = tempNoise.GetNoise(wx + 0.5f, wy + 0.5f) * 0.5 + 0.5;
+                double t = tNoise;
+                double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
+                
+                double maxExpectedE = 1.0;
+                double elevationRange = Math.max(0.1, maxExpectedE - waterLevel);
+                double elevationPenalty = 0.0;
+                if (e > waterLevel) {
+                    elevationPenalty = ((e - waterLevel) / elevationRange) * 0.5;
+                }
+                
+                t = t + lat * 0.5 - elevationPenalty + temperatureBias;
                 if (Math.abs(e - waterLevel) < 0.1) t = (t + 0.5) / 2.0;
+                t = Math.clamp(t, 0.0, 1.0);
                 cell.setTemperature(t);
 
-                double r = rainNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                double rNoise = rainNoise.GetNoise(wx + 0.5f, wy + 0.5f) * 0.5 + 0.5;
+                double r = rNoise;
                 r = r + (1.0 - t) * 0.3 + rainfallBias;
                 if (cx > 0) {
-                    double prevE = lodGrid.getCell(cx - 1, cy).getElevation();
-                    if (e > prevE) r += 0.2;
-                    else if (e < prevE) r -= 0.2;
+                    float prevWx = (float)(worldOffsetX + (cx - 1) * cellWorldSize);
+                    double prevNoise = elevationNoise.GetNoise(prevWx + 0.5f, wy + 0.5f) * 0.5 + 0.5;
+                    if (eNoise > prevNoise) r += 0.2;
+                    else if (eNoise < prevNoise) r -= 0.2;
                 }
+                r = Math.clamp(r, 0.0, 1.0);
                 cell.setRainfall(r);
 
                 Biome biome = resolveBiome(e, t, r, waterLevel);
