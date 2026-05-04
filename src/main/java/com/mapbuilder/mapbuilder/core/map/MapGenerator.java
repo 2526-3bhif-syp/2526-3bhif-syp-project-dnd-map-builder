@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Set;
 
 public class MapGenerator {
     // --- River Generation Constants ---
@@ -86,8 +84,7 @@ public class MapGenerator {
                 cell.setElevation(e);
 
                 // Temperature
-                double tNoise = tempNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
-                double t = tNoise;
+                double t = tempNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
                 // Latitude gradient (smooth cosine instead of sharp absolute value to prevent quadrant lines)
                 double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
                 
@@ -108,8 +105,7 @@ public class MapGenerator {
                 cell.setTemperature(t);
 
                 // Rainfall
-                double rNoise = rainNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
-                double r = rNoise;
+                double r = rainNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
                 // Inverse temp bias
                 r = r + (1.0 - t) * 0.3 + rainfallBias;
 
@@ -219,8 +215,7 @@ public class MapGenerator {
                 }
                 cell.setElevation(e);
 
-                double tNoise = tempNoise.GetNoise(wx, wy) * 0.5 + 0.5;
-                double t = tNoise;
+                double t = tempNoise.GetNoise(wx, wy) * 0.5 + 0.5;
                 double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
                 
                 double maxExpectedE = 1.0;
@@ -235,8 +230,7 @@ public class MapGenerator {
                 t = Math.clamp(t, 0.0, 1.0);
                 cell.setTemperature(t);
 
-                double rNoise = rainNoise.GetNoise(wx, wy) * 0.5 + 0.5;
-                double r = rNoise;
+                double r = rainNoise.GetNoise(wx, wy) * 0.5 + 0.5;
                 r = r + (1.0 - t) * 0.3 + rainfallBias;
                 if (cx > 0) {
                     float prevWx = (float)(worldOffsetX + (cx - 1) * cellWorldSize);
