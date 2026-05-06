@@ -618,38 +618,6 @@ public class MainPresenter {
         }
     }
 
-        pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
-
-        // Update map labels using JavaFX nodes to keep them crisp and fixed-size during zoom
-        javafx.scene.Group canvasGroup = view.getCanvasGroup();
-        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.layout.StackPane);
-
-        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-            javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
-            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
-            textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
-
-            javafx.scene.effect.DropShadow shadow = new javafx.scene.effect.DropShadow();
-            shadow.setRadius(8.0);
-            shadow.setSpread(0.75);
-            shadow.setOffsetX(0);
-            shadow.setOffsetY(0);
-            shadow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
-            textNode.setEffect(shadow);
-
-            javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
-            labelContainer.setStyle("-fx-padding: 4px 10px;");
-            
-            labelContainer.setLayoutX(label.getX());
-            labelContainer.setLayoutY(label.getY());
-            
-            // Dynamically center the container based on its actual width/height
-            labelContainer.translateXProperty().bind(labelContainer.widthProperty().divide(-2));
-            labelContainer.translateYProperty().bind(labelContainer.heightProperty().divide(-2));
-            
-            // Inverse scale the container so the label stays the same visual size when zooming in/out
-            labelContainer.scaleXProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleXProperty()));
-            labelContainer.scaleYProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleYProperty()));
     private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay) {
         int w = grid.getWidth();
         int h = grid.getHeight();
