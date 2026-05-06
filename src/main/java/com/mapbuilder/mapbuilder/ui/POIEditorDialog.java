@@ -51,7 +51,10 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         this.setResizable(true);
         this.getDialogPane().setPrefWidth(500);
         this.getDialogPane().setPrefHeight(400);
-        
+        this.getDialogPane().getStylesheets().add(
+            getClass().getResource("/styles.css").toExternalForm()
+        );
+
         initializeForm();
         setupButtons();
     }
@@ -68,16 +71,20 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         nameField.setPrefWidth(300);
         HBox nameBox = new HBox(10);
         nameBox.setAlignment(Pos.CENTER_LEFT);
-        nameBox.getChildren().addAll(new Label("Name:"), nameField);
-        
+        Label nameLabel = new Label("Name:");
+        nameLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
+        nameBox.getChildren().addAll(nameLabel, nameField);
+
         // Type combo box
         typeCombo = new ComboBox<>(FXCollections.observableArrayList(POIType.values()));
         typeCombo.setValue(poi.getType());
         typeCombo.setPrefWidth(200);
         HBox typeBox = new HBox(10);
         typeBox.setAlignment(Pos.CENTER_LEFT);
-        typeBox.getChildren().addAll(new Label("Type:"), typeCombo);
-        
+        Label typeLabel = new Label("Type:");
+        typeLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
+        typeBox.getChildren().addAll(typeLabel, typeCombo);
+
         // Description area
         descriptionArea = new TextArea(poi.getDescription() != null ? poi.getDescription() : "");
         descriptionArea.setWrapText(true);
@@ -85,8 +92,10 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         descriptionArea.setPrefWidth(300);
         HBox descBox = new HBox(10);
         descBox.setAlignment(Pos.TOP_LEFT);
-        descBox.getChildren().addAll(new Label("Description:"), descriptionArea);
-        
+        Label descLabel = new Label("Description:");
+        descLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
+        descBox.getChildren().addAll(descLabel, descriptionArea);
+
         // Color picker
         colorPicker = new ColorPicker();
         if (poi.getCustomColor() != null) {
@@ -96,8 +105,10 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         }
         HBox colorBox = new HBox(10);
         colorBox.setAlignment(Pos.CENTER_LEFT);
-        colorBox.getChildren().addAll(new Label("Color:"), colorPicker);
-        
+        Label colorLabel = new Label("Color:");
+        colorLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
+        colorBox.getChildren().addAll(colorLabel, colorPicker);
+
         // Icon override combo
         iconCombo = new ComboBox<>(FXCollections.observableArrayList(POIType.values()));
         if (poi.getCustomIcon() != null) {
@@ -108,7 +119,9 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         iconCombo.setPrefWidth(200);
         HBox iconBox = new HBox(10);
         iconBox.setAlignment(Pos.CENTER_LEFT);
-        iconBox.getChildren().addAll(new Label("Icon:"), iconCombo);
+        Label iconLabel = new Label("Icon:");
+        iconLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
+        iconBox.getChildren().addAll(iconLabel, iconCombo);
         
         form.getChildren().addAll(
             nameBox,

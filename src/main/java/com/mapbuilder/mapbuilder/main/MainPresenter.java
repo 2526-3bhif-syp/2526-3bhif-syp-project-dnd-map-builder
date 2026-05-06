@@ -162,6 +162,7 @@ public class MainPresenter {
                         dialog.setTitle("Edit Map Label");
                         dialog.setHeaderText("Edit the label text:");
                         dialog.setContentText("Label:");
+                        applyDarkTheme(dialog);
                         dialog.showAndWait().ifPresent(text -> {
                             finalLabel.setText(text);
                             renderMap();
@@ -173,6 +174,7 @@ public class MainPresenter {
                         dialog.setTitle("Add Map Label");
                         dialog.setHeaderText("Enter label text:");
                         dialog.setContentText("Label:");
+                        applyDarkTheme(dialog);
                         dialog.showAndWait().ifPresent(text -> {
                             double worldX = viewOffsetX + x / pixelsPerCell;
                             double worldY = viewOffsetY + y / pixelsPerCell;
@@ -205,12 +207,18 @@ public class MainPresenter {
         return null;
     }
 
+    private void applyDarkTheme(javafx.scene.control.Dialog<?> dialog) {
+        String css = getClass().getResource("/styles.css").toExternalForm();
+        dialog.getDialogPane().getStylesheets().add(css);
+    }
+
     private void confirmAndRemoveLabel(com.mapbuilder.mapbuilder.core.map.MapLabel label) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Label");
         alert.setHeaderText("Are you sure you want to delete this label?");
         alert.setContentText("Label text: " + label.getText());
-        
+        applyDarkTheme(alert);
+
         java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
             model.removeLabel(label);
@@ -610,6 +618,38 @@ public class MainPresenter {
         }
     }
 
+        pixelWriter.setPixels(0, 0, width, height, PixelFormat.getIntArgbPreInstance(), pixels, 0, width);
+
+        // Update map labels using JavaFX nodes to keep them crisp and fixed-size during zoom
+        javafx.scene.Group canvasGroup = view.getCanvasGroup();
+        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.layout.StackPane);
+
+        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+            javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
+            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
+            textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
+
+            javafx.scene.effect.DropShadow shadow = new javafx.scene.effect.DropShadow();
+            shadow.setRadius(8.0);
+            shadow.setSpread(0.75);
+            shadow.setOffsetX(0);
+            shadow.setOffsetY(0);
+            shadow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
+            textNode.setEffect(shadow);
+
+            javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
+            labelContainer.setStyle("-fx-padding: 4px 10px;");
+            
+            labelContainer.setLayoutX(label.getX());
+            labelContainer.setLayoutY(label.getY());
+            
+            // Dynamically center the container based on its actual width/height
+            labelContainer.translateXProperty().bind(labelContainer.widthProperty().divide(-2));
+            labelContainer.translateYProperty().bind(labelContainer.heightProperty().divide(-2));
+            
+            // Inverse scale the container so the label stays the same visual size when zooming in/out
+            labelContainer.scaleXProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleXProperty()));
+            labelContainer.scaleYProperty().bind(javafx.beans.binding.Bindings.divide(1.0, canvasGroup.scaleYProperty()));
     private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay) {
         int w = grid.getWidth();
         int h = grid.getHeight();

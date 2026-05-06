@@ -104,3 +104,133 @@
     -fx-background-color: transparent;
 }
 
+/* Dark theme dialogs */
+.dialog-pane {
+    -fx-background-color: #2b2b2b;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: #3c3f41;
+    -fx-padding: 15;
+}
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+}
+.dialog-pane .content.label {
+    -fx-text-fill: #e0e0e0;
+}
+.dialog-pane .button-bar {
+    -fx-background-color: #2b2b2b;
+    -fx-padding: 10;
+}
+.dialog-pane .button-bar .container {
+    -fx-background-color: #2b2b2b;
+}
+.dialog-pane .text-area {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+.dialog-pane .text-area .content {
+    -fx-background-color: #3c3f41;
+}
+.dialog-pane .combo-box {
+    -fx-background-color: #3c3f41;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+.dialog-pane .combo-box .list-cell {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+}
+.dialog-pane .combo-box-popup .list-view {
+    -fx-background-color: #3c3f41;
+    -fx-border-color: #555555;
+}
+.dialog-pane .combo-box-popup .list-cell {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+}
+.dialog-pane .combo-box-popup .list-cell:hover {
+    -fx-background-color: #4c4f51;
+}
+.dialog-pane > .label {
+    -fx-text-fill: #e0e0e0;
+}
+.dialog-pane .color-picker {
+    -fx-background-color: #3c3f41;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+.dialog-pane .color-picker:hover {
+    -fx-background-color: #4c4f51;
+}
+.dialog-pane .color-picker .arrow-button {
+    -fx-background-color: transparent;
+}
+.dialog-pane .color-picker .arrow {
+    -fx-background-color: #ffffff;
+}
+.dialog-pane .color-picker .label {
+    -fx-text-fill: #ffffff;
+}
+
+/* ColorPicker popup palette */
+.color-palette {
+    -fx-background-color: #2b2b2b;
+    -fx-border-color: #555555;
+    -fx-border-width: 1;
+    -fx-padding: 8;
+}
+.color-palette .color-square {
+    -fx-border-color: #3c3f41;
+    -fx-border-width: 1;
+}
+.color-palette .color-square:hover {
+    -fx-border-color: #ffffff;
+    -fx-border-width: 1;
+}
+.color-palette .custom-color-link {
+    -fx-text-fill: #aaaaaa;
+    -fx-underline: false;
+}
+.color-palette .custom-color-link:hover {
+    -fx-text-fill: #ffffff;
+}
+.color-palette .separator .line {
+    -fx-border-color: #555555;
+}
+.color-palette .label {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Custom color dialog (advanced picker) */
+.custom-color-dialog {
+    -fx-background-color: #2b2b2b;
+}
+.custom-color-dialog .label {
+    -fx-text-fill: #e0e0e0;
+}
+.custom-color-dialog .text-field {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555555;
+}
+.custom-color-dialog .button {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+}
+.custom-color-dialog .button:hover {
+    -fx-background-color: #4c4f51;
+}
+.custom-color-dialog .slider .track {
+    -fx-background-color: #3c3f41;
+}
+.custom-color-dialog .slider .thumb {
+    -fx-background-color: #ffffff;
+}
+
