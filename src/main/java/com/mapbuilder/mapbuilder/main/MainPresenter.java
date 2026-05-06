@@ -444,7 +444,42 @@ public class MainPresenter {
         gc.drawImage(activeImage, sourceX, sourceY, sourceW, sourceH, 0, 0, canvasW, canvasH);
         
         renderPOIs();
+        renderLabels();
         view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
+    }
+
+    private void renderLabels() {
+        javafx.scene.Group canvasGroup = view.getCanvasGroup();
+        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.layout.StackPane);
+
+        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
+            javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
+            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
+            textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
+
+            javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
+            glow.setRadius(5.0);
+            glow.setSpread(0.8);
+            glow.setOffsetX(0);
+            glow.setOffsetY(0);
+            glow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
+            textNode.setEffect(glow);
+
+            javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
+            labelContainer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-background-radius: 12px; -fx-padding: 4px 10px;");
+
+            double screenX = (label.getX() - viewOffsetX) * pixelsPerCell;
+            double screenY = (label.getY() - viewOffsetY) * pixelsPerCell;
+
+            labelContainer.setLayoutX(screenX);
+            labelContainer.setLayoutY(screenY);
+
+            labelContainer.translateXProperty().bind(labelContainer.widthProperty().divide(-2));
+            labelContainer.translateYProperty().bind(labelContainer.heightProperty().divide(-2));
+
+            labelContainer.setMouseTransparent(true);
+            canvasGroup.getChildren().add(labelContainer);
+        }
     }
 
     /**
