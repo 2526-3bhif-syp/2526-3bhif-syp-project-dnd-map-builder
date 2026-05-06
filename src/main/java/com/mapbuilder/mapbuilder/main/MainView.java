@@ -76,7 +76,17 @@ public class MainView extends AnchorPane {
         canvas = new Canvas(800, 800);
         poiCanvas = new Canvas(800, 800);
         poiCanvas.setMouseTransparent(false);
-        
+
+        // Canvas fills the container — the viewport renderer handles zoom/pan in software
+        canvasContainer.widthProperty().addListener((obs, oldW, newW) -> {
+            canvas.setWidth(newW.doubleValue());
+            poiCanvas.setWidth(newW.doubleValue());
+        });
+        canvasContainer.heightProperty().addListener((obs, oldH, newH) -> {
+            canvas.setHeight(newH.doubleValue());
+            poiCanvas.setHeight(newH.doubleValue());
+        });
+
         canvasGroup = new Group(canvas, poiCanvas);
         canvasContainer.getChildren().add(canvasGroup);
         
@@ -87,52 +97,16 @@ public class MainView extends AnchorPane {
 
         // On Windows, scroll events are routed to the focused node rather than
         // the node under the cursor. Making the canvas focusable and requesting
-        // focus on mouse enter ensures zoom works the same as on macOS.
+        // focus on mouse enter ensures zoom works the same as on macOS/Linux.
         canvasContainer.setFocusTraversable(true);
         canvasContainer.setOnMouseEntered(event -> canvasContainer.requestFocus());
-
-        // Zoom functionality
-        canvasContainer.setOnScroll(event -> {
-            double deltaY = event.getDeltaY();
-            // Linux/X11 fires a zero-delta ghost event before each real scroll tick;
-            // skipping it prevents every zoom-out from being cancelled by an accidental zoom-in.
-            if (deltaY == 0) {
-                event.consume();
-                return;
-            }
-            double zoomFactor = 1.05;
-            if (deltaY < 0) {
-                zoomFactor = 1 / zoomFactor;
-            }
-            double newScaleX = canvasGroup.getScaleX() * zoomFactor;
-            double newScaleY = canvasGroup.getScaleY() * zoomFactor;
-
-            newScaleX = Math.max(0.1, Math.min(newScaleX, 10.0));
-            newScaleY = Math.max(0.1, Math.min(newScaleY, 10.0));
-
-            canvasGroup.setScaleX(newScaleX);
-            canvasGroup.setScaleY(newScaleY);
-            event.consume();
-        });
-
-        // Panning functionality
-        final double[] dragStart = new double[2];
-        canvasContainer.setOnMousePressed(event -> {
-            canvasContainer.requestFocus();
-            dragStart[0] = event.getSceneX() - canvasGroup.getTranslateX();
-            dragStart[1] = event.getSceneY() - canvasGroup.getTranslateY();
-        });
-        
-        canvasContainer.setOnMouseDragged(event -> {
-            canvasGroup.setTranslateX(event.getSceneX() - dragStart[0]);
-            canvasGroup.setTranslateY(event.getSceneY() - dragStart[1]);
-        });
 
         // Track mouse position for POI hover labels
         canvasContainer.setOnMouseMoved(event -> {
             mouseX = event.getX();
             mouseY = event.getY();
         });
+        // Scroll/drag handlers are set by MainPresenter via getCanvasContainer()
     }
 
     private ScrollPane setupLeftPanel() {
@@ -506,21 +480,8 @@ public class MainView extends AnchorPane {
         return showRightBtn;
     }
 
-    public void centerMap() {
-        double cw = canvasContainer.getWidth();
-        double ch = canvasContainer.getHeight();
-        double mw = canvas.getWidth();
-        double mh = canvas.getHeight();
-        double tx = cw > 0 ? (cw - mw) / 2 : 0;
-        double ty = ch > 0 ? (ch - mh) / 2 : 0;
-        
-        canvasGroup.setScaleX(1.0);
-        canvasGroup.setScaleY(1.0);
-        canvasGroup.setTranslateX(tx);
-        canvasGroup.setTranslateY(ty);
-    }
-
     public Canvas getCanvas() { return canvas; }
+    public Pane getCanvasContainer() { return canvasContainer; }
     public Group getCanvasGroup() { return canvasGroup; }
     public Canvas getPoiCanvas() { return poiCanvas; }
     public double getMouseX() { return mouseX; }
