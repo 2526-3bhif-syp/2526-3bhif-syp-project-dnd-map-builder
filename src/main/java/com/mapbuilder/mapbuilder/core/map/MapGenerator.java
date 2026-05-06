@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Set;
 
 public class MapGenerator {
     // --- River Generation Constants ---
@@ -34,19 +32,19 @@ public class MapGenerator {
         int height = grid.getHeight();
 
         FastNoiseLite elevationNoise = new FastNoiseLite(seed);
-        elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
         elevationNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
         elevationNoise.SetFractalOctaves(octaves);
         elevationNoise.SetFrequency(scale);
 
         FastNoiseLite tempNoise = new FastNoiseLite(seed + 1);
-        tempNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        tempNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
         tempNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
         tempNoise.SetFractalOctaves(octaves);
         tempNoise.SetFrequency(scale);
 
         FastNoiseLite rainNoise = new FastNoiseLite(seed + 2);
-        rainNoise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        rainNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
         rainNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
         rainNoise.SetFractalOctaves(octaves);
         rainNoise.SetFrequency(scale);
@@ -63,25 +61,47 @@ public class MapGenerator {
                 double ny = (double) y / height;
 
                 // Elevation
-                double e = elevationNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5; 
+                double eNoise = elevationNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
+                double e = eNoise; 
                 // Island falloff
                 double cx = nx * 2 - 1;
                 double cy = ny * 2 - 1;
                 double d = Math.sqrt(cx * cx + cy * cy);
-                // Squaring the distance creates a non-linear falloff (flatter in center, steeper at edges)
-                // This keeps the center solid and connected, and pushes the water to the edges.
-                e = e - Math.pow(d, 2.0) * (1.0 + falloff);
+                
+                // Base falloff guarantees an island shape (circular dropoff)
+                double baseFalloff = Math.pow(Math.max(0, d - 0.1), 2.0) * 2.5;
+                
+                if (falloff >= 0) {
+                    // Positive falloff: reduce base mask impact slightly for larger continents
+                    e = e - baseFalloff * (1.0 - falloff * 0.4);
+                } else {
+                    // Negative falloff (Archipelago): 
+                    // Increase noise variance to create deep channels, sink slightly
+                    double absF = Math.abs(falloff);
+                    e = (e - 0.5) * (1.0 + absF * 1.5) + 0.5; // Amplify peaks and valleys
+                    e = e - baseFalloff - absF * 0.2; // Sink overall elevation
+                }
                 cell.setElevation(e);
 
                 // Temperature
                 double t = tempNoise.GetNoise((float) x, (float) y) * 0.5 + 0.5;
-                // Latitude gradient
-                double lat = 1.0 - Math.abs(ny * 2 - 1);
-                t = t + lat * 0.5 - Math.max(0, e - waterLevel) * 0.5 + temperatureBias;
+                // Latitude gradient (smooth cosine instead of sharp absolute value to prevent quadrant lines)
+                double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
+                
+                // Scale elevation penalty relative to max possible land height to prevent freezing at low water levels
+                double maxExpectedE = 1.0;
+                double elevationRange = Math.max(0.1, maxExpectedE - waterLevel);
+                double elevationPenalty = 0.0;
+                if (e > waterLevel) {
+                    elevationPenalty = ((e - waterLevel) / elevationRange) * 0.5;
+                }
+                
+                t = t + lat * 0.5 - elevationPenalty + temperatureBias;
                 // Ocean temp moderation
                 if (Math.abs(e - waterLevel) < 0.1) {
                     t = (t + 0.5) / 2.0; 
                 }
+                t = Math.clamp(t, 0.0, 1.0); // Clamp to standard range
                 cell.setTemperature(t);
 
                 // Rainfall
@@ -91,17 +111,20 @@ public class MapGenerator {
 
                 // Wind logic (rain shadow)
                 if (x > 0) {
-                    double prevE = grid.getCell(x - 1, y).getElevation();
-                    if (e > prevE) {
+                    // Use noise derivative to prevent macro-falloff from creating vertical stripes
+                    double prevNoise = elevationNoise.GetNoise((float) (x - 1), (float) y) * 0.5 + 0.5;
+                    if (eNoise > prevNoise) {
                         r += 0.2;
-                    } else if (e < prevE) {
+                    } else if (eNoise < prevNoise) {
                         r -= 0.2;
                     }
                 }
+                r = Math.clamp(r, 0.0, 1.0); // Clamp to standard range
                 cell.setRainfall(r);
 
                 // Resolve Biome
-                Biome biome = resolveBiome(e, t, r, waterLevel);
+                double landE = e > waterLevel ? (e - waterLevel) / Math.max(0.01, 1.0 - waterLevel) : 0.0;
+                Biome biome = resolveBiome(e, landE, t, r, waterLevel);
                 cell.setBiome(biome);
 
                 // Mixed color
@@ -127,6 +150,104 @@ public class MapGenerator {
             grid, seed, dungeonDensity, landmarkDensity, settlementDensity
         );
         grid.setPointsOfInterest(pois);
+    }
+
+    /**
+     * Generates terrain for a LOD sub-region at higher resolution.
+     * Samples noise at fractional world coordinates so the same seed produces
+     * consistent, finer-grained detail when zoomed in.
+     * Rivers/lakes are NOT generated here — they are propagated from the base grid
+     * after generation to keep spatial consistency and avoid expensive re-tracing.
+     */
+    public void generateLOD(MapGrid lodGrid, int seed, int octaves, float scale,
+                            double falloff, double waterLevel,
+                            double temperatureBias, double rainfallBias,
+                            double worldOffsetX, double worldOffsetY,
+                            double cellWorldSize,
+                            int worldWidth, int worldHeight) {
+        int w = lodGrid.getWidth();
+        int h = lodGrid.getHeight();
+
+        FastNoiseLite elevationNoise = new FastNoiseLite(seed);
+        elevationNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+        elevationNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        elevationNoise.SetFractalOctaves(octaves);
+        elevationNoise.SetFrequency(scale);
+
+        FastNoiseLite tempNoise = new FastNoiseLite(seed + 1);
+        tempNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+        tempNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        tempNoise.SetFractalOctaves(octaves);
+        tempNoise.SetFrequency(scale);
+
+        FastNoiseLite rainNoise = new FastNoiseLite(seed + 2);
+        rainNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+        rainNoise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        rainNoise.SetFractalOctaves(octaves);
+        rainNoise.SetFrequency(scale);
+
+        for (int cx = 0; cx < w; cx++) {
+            for (int cy = 0; cy < h; cy++) {
+                MapCell cell = lodGrid.getCell(cx, cy);
+                cell.setRiver(false);
+                cell.setLake(false);
+
+                float wx = (float)(worldOffsetX + cx * cellWorldSize);
+                float wy = (float)(worldOffsetY + cy * cellWorldSize);
+
+                double eNoise = elevationNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                double e = eNoise;
+                // Island falloff uses the world position normalised against the original grid
+                double nx = wx / worldWidth;
+                double ny = wy / worldHeight;
+                double fcx = nx * 2 - 1;
+                double fcy = ny * 2 - 1;
+                double d = Math.sqrt(fcx * fcx + fcy * fcy);
+                
+                double baseFalloff = Math.pow(Math.max(0, d - 0.1), 2.0) * 2.5;
+                
+                if (falloff >= 0) {
+                    e = e - baseFalloff * (1.0 - falloff * 0.4);
+                } else {
+                    double absF = Math.abs(falloff);
+                    e = (e - 0.5) * (1.0 + absF * 1.5) + 0.5;
+                    e = e - baseFalloff - absF * 0.2;
+                }
+                cell.setElevation(e);
+
+                double t = tempNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                double lat = Math.cos((ny * 2 - 1) * Math.PI / 2.0);
+                
+                double maxExpectedE = 1.0;
+                double elevationRange = Math.max(0.1, maxExpectedE - waterLevel);
+                double elevationPenalty = 0.0;
+                if (e > waterLevel) {
+                    elevationPenalty = ((e - waterLevel) / elevationRange) * 0.5;
+                }
+                
+                t = t + lat * 0.5 - elevationPenalty + temperatureBias;
+                if (Math.abs(e - waterLevel) < 0.1) t = (t + 0.5) / 2.0;
+                t = Math.clamp(t, 0.0, 1.0);
+                cell.setTemperature(t);
+
+                double r = rainNoise.GetNoise(wx, wy) * 0.5 + 0.5;
+                r = r + (1.0 - t) * 0.3 + rainfallBias;
+                if (cx > 0) {
+                    float prevWx = (float)(worldOffsetX + (cx - 1) * cellWorldSize);
+                    double prevNoise = elevationNoise.GetNoise(prevWx, wy) * 0.5 + 0.5;
+                    if (eNoise > prevNoise) r += 0.2;
+                    else if (eNoise < prevNoise) r -= 0.2;
+                }
+                r = Math.clamp(r, 0.0, 1.0);
+                cell.setRainfall(r);
+
+                double landE = e > waterLevel ? (e - waterLevel) / Math.max(0.01, 1.0 - waterLevel) : 0.0;
+                Biome biome = resolveBiome(e, landE, t, r, waterLevel);
+                cell.setBiome(biome);
+                cell.setMixedColorARGB(biome.getColorARGB());
+            }
+        }
+
     }
 
     private void generateHydrology(MapGrid grid, int seed, int targetRiverCount, double waterLevel, boolean enableRivers, boolean enableLakes, double lakeSizePercent, int customMinLakeArea) {
@@ -385,13 +506,13 @@ public class MapGenerator {
         }
     }
 
-    private Biome resolveBiome(double e, double t, double r, double waterLevel) {
+    private Biome resolveBiome(double e, double landE, double t, double r, double waterLevel) {
         if (e < waterLevel - 0.3) return Biome.DEEP_OCEAN;
         if (e < waterLevel - 0.1) return Biome.OCEAN;
         if (e < waterLevel) return Biome.SHALLOW_SEA;
-        if (e < waterLevel + 0.05) return Biome.BEACH;
+        if (landE < 0.05) return Biome.BEACH;
 
-        if (e > waterLevel + 0.6) {
+        if (landE > 0.6) {
             if (t > 0.5) return Biome.BARE_ROCK;
             return Biome.SNOW_PEAKS;
         }
