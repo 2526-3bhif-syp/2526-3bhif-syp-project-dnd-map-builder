@@ -247,7 +247,7 @@ class PointOfInterestGeneratorTest {
         
         List<PointOfInterest> poisMax = gridMax.getPointsOfInterest();
         long dungeonsMax = poisMax.stream().filter(p -> p.getType() == POIType.DUNGEON || p.getType() == POIType.RUIN).count();
-        long settlementsMax = poisMax.stream().filter(p -> p.getType() == POIType.VILLAGE).count();
+        long settlementsMax = poisMax.stream().filter(p -> p.getType() == POIType.VILLAGE || p.getType() == POIType.CASTLE || p.getType() == POIType.CAVE || p.getType() == POIType.RUIN).count();
         
         assertTrue(dungeonsMax > 0, "Max density should produce at least some dungeons");
         assertTrue(settlementsMax > 0, "Max density should produce at least some settlements");

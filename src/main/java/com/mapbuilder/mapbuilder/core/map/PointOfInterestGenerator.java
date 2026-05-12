@@ -207,9 +207,9 @@ public class PointOfInterestGenerator {
     private static void addSettlements(
             List<PointOfInterest> pois, MapGrid grid, int seedValue, double settlementDensity, AtomicInteger idCounter) {
         
-        // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        // Use 0.00005 multiplier for sparse distribution
-        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.00005);
+        // Use 0.00005 multiplier for sparse distribution. Use ceil to ensure at least 1 at max density for small grids.
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * settlementDensity * 0.00005);
+        if (targetCount <= 0 && settlementDensity > 0.0) targetCount = 1;
         if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
         Random rand = new Random(seedValue + 1003);
