@@ -210,7 +210,7 @@ public class MainView extends AnchorPane {
         poisContent.setPadding(new Insets(10, 0, 10, 0));
 
         // Dungeon Density Slider
-        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
+        dungeonDensitySlider = new Slider(0.0, 1.0, 0.3);
         dungeonDensitySlider.setShowTickMarks(true);
         dungeonDensitySlider.setShowTickLabels(true);
         dungeonDensitySlider.setMajorTickUnit(0.5);
@@ -218,7 +218,7 @@ public class MainView extends AnchorPane {
         dungeonDensitySlider.setSnapToTicks(true);
 
         // Settlement Density Slider
-        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
+        settlementDensitySlider = new Slider(0.0, 1.0, 0.3);
         settlementDensitySlider.setShowTickMarks(true);
         settlementDensitySlider.setShowTickLabels(true);
         settlementDensitySlider.setMajorTickUnit(0.5);

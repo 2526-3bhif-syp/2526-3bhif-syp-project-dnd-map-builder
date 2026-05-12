@@ -101,8 +101,8 @@ public class PointOfInterestGenerator {
     private static void addDungeonAndRuins(
             List<PointOfInterest> pois, MapGrid grid, int seed, double dungeonDensity, AtomicInteger idCounter) {
         
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.0005);
-        int targetCount = Math.max(0, baseCount);
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * dungeonDensity * 0.0001);
+        if (targetCount <= 0 && dungeonDensity > 0.0) targetCount = 1;
         if (targetCount <= 0) return;
         
         Random rand = new Random(seed + 1001);
@@ -207,8 +207,8 @@ public class PointOfInterestGenerator {
     private static void addSettlements(
             List<PointOfInterest> pois, MapGrid grid, int seedValue, double settlementDensity, AtomicInteger idCounter) {
         
-        // Use 0.00005 multiplier for sparse distribution. Use ceil to ensure at least 1 at max density for small grids.
-        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * settlementDensity * 0.00005);
+        // Use 0.0002 multiplier for sparse distribution. Use ceil to ensure at least 1 at max density for small grids.
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * settlementDensity * 0.0002);
         if (targetCount <= 0 && settlementDensity > 0.0) targetCount = 1;
         if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
