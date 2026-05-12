@@ -13,7 +13,7 @@ public class POIPass implements MapGenerationPass {
             grid, 
             params.seed(), 
             params.dungeonDensity(), 
-            params.landmarkDensity(), 
+            params.ruinCastleDensity(), 
             params.settlementDensity()
         );
         grid.setPointsOfInterest(pois);

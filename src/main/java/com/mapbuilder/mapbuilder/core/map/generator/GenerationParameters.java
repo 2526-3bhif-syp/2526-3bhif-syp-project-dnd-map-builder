@@ -16,6 +16,6 @@ public record GenerationParameters(
     int kingdomCount,
     int lloydPasses,
     double dungeonDensity,
-    double landmarkDensity,
+    double ruinCastleDensity,
     double settlementDensity
 ) {}

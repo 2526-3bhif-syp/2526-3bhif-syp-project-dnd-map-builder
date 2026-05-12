@@ -21,12 +21,12 @@ public class MapGenerator {
 
     public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias,
                          boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea,
-                         int kingdomCount, int lloydPasses, double dungeonDensity, double landmarkDensity, double settlementDensity) {
+                         int kingdomCount, int lloydPasses, double dungeonDensity, double ruinCastleDensity, double settlementDensity) {
         
         GenerationParameters params = new GenerationParameters(
             seed, octaves, scale, falloff, waterLevel, temperatureBias, rainfallBias,
             enableRivers, enableLakes, riverDensityPercent, lakeSizePercent, customMinLakeArea,
-            kingdomCount, lloydPasses, dungeonDensity, landmarkDensity, settlementDensity
+            kingdomCount, lloydPasses, dungeonDensity, ruinCastleDensity, settlementDensity
         );
         
         int startPass = 0;
@@ -72,7 +72,7 @@ public class MapGenerator {
         
         // POI dependencies -> start at POIPass (3)
         if (Double.compare(oldP.dungeonDensity(), newP.dungeonDensity()) != 0 ||
-            Double.compare(oldP.landmarkDensity(), newP.landmarkDensity()) != 0 ||
+            Double.compare(oldP.ruinCastleDensity(), newP.ruinCastleDensity()) != 0 ||
             Double.compare(oldP.settlementDensity(), newP.settlementDensity()) != 0) {
             return 3;
         }

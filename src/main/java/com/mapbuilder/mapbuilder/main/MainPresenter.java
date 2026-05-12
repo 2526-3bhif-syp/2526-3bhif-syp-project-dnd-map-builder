@@ -243,6 +243,9 @@ public class MainPresenter {
         view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
             poiDebounce.playFromStart();
         });
+        view.getRuinCastleDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            poiDebounce.playFromStart();
+        });
     }
     
     private void regenerateImages() {
@@ -314,12 +317,13 @@ public class MainPresenter {
             protected Void call() {
                 // Read POI density parameters from sliders
                 double dungeonDensity = view.getDungeonDensitySlider().getValue();
+                double ruinCastleDensity = view.getRuinCastleDensitySlider().getValue();
                 double settlementDensity = view.getSettlementDensitySlider().getValue();
                 
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
                                   kingdomCount, lloydPasses,
-                                  dungeonDensity, 0.0, settlementDensity);
+                                  dungeonDensity, ruinCastleDensity, settlementDensity);
                 return null;
             }
         };
