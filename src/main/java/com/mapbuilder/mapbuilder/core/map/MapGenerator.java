@@ -9,6 +9,9 @@ public class MapGenerator {
     
     private final List<MapGenerationPass> passes = new ArrayList<>();
     
+    private GenerationParameters lastParams = null;
+    private MapGrid lastGrid = null;
+
     public MapGenerator() {
         passes.add(new TerrainPass());
         passes.add(new HydrologyPass());
@@ -26,9 +29,56 @@ public class MapGenerator {
             kingdomCount, lloydPasses, dungeonDensity, landmarkDensity, settlementDensity
         );
         
-        for (MapGenerationPass pass : passes) {
-            pass.execute(grid, params);
+        int startPass = 0;
+        if (lastParams != null && lastGrid == grid) {
+            startPass = determineStartingPass(lastParams, params);
         }
+        
+        for (int i = startPass; i < passes.size(); i++) {
+            passes.get(i).execute(grid, params);
+        }
+        
+        lastParams = params;
+        lastGrid = grid;
+    }
+
+    private int determineStartingPass(GenerationParameters oldP, GenerationParameters newP) {
+        // Terrain dependencies
+        if (oldP.seed() != newP.seed() ||
+            oldP.octaves() != newP.octaves() ||
+            Float.compare(oldP.scale(), newP.scale()) != 0 ||
+            Double.compare(oldP.falloff(), newP.falloff()) != 0 ||
+            Double.compare(oldP.waterLevel(), newP.waterLevel()) != 0 ||
+            Double.compare(oldP.temperatureBias(), newP.temperatureBias()) != 0 ||
+            Double.compare(oldP.rainfallBias(), newP.rainfallBias()) != 0) {
+            return 0;
+        }
+        
+        // Hydrology dependencies. Hydrology carves into terrain elevation, 
+        // so we must rerun TerrainPass (0) if hydrology settings change.
+        if (oldP.enableRivers() != newP.enableRivers() ||
+            oldP.enableLakes() != newP.enableLakes() ||
+            Double.compare(oldP.riverDensityPercent(), newP.riverDensityPercent()) != 0 ||
+            Double.compare(oldP.lakeSizePercent(), newP.lakeSizePercent()) != 0 ||
+            oldP.customMinLakeArea() != newP.customMinLakeArea()) {
+            return 0; 
+        }
+        
+        // Kingdom dependencies -> start at KingdomPass (2)
+        if (oldP.kingdomCount() != newP.kingdomCount() ||
+            oldP.lloydPasses() != newP.lloydPasses()) {
+            return 2;
+        }
+        
+        // POI dependencies -> start at POIPass (3)
+        if (Double.compare(oldP.dungeonDensity(), newP.dungeonDensity()) != 0 ||
+            Double.compare(oldP.landmarkDensity(), newP.landmarkDensity()) != 0 ||
+            Double.compare(oldP.settlementDensity(), newP.settlementDensity()) != 0) {
+            return 3;
+        }
+        
+        // If exact same parameters, skip generation
+        return passes.size();
     }
 
     public void generateLOD(MapGrid lodGrid, int seed, int octaves, float scale,
