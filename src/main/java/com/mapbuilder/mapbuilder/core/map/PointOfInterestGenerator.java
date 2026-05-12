@@ -267,7 +267,7 @@ public class PointOfInterestGenerator {
      * Select a random settlement type (VILLAGE, CASTLE, CAVE, or RUIN).
      */
     private static POIType selectSettlementType(Random rand) {
-        POIType[] types = {POIType.VILLAGE, POIType.CASTLE, POIType.CAVE, POIType.RUIN};
+        POIType[] types = {POIType.VILLAGE, POIType.VILLAGE, POIType.VILLAGE, POIType.CASTLE};
         return types[rand.nextInt(types.length)];
     }
     
