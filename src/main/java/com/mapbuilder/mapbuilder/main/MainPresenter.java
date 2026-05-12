@@ -261,28 +261,7 @@ public class MainPresenter {
      * Regenerates only POIs without affecting terrain, hydrology, or kingdoms.
      */
     private void generatePOIsOnly() {
-        MapGrid grid = model.getCurrentGrid();
-        if (grid == null) return;
-        
-        int parsedSeed;
-        try {
-            parsedSeed = Integer.parseInt(view.getSeedField().getText());
-        } catch (NumberFormatException e) {
-            parsedSeed = view.getSeedField().getText().hashCode();
-        }
-        
-        double dungeonDensity = view.getDungeonDensitySlider().getValue();
-        double settlementDensity = view.getSettlementDensitySlider().getValue();
-        
-        // Regenerate POIs with current density settings using PointOfInterestGenerator
-        grid.setPointsOfInterest(
-            com.mapbuilder.mapbuilder.core.map.PointOfInterestGenerator.generatePointsOfInterest(
-                grid, parsedSeed, dungeonDensity, 0.0, settlementDensity
-            )
-        );
-        
-        // Re-render the map with new POIs
-        renderMap();
+        triggerGeneration();
     }
 
     private void triggerGeneration() {
