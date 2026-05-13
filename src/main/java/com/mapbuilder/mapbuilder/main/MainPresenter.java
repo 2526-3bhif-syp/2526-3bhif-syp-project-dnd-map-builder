@@ -398,7 +398,9 @@ public class MainPresenter {
         }
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, canvasW, canvasH);
+        // Fill out-of-bounds space with DEEP_OCEAN color
+        gc.setFill(javafx.scene.paint.Color.web("#00008B"));
+        gc.fillRect(0, 0, canvasW, canvasH);
         
         // Determine active image: cached LOD image or base map image fallback
         LodRegion region = computeRequiredLOD(canvasW, canvasH, baseGrid);
@@ -423,8 +425,25 @@ public class MainPresenter {
             sourceH = canvasH / pixelsPerCell;
         }
 
-        // Draw hardware-accelerated image
-        gc.drawImage(activeImage, sourceX, sourceY, sourceW, sourceH, 0, 0, canvasW, canvasH);
+        double imgW = activeImage.getWidth();
+        double imgH = activeImage.getHeight();
+
+        // Calculate intersection to avoid stretching artifacts
+        double intersectX = Math.max(0, sourceX);
+        double intersectY = Math.max(0, sourceY);
+        double intersectW = Math.min(imgW - intersectX, sourceW - (intersectX - sourceX));
+        double intersectH = Math.min(imgH - intersectY, sourceH - (intersectY - sourceY));
+
+        if (intersectW > 0 && intersectH > 0) {
+            // Map cropped source coordinates to destination coordinates
+            double destX = (intersectX - sourceX) * (canvasW / sourceW);
+            double destY = (intersectY - sourceY) * (canvasH / sourceH);
+            double destW = intersectW * (canvasW / sourceW);
+            double destH = intersectH * (canvasH / sourceH);
+
+            // Draw hardware-accelerated image properly cropped
+            gc.drawImage(activeImage, intersectX, intersectY, intersectW, intersectH, destX, destY, destW, destH);
+        }
         
         renderPOIs();
         renderLabels();
@@ -659,7 +678,7 @@ public class MainPresenter {
 
     private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay) {
         if (cx < 0 || cx >= grid.getWidth() || cy < 0 || cy >= grid.getHeight()) {
-            return 0xFF333333;
+            return 0xFF00008B;
         }
         MapCell cell = grid.getCell(cx, cy);
         int color = cell.getMixedColorARGB();
