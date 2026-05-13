@@ -15,6 +15,7 @@
 - 21.4.26 - 45 Minutes - Kingdom generation and border rendering
 - 27.4.26 - 2 Hours - POI generation and rendering
 - 28.4.26 - 30 min - POI algorithm fixes
+- 12.5.26 - 1 Hour - Generation Algorithm refactor and improvements
 
 # Nico
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
