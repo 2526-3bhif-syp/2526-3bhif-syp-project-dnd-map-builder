@@ -56,6 +56,7 @@ public class MainView extends AnchorPane {
     
     private Slider dungeonDensitySlider;
     private Slider settlementDensitySlider;
+    private Slider ruinCastleDensitySlider;
     
     private POIListPanel poiListPanel;
 
@@ -210,7 +211,7 @@ public class MainView extends AnchorPane {
         poisContent.setPadding(new Insets(10, 0, 10, 0));
 
         // Dungeon Density Slider
-        dungeonDensitySlider = new Slider(0.0, 1.0, 0.5);
+        dungeonDensitySlider = new Slider(0.0, 1.0, 0.3);
         dungeonDensitySlider.setShowTickMarks(true);
         dungeonDensitySlider.setShowTickLabels(true);
         dungeonDensitySlider.setMajorTickUnit(0.5);
@@ -218,16 +219,25 @@ public class MainView extends AnchorPane {
         dungeonDensitySlider.setSnapToTicks(true);
 
         // Settlement Density Slider
-        settlementDensitySlider = new Slider(0.0, 1.0, 0.4);
+        settlementDensitySlider = new Slider(0.0, 1.0, 0.3);
         settlementDensitySlider.setShowTickMarks(true);
         settlementDensitySlider.setShowTickLabels(true);
         settlementDensitySlider.setMajorTickUnit(0.5);
         settlementDensitySlider.setMinorTickCount(4);
         settlementDensitySlider.setSnapToTicks(true);
 
+        // Ruin & Castle Density Slider
+        ruinCastleDensitySlider = new Slider(0.0, 1.0, 0.3);
+        ruinCastleDensitySlider.setShowTickMarks(true);
+        ruinCastleDensitySlider.setShowTickLabels(true);
+        ruinCastleDensitySlider.setMajorTickUnit(0.5);
+        ruinCastleDensitySlider.setMinorTickCount(4);
+        ruinCastleDensitySlider.setSnapToTicks(true);
+
         poisContent.getChildren().addAll(
                 new Label("Dungeon Density"), dungeonDensitySlider,
                 new Label("Settlement Density"), settlementDensitySlider,
+                new Label("Ruin & Castle Density"), ruinCastleDensitySlider,
                 new Separator(),
                 new Label("Points of Interest")
         );
@@ -509,6 +519,7 @@ public class MainView extends AnchorPane {
     
     public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
     public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
+    public Slider getRuinCastleDensitySlider() { return ruinCastleDensitySlider; }
     
     public POIListPanel getPOIListPanel() { return poiListPanel; }
 }

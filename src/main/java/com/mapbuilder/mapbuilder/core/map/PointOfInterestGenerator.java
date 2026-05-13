@@ -36,24 +36,25 @@ public class PointOfInterestGenerator {
      * @param grid The MapGrid to generate POIs for
      * @param seed Random seed for deterministic generation
      * @param dungeonDensity Dungeon density multiplier (0.0–1.0)
-     * @param landmarkDensity Landmark density multiplier (0.0–1.0)
+     * @param ruinCastleDensity Landmark density multiplier (0.0–1.0)
      * @param settlementDensity Settlement density multiplier (0.0–1.0)
      * @return List of generated PointOfInterest objects
      */
     public static List<PointOfInterest> generatePointsOfInterest(
-            MapGrid grid, int seed, double dungeonDensity, double landmarkDensity, double settlementDensity) {
+            MapGrid grid, int seed, double dungeonDensity, double ruinCastleDensity, double settlementDensity) {
         
         List<PointOfInterest> pois = new ArrayList<>();
         AtomicInteger idCounter = new AtomicInteger(0);
         
         // Clamp density values to valid range (Rule 2: input validation)
         dungeonDensity = Math.max(0.0, Math.min(1.0, dungeonDensity));
-        landmarkDensity = Math.max(0.0, Math.min(1.0, landmarkDensity));
+        ruinCastleDensity = Math.max(0.0, Math.min(1.0, ruinCastleDensity));
         settlementDensity = Math.max(0.0, Math.min(1.0, settlementDensity));
         
-        // Generate in order: cities, dungeons, settlements
+        // Generate in order: cities, dungeons, ruins/castles, settlements
         addKingdomCities(pois, grid, seed, idCounter);
-        addDungeonAndRuins(pois, grid, seed, dungeonDensity, idCounter);
+        addDungeonsAndCaves(pois, grid, seed, dungeonDensity, idCounter);
+        addRuinsAndCastles(pois, grid, seed, ruinCastleDensity, idCounter);
         addSettlements(pois, grid, seed, settlementDensity, idCounter);
         
         return pois;
@@ -95,14 +96,14 @@ public class PointOfInterestGenerator {
     }
 
     /**
-     * D-04: Place DUNGEON/RUIN at multi-kingdom borders and high caves.
+     * D-04: Place DUNGEON/CAVE at multi-kingdom borders and high caves.
      * Uses grid area and dungeonDensity to calculate count.
      */
-    private static void addDungeonAndRuins(
+    private static void addDungeonsAndCaves(
             List<PointOfInterest> pois, MapGrid grid, int seed, double dungeonDensity, AtomicInteger idCounter) {
         
-        int baseCount = (int) (grid.getWidth() * grid.getHeight() * dungeonDensity * 0.0005);
-        int targetCount = Math.max(0, baseCount);
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * dungeonDensity * 0.0001);
+        if (targetCount <= 0 && dungeonDensity > 0.0) targetCount = 1;
         if (targetCount <= 0) return;
         
         Random rand = new Random(seed + 1001);
@@ -139,7 +140,7 @@ public class PointOfInterestGenerator {
                     
                     if (cell != null && isDungeonLocation(grid, cell)) {
                         String dungeonName = "Dungeon_" + placed;
-                        POIType type = rand.nextBoolean() ? POIType.DUNGEON : POIType.RUIN;
+                        POIType type = rand.nextBoolean() ? POIType.DUNGEON : POIType.CAVE;
                         
                         PointOfInterest dungeon = new PointOfInterest(
                             idCounter.getAndIncrement(),
@@ -149,6 +150,58 @@ public class PointOfInterestGenerator {
                             "dungeon_border_cave"
                         );
                         pois.add(dungeon);
+                        placed++;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * D-05: Place RUIN/CASTLE scattered.
+     */
+    private static void addRuinsAndCastles(
+            List<PointOfInterest> pois, MapGrid grid, int seedValue, double ruinCastleDensity, AtomicInteger idCounter) {
+        
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * ruinCastleDensity * 0.0001);
+        if (targetCount <= 0 && ruinCastleDensity > 0.0) targetCount = 1;
+        if (targetCount <= 0) return;
+        
+        Random rand = new Random(seedValue + 1005);
+        int margin = 10;
+        
+        int gridSize = (int) Math.ceil(Math.sqrt(targetCount * 4));
+        int quadrantWidth = grid.getWidth() / gridSize;
+        int quadrantHeight = grid.getHeight() / gridSize;
+        
+        int placed = 0;
+        for (int gx = 0; gx < gridSize && placed < targetCount; gx++) {
+            for (int gy = 0; gy < gridSize && placed < targetCount; gy++) {
+                int minX = Math.max(gx * quadrantWidth + margin, margin);
+                int maxX = Math.min(((gx + 1) * quadrantWidth) - margin, grid.getWidth() - margin - 1);
+                int minY = Math.max(gy * quadrantHeight + margin, margin);
+                int maxY = Math.min(((gy + 1) * quadrantHeight) - margin, grid.getHeight() - margin - 1);
+                
+                if (maxX <= minX || maxY <= minY) continue;
+                
+                for (int attempt = 0; attempt < 20; attempt++) {
+                    int x = minX + rand.nextInt(maxX - minX + 1);
+                    int y = minY + rand.nextInt(maxY - minY + 1);
+                    MapCell cell = grid.getCell(x, y);
+                    
+                    if (cell != null && isHabitableBiome(cell.getBiome())) {
+                        String name = "Ruin_" + placed;
+                        POIType type = rand.nextBoolean() ? POIType.RUIN : POIType.CASTLE;
+                        
+                        PointOfInterest poi = new PointOfInterest(
+                            idCounter.getAndIncrement(),
+                            x, y,
+                            type,
+                            name,
+                            "ruin_scattered"
+                        );
+                        pois.add(poi);
                         placed++;
                         break;
                     }
@@ -207,9 +260,9 @@ public class PointOfInterestGenerator {
     private static void addSettlements(
             List<PointOfInterest> pois, MapGrid grid, int seedValue, double settlementDensity, AtomicInteger idCounter) {
         
-        // Density is already 0.0-1.0, multiply directly (not by 1/100)
-        // Use 0.00005 multiplier for sparse distribution
-        int targetCount = (int) (grid.getWidth() * grid.getHeight() * settlementDensity * 0.00005);
+        // Use 0.0002 multiplier for sparse distribution. Use ceil to ensure at least 1 at max density for small grids.
+        int targetCount = (int) Math.ceil(grid.getWidth() * grid.getHeight() * settlementDensity * 0.0002);
+        if (targetCount <= 0 && settlementDensity > 0.0) targetCount = 1;
         if (targetCount <= 0) return;  // Allow zero settlements at zero density
         
         Random rand = new Random(seedValue + 1003);
@@ -264,11 +317,10 @@ public class PointOfInterestGenerator {
     }
     
     /**
-     * Select a random settlement type (VILLAGE, CASTLE, CAVE, or RUIN).
+     * Select a random settlement type (VILLAGE only).
      */
     private static POIType selectSettlementType(Random rand) {
-        POIType[] types = {POIType.VILLAGE, POIType.CASTLE, POIType.CAVE, POIType.RUIN};
-        return types[rand.nextInt(types.length)];
+        return POIType.VILLAGE;
     }
     
     /**

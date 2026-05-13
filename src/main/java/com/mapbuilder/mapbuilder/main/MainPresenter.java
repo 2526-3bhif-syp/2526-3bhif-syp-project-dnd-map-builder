@@ -243,6 +243,9 @@ public class MainPresenter {
         view.getSettlementDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
             poiDebounce.playFromStart();
         });
+        view.getRuinCastleDensitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            poiDebounce.playFromStart();
+        });
     }
     
     private void regenerateImages() {
@@ -261,28 +264,7 @@ public class MainPresenter {
      * Regenerates only POIs without affecting terrain, hydrology, or kingdoms.
      */
     private void generatePOIsOnly() {
-        MapGrid grid = model.getCurrentGrid();
-        if (grid == null) return;
-        
-        int parsedSeed;
-        try {
-            parsedSeed = Integer.parseInt(view.getSeedField().getText());
-        } catch (NumberFormatException e) {
-            parsedSeed = view.getSeedField().getText().hashCode();
-        }
-        
-        double dungeonDensity = view.getDungeonDensitySlider().getValue();
-        double settlementDensity = view.getSettlementDensitySlider().getValue();
-        
-        // Regenerate POIs with current density settings using PointOfInterestGenerator
-        grid.setPointsOfInterest(
-            com.mapbuilder.mapbuilder.core.map.PointOfInterestGenerator.generatePointsOfInterest(
-                grid, parsedSeed, dungeonDensity, 0.0, settlementDensity
-            )
-        );
-        
-        // Re-render the map with new POIs
-        renderMap();
+        triggerGeneration();
     }
 
     private void triggerGeneration() {
@@ -335,12 +317,13 @@ public class MainPresenter {
             protected Void call() {
                 // Read POI density parameters from sliders
                 double dungeonDensity = view.getDungeonDensitySlider().getValue();
+                double ruinCastleDensity = view.getRuinCastleDensitySlider().getValue();
                 double settlementDensity = view.getSettlementDensitySlider().getValue();
                 
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
                                   kingdomCount, lloydPasses,
-                                  dungeonDensity, 0.0, settlementDensity);
+                                  dungeonDensity, ruinCastleDensity, settlementDensity);
                 return null;
             }
         };

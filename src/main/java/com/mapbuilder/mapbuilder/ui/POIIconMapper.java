@@ -91,11 +91,11 @@ public class POIIconMapper {
     private static int getTypeIndex(POIType type) {
         switch (type) {
             case CITY:       return 0;
-            case DUNGEON:    return 1;
-            case RUIN:       return 2;
-            case VILLAGE:    return 3;
-            case CASTLE:     return 4;
-            case CAVE:       return 5;
+            case VILLAGE:    return 1;
+            case CASTLE:     return 2;
+            case DUNGEON:    return 3;
+            case CAVE:       return 4;
+            case RUIN:       return 5;
             default:
                 // For any future types, cycle through remaining indices
                 return 6;

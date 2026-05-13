@@ -53,3 +53,13 @@
   - Implement theme/style switching mechanism.
   - Test across Windows, macOS, and Linux.
   - Final bug fixes and performance optimization.
+
+## Phase 7: Refactor Generation Algorithm
+- **Goal:** Split `MapGenerator` into multiple passes.
+- **Plans:** 1 plans
+  - [x] 07-refactor-generation-algorithm-01-PLAN.md — Refactor generation into separate passes.
+- **Tasks:**
+  - Create `GenerationParameters` record.
+  - Create `MapGenerationPass` interface.
+  - Implement `TerrainPass`, `HydrologyPass`, `KingdomPass`, and `POIPass`.
+  - Refactor `MapGenerator` to use passes.
