@@ -45,6 +45,9 @@ public class MainPresenter {
     private double viewOffsetY = 0;
     private double pixelsPerCell = 1.0;
 
+    // Label node cache — reuse nodes across renders
+    private final Map<com.mapbuilder.mapbuilder.core.map.MapLabel, javafx.scene.text.Text> labelNodeCache = new java.util.IdentityHashMap<>();
+
     // Image Caching
     private WritableImage baseMapImage;
     private final Map<LodGridCache.Key, WritableImage> lodImageCache = new HashMap<>();
@@ -452,35 +455,43 @@ public class MainPresenter {
 
     private void renderLabels() {
         javafx.scene.Group canvasGroup = view.getCanvasGroup();
-        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.layout.StackPane);
+        java.util.List<com.mapbuilder.mapbuilder.core.map.MapLabel> labels = model.getLabels();
 
-        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : model.getLabels()) {
-            javafx.scene.text.Text textNode = new javafx.scene.text.Text(label.getText());
-            textNode.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
-            textNode.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
+        // Evict cache entries for deleted labels
+        java.util.IdentityHashMap<com.mapbuilder.mapbuilder.core.map.MapLabel, ?> alive = new java.util.IdentityHashMap<>();
+        labels.forEach(l -> alive.put(l, null));
+        labelNodeCache.keySet().retainAll(alive.keySet());
+        canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.text.Text);
 
-            javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
-            glow.setRadius(5.0);
-            glow.setSpread(0.8);
-            glow.setOffsetX(0);
-            glow.setOffsetY(0);
-            glow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 1.0));
-            textNode.setEffect(glow);
+        for (com.mapbuilder.mapbuilder.core.map.MapLabel label : labels) {
+            javafx.scene.text.Text textNode = labelNodeCache.computeIfAbsent(label, l -> {
+                javafx.scene.text.Text t = new javafx.scene.text.Text(l.getText());
+                t.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 16));
+                t.setFill(javafx.scene.paint.Color.web("#FFFFFF"));
 
-            javafx.scene.layout.StackPane labelContainer = new javafx.scene.layout.StackPane(textNode);
-            labelContainer.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-background-radius: 12px; -fx-padding: 4px 10px;");
+                javafx.scene.effect.DropShadow shadow = new javafx.scene.effect.DropShadow();
+                shadow.setRadius(8.0);
+                shadow.setSpread(0.4);
+                shadow.setOffsetX(1);
+                shadow.setOffsetY(1);
+                shadow.setColor(javafx.scene.paint.Color.color(0, 0, 0, 0.85));
+                t.setEffect(shadow);
+
+                t.setMouseTransparent(true);
+                return t;
+            });
+
+            textNode.setText(label.getText());
 
             double screenX = (label.getX() - viewOffsetX) * pixelsPerCell;
             double screenY = (label.getY() - viewOffsetY) * pixelsPerCell;
 
-            labelContainer.setLayoutX(screenX);
-            labelContainer.setLayoutY(screenY);
+            textNode.setX(screenX - textNode.getLayoutBounds().getWidth() / 2);
+            textNode.setY(screenY + textNode.getLayoutBounds().getHeight() / 4);
 
-            labelContainer.translateXProperty().bind(labelContainer.widthProperty().divide(-2));
-            labelContainer.translateYProperty().bind(labelContainer.heightProperty().divide(-2));
-
-            labelContainer.setMouseTransparent(true);
-            canvasGroup.getChildren().add(labelContainer);
+            if (!canvasGroup.getChildren().contains(textNode)) {
+                canvasGroup.getChildren().add(textNode);
+            }
         }
     }
 
