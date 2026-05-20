@@ -5,6 +5,7 @@
 - 8.4.26 - 1 Hour - Clean up codebase and work on resolving merge conflicts
 - 28.4.26 - 2 Hours - Add custom sprites
 - 29.4.26 - 1 Hour - Rework ui to make all the dialogues match the theme
+- 20.5.26 - 30 Minutes - Fixed label rendering
 
 # Almir
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
