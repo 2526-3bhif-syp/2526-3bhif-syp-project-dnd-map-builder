@@ -27,4 +27,7 @@
 
 # Ali
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
+- 21.5.26 - 1 Hour - Implemented basic Map Labels (create, edit, delete, drag-and-drop)
+- 21.5.26 - 1 Hour - Fixed map label rendering issues with the new LOD viewport system
+- 21.5.26 - 30 Minutes - Added confirmation dialog for deletion and reviewed PR #39
 
