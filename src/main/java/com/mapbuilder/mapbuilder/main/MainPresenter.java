@@ -1,5 +1,6 @@
 package com.mapbuilder.mapbuilder.main;
 
+import com.mapbuilder.mapbuilder.core.map.Kingdom;
 import com.mapbuilder.mapbuilder.core.map.LodGridCache;
 import com.mapbuilder.mapbuilder.core.map.LodLevel;
 import com.mapbuilder.mapbuilder.core.map.LodRegion;
@@ -9,6 +10,7 @@ import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
 import com.mapbuilder.mapbuilder.ui.POIEditorDialog;
 import com.mapbuilder.mapbuilder.ui.POIIconMapper;
+import com.mapbuilder.mapbuilder.ui.ProvinceListPanel;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -58,6 +60,10 @@ public class MainPresenter {
     private final MapGenerator lodGenerator = new MapGenerator();
     private LodLevel activeLodLevel = LodLevel.LOD_0;
 
+    // Province editing
+    private boolean provincePaintMode = false;
+    private Kingdom selectedPaintKingdom = null;
+
     public MainPresenter() {
         this.model = new MainModel();
         this.debounce = new PauseTransition(Duration.millis(300));
@@ -69,6 +75,7 @@ public class MainPresenter {
     public void setView(MainView view) {
         this.view = view;
         view.getPOIListPanel().setPresenter(this);
+        view.getProvinceListPanel().setPresenter(this);
         bind();
         triggerGeneration();
     }
@@ -89,6 +96,12 @@ public class MainPresenter {
         
         view.getCanvasContainer().setOnMousePressed(event -> {
             view.getCanvasContainer().requestFocus();
+            // Province paint mode — paint cells on press
+            if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                paintCellsAtScreen(event.getX(), event.getY());
+                event.consume();
+                return;
+            }
             if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                 double x = event.getX();
                 double y = event.getY();
@@ -104,6 +117,12 @@ public class MainPresenter {
         });
         
         view.getCanvasContainer().setOnMouseDragged(event -> {
+            // Province paint mode — paint cells while dragging
+            if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                paintCellsAtScreen(event.getX(), event.getY());
+                event.consume();
+                return;
+            }
             if (draggedLabel != null) {
                 double worldX = viewOffsetX + event.getX() / pixelsPerCell;
                 double worldY = viewOffsetY + event.getY() / pixelsPerCell;
@@ -155,7 +174,7 @@ public class MainPresenter {
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
 
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 2 && !provincePaintMode) {
                 if (clickedLabel != null) {
                     final com.mapbuilder.mapbuilder.core.map.MapLabel finalLabel = clickedLabel;
                     if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
@@ -190,10 +209,25 @@ public class MainPresenter {
                 if (clickedLabel != null) {
                      confirmAndRemoveLabel(clickedLabel);
                 }
+            } else if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY
+                    && event.getClickCount() == 1 && !provincePaintMode) {
+                // Single left-click in normal mode: select the province under the cursor
+                if (clickedLabel == null) {
+                    Kingdom k = getKingdomAtScreen(x, y);
+                    if (k != null) setSelectedKingdom(k);
+                }
             }
         });
         
         setupPOIDensityListeners();
+
+        // Province paint mode toggle
+        view.getProvincePaintToggle().selectedProperty().addListener((obs, oldV, newV) -> {
+            provincePaintMode = newV;
+            view.getCanvasContainer().setCursor(
+                    newV ? javafx.scene.Cursor.CROSSHAIR : javafx.scene.Cursor.DEFAULT);
+            if (!newV) selectedPaintKingdom = null;
+        });
     }
 
     private com.mapbuilder.mapbuilder.core.map.MapLabel getLabelAt(double screenX, double screenY) {
@@ -451,6 +485,7 @@ public class MainPresenter {
         renderPOIs();
         renderLabels();
         view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
+        view.getProvinceListPanel().updateProvinceList(baseGrid.getKingdoms());
     }
 
     private void renderLabels() {
@@ -906,5 +941,69 @@ public class MainPresenter {
         grid.removePointOfInterest(poi.getId());
         renderMap();
     }
-}
 
+    // ── Province Editing ─────────────────────────────────────────────────────
+
+    /**
+     * Called by {@link com.mapbuilder.mapbuilder.ui.ProvinceListPanel} whenever a
+     * province colour is changed via the inline {@code ColorPicker}.
+     * Rebuilds the cached map image so the new colour is immediately visible.
+     */
+    public void onProvinceColorChanged() {
+        regenerateImages();
+    }
+
+    /**
+     * Marks {@code kingdom} as the province to paint and highlights it in the
+     * province list panel.
+     */
+    public void setSelectedKingdom(Kingdom kingdom) {
+        selectedPaintKingdom = kingdom;
+        view.getProvinceListPanel().selectKingdom(kingdom);
+    }
+
+    /**
+     * Returns the {@link Kingdom} whose territory covers the given screen
+     * position, or {@code null} if the position is over water or outside the map.
+     */
+    private Kingdom getKingdomAtScreen(double screenX, double screenY) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return null;
+        int cx = (int) (viewOffsetX + screenX / pixelsPerCell);
+        int cy = (int) (viewOffsetY + screenY / pixelsPerCell);
+        MapCell cell = grid.getCell(cx, cy);
+        return cell != null ? cell.getKingdom() : null;
+    }
+
+    /**
+     * Paints all land cells within the brush radius around the given screen
+     * position to {@link #selectedPaintKingdom}.
+     * Only land cells (elevation > waterLevel) are reassigned.
+     */
+    private void paintCellsAtScreen(double screenX, double screenY) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null || selectedPaintKingdom == null) return;
+
+        double waterLevel = view.getWaterLevelSlider().getValue();
+        int cx = (int) (viewOffsetX + screenX / pixelsPerCell);
+        int cy = (int) (viewOffsetY + screenY / pixelsPerCell);
+        int radius = (int) view.getBrushSizeSlider().getValue();
+
+        boolean changed = false;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                if (dx * dx + dy * dy <= radius * radius) {
+                    MapCell cell = grid.getCell(cx + dx, cy + dy);
+                    if (cell != null && cell.getElevation() > waterLevel) {
+                        cell.setKingdom(selectedPaintKingdom);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if (changed) {
+            regenerateImages();
+        }
+    }
+}
