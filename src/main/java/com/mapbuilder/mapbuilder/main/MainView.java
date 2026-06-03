@@ -213,8 +213,6 @@ public class MainView extends AnchorPane {
         kingdomsTab.setContent(kingdomsContent);
 
         // ── Province Editing section (added to same kingdoms VBox) ──────────
-        Label provSepLabel = new Label("\u2500\u2500 Province Editing \u2500\u2500");
-        provSepLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px;");
 
         provincePaintToggle = new ToggleButton("\uD83C\uDFA8  Province Paint Mode");
         provincePaintToggle.setId("province-paint-toggle");
@@ -244,7 +242,6 @@ public class MainView extends AnchorPane {
 
         kingdomsContent.getChildren().addAll(
                 new Separator(),
-                provSepLabel,
                 provincePaintToggle,
                 selectedProvinceBox,
                 brushSizeLabel, brushSizeSlider,
