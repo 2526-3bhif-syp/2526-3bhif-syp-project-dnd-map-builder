@@ -63,6 +63,8 @@ public class MainPresenter {
     // Province editing
     private boolean provincePaintMode = false;
     private Kingdom selectedPaintKingdom = null;
+    private double lastPaintX = -1;
+    private double lastPaintY = -1;
 
     public MainPresenter() {
         this.model = new MainModel();
@@ -98,6 +100,8 @@ public class MainPresenter {
             view.getCanvasContainer().requestFocus();
             // Province paint mode — paint cells on press
             if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                lastPaintX = event.getX();
+                lastPaintY = event.getY();
                 paintCellsAtScreen(event.getX(), event.getY());
                 event.consume();
                 return;
@@ -119,7 +123,13 @@ public class MainPresenter {
         view.getCanvasContainer().setOnMouseDragged(event -> {
             // Province paint mode — paint cells while dragging
             if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
-                paintCellsAtScreen(event.getX(), event.getY());
+                if (lastPaintX >= 0 && lastPaintY >= 0) {
+                    paintCellsBetweenScreen(lastPaintX, lastPaintY, event.getX(), event.getY());
+                } else {
+                    paintCellsAtScreen(event.getX(), event.getY());
+                }
+                lastPaintX = event.getX();
+                lastPaintY = event.getY();
                 event.consume();
                 return;
             }
@@ -995,13 +1005,55 @@ public class MainPresenter {
                 if (dx * dx + dy * dy <= radius * radius) {
                     MapCell cell = grid.getCell(cx + dx, cy + dy);
                     if (cell != null && cell.getElevation() > waterLevel) {
-                        cell.setKingdom(selectedPaintKingdom);
-                        changed = true;
+                        if (cell.getKingdom() != selectedPaintKingdom) {
+                            cell.setKingdom(selectedPaintKingdom);
+                            changed = true;
+                        }
                     }
                 }
             }
         }
 
+        if (changed) {
+            regenerateImages();
+        }
+    }
+
+    private void paintCellsBetweenScreen(double x0, double y0, double x1, double y1) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null || selectedPaintKingdom == null) return;
+
+        double waterLevel = view.getWaterLevelSlider().getValue();
+        int radius = (int) view.getBrushSizeSlider().getValue();
+        
+        double dist = Math.hypot(x1 - x0, y1 - y0);
+        // Paint every pixel cell step to ensure no gaps
+        int steps = (int) Math.max(1, dist / (pixelsPerCell * Math.max(0.5, radius * 0.5)));
+        
+        boolean changed = false;
+        for (int i = 0; i <= steps; i++) {
+            double t = (double) i / steps;
+            double sx = x0 + t * (x1 - x0);
+            double sy = y0 + t * (y1 - y0);
+            
+            int cx = (int) (viewOffsetX + sx / pixelsPerCell);
+            int cy = (int) (viewOffsetY + sy / pixelsPerCell);
+            
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        MapCell cell = grid.getCell(cx + dx, cy + dy);
+                        if (cell != null && cell.getElevation() > waterLevel) {
+                            if (cell.getKingdom() != selectedPaintKingdom) {
+                                cell.setKingdom(selectedPaintKingdom);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         if (changed) {
             regenerateImages();
         }
