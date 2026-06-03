@@ -1,6 +1,7 @@
 package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.ui.POIListPanel;
+import com.mapbuilder.mapbuilder.ui.ProvinceListPanel;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -59,6 +60,11 @@ public class MainView extends AnchorPane {
     private Slider ruinCastleDensitySlider;
     
     private POIListPanel poiListPanel;
+
+    // Province editing
+    private ProvinceListPanel provinceListPanel;
+    private ToggleButton provincePaintToggle;
+    private Slider brushSizeSlider;
 
     public MainView() {
         setupCanvasContainer();
@@ -202,6 +208,37 @@ public class MainView extends AnchorPane {
                 enableKingdomOverlayToggle
         );
         kingdomsTab.setContent(kingdomsContent);
+
+        // ── Province Editing section (added to same kingdoms VBox) ──────────
+        Label provSepLabel = new Label("\u2500\u2500 Province Editing \u2500\u2500");
+        provSepLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px;");
+
+        provincePaintToggle = new ToggleButton("\uD83C\uDFA8  Province Paint Mode");
+        provincePaintToggle.setMaxWidth(Double.MAX_VALUE);
+
+        Label brushSizeLabel = new Label("Brush Size");
+        brushSizeLabel.setStyle("-fx-text-fill: white;");
+        brushSizeSlider = new Slider(1, 15, 3);
+        brushSizeSlider.setShowTickMarks(true);
+        brushSizeSlider.setShowTickLabels(true);
+        brushSizeSlider.setMajorTickUnit(7);
+        brushSizeSlider.setMinorTickCount(6);
+
+        Label provListTitle = new Label("Provinces");
+        provListTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
+        provinceListPanel = new ProvinceListPanel(null);
+        VBox.setVgrow(provinceListPanel, Priority.ALWAYS);
+
+        kingdomsContent.getChildren().addAll(
+                new Separator(),
+                provSepLabel,
+                provincePaintToggle,
+                brushSizeLabel, brushSizeSlider,
+                new Separator(),
+                provListTitle,
+                provinceListPanel
+        );
 
         // Create POIs Tab
         Tab poisTab = new Tab("POIs");
@@ -522,4 +559,8 @@ public class MainView extends AnchorPane {
     public Slider getRuinCastleDensitySlider() { return ruinCastleDensitySlider; }
     
     public POIListPanel getPOIListPanel() { return poiListPanel; }
+
+    public ToggleButton getProvincePaintToggle()    { return provincePaintToggle; }
+    public Slider       getBrushSizeSlider()        { return brushSizeSlider; }
+    public ProvinceListPanel getProvinceListPanel() { return provinceListPanel; }
 }
