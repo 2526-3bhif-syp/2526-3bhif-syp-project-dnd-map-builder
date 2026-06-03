@@ -85,7 +85,10 @@ public class ProvinceListPanel extends VBox {
                     Color c = picker.getValue();
                     k.setColorARGB(fxToArgb(c));
                     swatch.setFill(c);
-                    if (presenter != null) presenter.onProvinceColorChanged();
+                    if (presenter != null) {
+                        presenter.onProvinceColorChanged();
+                        presenter.setSelectedKingdom(k);
+                    }
                 });
 
                 row.getChildren().addAll(swatch, nameLabel, picker);
@@ -113,6 +116,7 @@ public class ProvinceListPanel extends VBox {
                     if (!name.isBlank()) {
                         selected.setName(name.trim());
                         listView.refresh();
+                        presenter.setSelectedKingdom(selected);
                     }
                 });
             }
