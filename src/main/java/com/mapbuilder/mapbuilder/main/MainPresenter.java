@@ -236,7 +236,14 @@ public class MainPresenter {
             provincePaintMode = newV;
             view.getCanvasContainer().setCursor(
                     newV ? javafx.scene.Cursor.CROSSHAIR : javafx.scene.Cursor.DEFAULT);
-            if (!newV) selectedPaintKingdom = null;
+            if (!newV) setSelectedKingdom(null);
+        });
+
+        // Automatically turn off paint mode when leaving the Kingdoms tab
+        view.getKingdomsTab().selectedProperty().addListener((obs, oldV, newV) -> {
+            if (!newV) {
+                view.getProvincePaintToggle().setSelected(false);
+            }
         });
     }
 
@@ -970,6 +977,13 @@ public class MainPresenter {
     public void setSelectedKingdom(Kingdom kingdom) {
         selectedPaintKingdom = kingdom;
         view.getProvinceListPanel().selectKingdom(kingdom);
+        if (kingdom != null) {
+            view.getSelectedProvinceLabel().setText(kingdom.getName());
+            view.getSelectedProvinceColorBox().setFill(toFXColor(kingdom.getColorARGB()));
+        } else {
+            view.getSelectedProvinceLabel().setText("None");
+            view.getSelectedProvinceColorBox().setFill(javafx.scene.paint.Color.TRANSPARENT);
+        }
     }
 
     /**
@@ -1000,6 +1014,11 @@ public class MainPresenter {
         int radius = (int) view.getBrushSizeSlider().getValue();
 
         boolean changed = false;
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 if (dx * dx + dy * dy <= radius * radius) {
@@ -1007,6 +1026,10 @@ public class MainPresenter {
                     if (cell != null && cell.getElevation() > waterLevel) {
                         if (cell.getKingdom() != selectedPaintKingdom) {
                             cell.setKingdom(selectedPaintKingdom);
+                            minX = Math.min(minX, cx + dx);
+                            minY = Math.min(minY, cy + dy);
+                            maxX = Math.max(maxX, cx + dx);
+                            maxY = Math.max(maxY, cy + dy);
                             changed = true;
                         }
                     }
@@ -1015,7 +1038,7 @@ public class MainPresenter {
         }
 
         if (changed) {
-            regenerateImages();
+            updateImagePixels(minX, minY, maxX, maxY);
         }
     }
 
@@ -1031,6 +1054,11 @@ public class MainPresenter {
         int steps = (int) Math.max(1, dist / (pixelsPerCell * Math.max(0.5, radius * 0.5)));
         
         boolean changed = false;
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
         for (int i = 0; i <= steps; i++) {
             double t = (double) i / steps;
             double sx = x0 + t * (x1 - x0);
@@ -1046,6 +1074,10 @@ public class MainPresenter {
                         if (cell != null && cell.getElevation() > waterLevel) {
                             if (cell.getKingdom() != selectedPaintKingdom) {
                                 cell.setKingdom(selectedPaintKingdom);
+                                minX = Math.min(minX, cx + dx);
+                                minY = Math.min(minY, cy + dy);
+                                maxX = Math.max(maxX, cx + dx);
+                                maxY = Math.max(maxY, cy + dy);
                                 changed = true;
                             }
                         }
@@ -1055,7 +1087,30 @@ public class MainPresenter {
         }
         
         if (changed) {
-            regenerateImages();
+            updateImagePixels(minX, minY, maxX, maxY);
         }
+    }
+
+    private void updateImagePixels(int minX, int minY, int maxX, int maxY) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null || baseMapImage == null) return;
+        boolean showBorders = view.getEnableBordersToggle().isSelected();
+        boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
+        
+        // Expand bounding box slightly for borders
+        minX = Math.max(0, minX - 1);
+        minY = Math.max(0, minY - 1);
+        maxX = Math.min(grid.getWidth() - 1, maxX + 1);
+        maxY = Math.min(grid.getHeight() - 1, maxY + 1);
+        
+        PixelWriter writer = baseMapImage.getPixelWriter();
+        for (int cy = minY; cy <= maxY; cy++) {
+            for (int cx = minX; cx <= maxX; cx++) {
+                writer.setArgb(cx, cy, getColorAt(cx, cy, grid, showBorders, showOverlay));
+            }
+        }
+        // Invalidate LOD cache so zoomed-out views get the new pixels too
+        lodImageCache.clear();
+        renderMap();
     }
 }

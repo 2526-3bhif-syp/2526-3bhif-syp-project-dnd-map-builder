@@ -54,6 +54,7 @@ public class MainView extends AnchorPane {
     private CheckBox enableBordersToggle;
     private CheckBox enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
+    private Tab kingdomsTab;
     
     private Slider dungeonDensitySlider;
     private Slider settlementDensitySlider;
@@ -65,6 +66,8 @@ public class MainView extends AnchorPane {
     private ProvinceListPanel provinceListPanel;
     private ToggleButton provincePaintToggle;
     private Slider brushSizeSlider;
+    private Label selectedProvinceLabel;
+    private javafx.scene.shape.Rectangle selectedProvinceColorBox;
 
     public MainView() {
         setupCanvasContainer();
@@ -176,7 +179,7 @@ public class MainView extends AnchorPane {
         );
         hydrologyTab.setContent(hydrologyContent);
 
-        Tab kingdomsTab = new Tab("Kingdoms");
+        kingdomsTab = new Tab("Kingdoms");
         kingdomsTab.setClosable(false);
         kingdomsTab.setStyle("-fx-text-fill: white;");
         VBox kingdomsContent = new VBox(10);
@@ -217,6 +220,14 @@ public class MainView extends AnchorPane {
         provincePaintToggle.setId("province-paint-toggle");
         provincePaintToggle.setMaxWidth(Double.MAX_VALUE);
 
+        selectedProvinceLabel = new Label("Selected: None");
+        selectedProvinceLabel.setStyle("-fx-text-fill: white; -fx-font-style: italic;");
+        selectedProvinceColorBox = new javafx.scene.shape.Rectangle(12, 12, javafx.scene.paint.Color.TRANSPARENT);
+        selectedProvinceColorBox.setStroke(javafx.scene.paint.Color.WHITE);
+        HBox selectedProvinceBox = new HBox(5, new Label("Paint Target:"), selectedProvinceColorBox, selectedProvinceLabel);
+        selectedProvinceBox.setAlignment(Pos.CENTER_LEFT);
+        selectedProvinceBox.setStyle("-fx-text-fill: white;");
+
         Label brushSizeLabel = new Label("Brush Size");
         brushSizeLabel.setStyle("-fx-text-fill: white;");
         brushSizeSlider = new Slider(1, 15, 3);
@@ -235,6 +246,7 @@ public class MainView extends AnchorPane {
                 new Separator(),
                 provSepLabel,
                 provincePaintToggle,
+                selectedProvinceBox,
                 brushSizeLabel, brushSizeSlider,
                 new Separator(),
                 provListTitle,
@@ -562,6 +574,9 @@ public class MainView extends AnchorPane {
     public POIListPanel getPOIListPanel() { return poiListPanel; }
 
     public ToggleButton getProvincePaintToggle()    { return provincePaintToggle; }
+    public Tab getKingdomsTab()                     { return kingdomsTab; }
     public Slider       getBrushSizeSlider()        { return brushSizeSlider; }
     public ProvinceListPanel getProvinceListPanel() { return provinceListPanel; }
+    public Label getSelectedProvinceLabel()         { return selectedProvinceLabel; }
+    public javafx.scene.shape.Rectangle getSelectedProvinceColorBox() { return selectedProvinceColorBox; }
 }
