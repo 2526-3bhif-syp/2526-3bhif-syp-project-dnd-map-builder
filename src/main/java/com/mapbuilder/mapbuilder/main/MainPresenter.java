@@ -150,6 +150,11 @@ public class MainPresenter {
         });
         
         view.getCanvasContainer().setOnMouseReleased(event -> {
+            if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                lastPaintX = -1;
+                lastPaintY = -1;
+                annexEnclosedAreas();
+            }
             draggedLabel = null;
         });
 
@@ -1112,5 +1117,81 @@ public class MainPresenter {
         // Invalidate LOD cache so zoomed-out views get the new pixels too
         lodImageCache.clear();
         renderMap();
+    }
+
+    private void annexEnclosedAreas() {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null || selectedPaintKingdom == null) return;
+
+        int w = grid.getWidth();
+        int h = grid.getHeight();
+        boolean[][] reachesEdge = new boolean[w][h];
+        java.util.Queue<int[]> queue = new java.util.LinkedList<>();
+
+        // 1. Add all edge cells that are not selectedPaintKingdom
+        for (int x = 0; x < w; x++) {
+            if (grid.getCell(x, 0).getKingdom() != selectedPaintKingdom) {
+                reachesEdge[x][0] = true;
+                queue.add(new int[]{x, 0});
+            }
+            if (grid.getCell(x, h - 1).getKingdom() != selectedPaintKingdom) {
+                reachesEdge[x][h - 1] = true;
+                queue.add(new int[]{x, h - 1});
+            }
+        }
+        for (int y = 0; y < h; y++) {
+            if (grid.getCell(0, y).getKingdom() != selectedPaintKingdom) {
+                reachesEdge[0][y] = true;
+                queue.add(new int[]{0, y});
+            }
+            if (grid.getCell(w - 1, y).getKingdom() != selectedPaintKingdom) {
+                reachesEdge[w - 1][y] = true;
+                queue.add(new int[]{w - 1, y});
+            }
+        }
+
+        // 2. Flood fill
+        int[] dx = {-1, 1, 0, 0};
+        int[] dy = {0, 0, -1, 1};
+        while (!queue.isEmpty()) {
+            int[] p = queue.poll();
+            int cx = p[0], cy = p[1];
+            for (int i = 0; i < 4; i++) {
+                int nx = cx + dx[i];
+                int ny = cy + dy[i];
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                    if (!reachesEdge[nx][ny] && grid.getCell(nx, ny).getKingdom() != selectedPaintKingdom) {
+                        reachesEdge[nx][ny] = true;
+                        queue.add(new int[]{nx, ny});
+                    }
+                }
+            }
+        }
+
+        // 3. Annex cells that couldn't reach the edge
+        boolean changed = false;
+        double waterLevel = view.getWaterLevelSlider().getValue();
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                if (!reachesEdge[x][y]) {
+                    MapCell cell = grid.getCell(x, y);
+                    if (cell.getKingdom() != selectedPaintKingdom && cell.getElevation() > waterLevel) {
+                        cell.setKingdom(selectedPaintKingdom);
+                        minX = Math.min(minX, x);
+                        minY = Math.min(minY, y);
+                        maxX = Math.max(maxX, x);
+                        maxY = Math.max(maxY, y);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if (changed) {
+            updateImagePixels(minX, minY, maxX, maxY);
+        }
     }
 }
