@@ -214,6 +214,7 @@ public class MainView extends AnchorPane {
         provSepLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px;");
 
         provincePaintToggle = new ToggleButton("\uD83C\uDFA8  Province Paint Mode");
+        provincePaintToggle.setId("province-paint-toggle");
         provincePaintToggle.setMaxWidth(Double.MAX_VALUE);
 
         Label brushSizeLabel = new Label("Brush Size");
