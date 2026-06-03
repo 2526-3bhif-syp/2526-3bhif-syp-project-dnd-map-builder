@@ -234,3 +234,11 @@
     -fx-background-color: #ffffff;
 }
 
+/* Province Paint Mode toggle — active state */
+.toggle-button:selected {
+    -fx-background-color: #6a3d9a;
+    -fx-text-fill: #ffffff;
+}
+.toggle-button:selected:hover {
+    -fx-background-color: #7a4daa;
+}
