@@ -30,4 +30,6 @@
 - 21.5.26 - 1 Hour - Implemented basic Map Labels (create, edit, delete, drag-and-drop)
 - 21.5.26 - 1 Hour - Fixed map label rendering issues with the new LOD viewport system
 - 21.5.26 - 30 Minutes - Added confirmation dialog for deletion and reviewed PR #39
-
+- 3.6.26 - 1 Hour - Province List Panel and color picking
+- 3.6.26 - 1 Hour - Province Paint Mode
+- 3.6.26 - 30 Minutes - Province Paint Mode improvements & UI fixes
