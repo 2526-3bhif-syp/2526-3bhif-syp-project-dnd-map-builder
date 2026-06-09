@@ -17,6 +17,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -467,6 +469,9 @@ public class MainView extends AnchorPane {
 
         String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
 
+        Image eyeOpen  = loadIcon("/assets/eye.png");
+        Image eyeClosed = loadIcon("/assets/eye-blind.png");
+
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
             row.setAlignment(Pos.CENTER_LEFT);
@@ -478,17 +483,19 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            ToggleButton toggle = new ToggleButton("(o)");
-            toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+            ImageView iconView = new ImageView(eyeOpen);
+            iconView.setFitWidth(18);
+            iconView.setFitHeight(18);
+            iconView.setPreserveRatio(true);
+            iconView.setSmooth(true);
+
+            ToggleButton toggle = new ToggleButton("", iconView);
+            toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
             toggle.setSelected(true);  // All layers visible by default
             int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
-                if (newV) {
-                    toggle.setText("(/)");
-                } else {
-                    toggle.setText("(o)");
-                }
-                
+                iconView.setImage(newV ? eyeOpen : eyeClosed);
+
                 // Wire POI toggle to control POI canvas opacity
                 if (finalI == 1) {
                     poiCanvas.setOpacity(newV ? 1.0 : 0.0);
@@ -576,4 +583,13 @@ public class MainView extends AnchorPane {
     public ProvinceListPanel getProvinceListPanel() { return provinceListPanel; }
     public Label getSelectedProvinceLabel()         { return selectedProvinceLabel; }
     public javafx.scene.shape.Rectangle getSelectedProvinceColorBox() { return selectedProvinceColorBox; }
+
+    private Image loadIcon(String resourcePath) {
+        java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);
+        if (stream != null) {
+            return new Image(stream);
+        }
+        // Transparent 1×1 fallback so the button still renders
+        return new javafx.scene.image.WritableImage(1, 1);
+    }
 }
