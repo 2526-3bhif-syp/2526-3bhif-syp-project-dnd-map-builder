@@ -8,12 +8,14 @@ public class MapGrid {
     private final int height;
     private final MapCell[][] grid;
     private List<PointOfInterest> pois;
+    private List<Kingdom> kingdoms;
 
     public MapGrid(int width, int height) {
         this.width = width;
         this.height = height;
         this.grid = new MapCell[width][height];
         this.pois = new ArrayList<>();
+        this.kingdoms = new ArrayList<>();
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -78,5 +80,15 @@ public class MapGrid {
             }
         }
         return null;
+    }
+
+    /** Returns all kingdoms registered on this map. */
+    public List<Kingdom> getKingdoms() {
+        return kingdoms;
+    }
+
+    /** Replaces the kingdoms list. Called by KingdomPass after generation. */
+    public void setKingdoms(List<Kingdom> kingdoms) {
+        this.kingdoms = kingdoms != null ? kingdoms : new ArrayList<>();
     }
 }

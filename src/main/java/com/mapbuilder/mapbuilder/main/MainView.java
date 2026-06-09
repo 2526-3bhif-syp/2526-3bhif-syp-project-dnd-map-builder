@@ -1,6 +1,7 @@
 package com.mapbuilder.mapbuilder.main;
 
 import com.mapbuilder.mapbuilder.ui.POIListPanel;
+import com.mapbuilder.mapbuilder.ui.ProvinceListPanel;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -53,12 +54,20 @@ public class MainView extends AnchorPane {
     private CheckBox enableBordersToggle;
     private CheckBox enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
+    private Tab kingdomsTab;
     
     private Slider dungeonDensitySlider;
     private Slider settlementDensitySlider;
     private Slider ruinCastleDensitySlider;
     
     private POIListPanel poiListPanel;
+
+    // Province editing
+    private ProvinceListPanel provinceListPanel;
+    private ToggleButton provincePaintToggle;
+    private Slider brushSizeSlider;
+    private Label selectedProvinceLabel;
+    private javafx.scene.shape.Rectangle selectedProvinceColorBox;
 
     public MainView() {
         setupCanvasContainer();
@@ -170,7 +179,7 @@ public class MainView extends AnchorPane {
         );
         hydrologyTab.setContent(hydrologyContent);
 
-        Tab kingdomsTab = new Tab("Kingdoms");
+        kingdomsTab = new Tab("Kingdoms");
         kingdomsTab.setClosable(false);
         kingdomsTab.setStyle("-fx-text-fill: white;");
         VBox kingdomsContent = new VBox(10);
@@ -202,6 +211,44 @@ public class MainView extends AnchorPane {
                 enableKingdomOverlayToggle
         );
         kingdomsTab.setContent(kingdomsContent);
+
+        // ── Province Editing section (added to same kingdoms VBox) ──────────
+
+        provincePaintToggle = new ToggleButton("\uD83C\uDFA8  Province Paint Mode");
+        provincePaintToggle.setId("province-paint-toggle");
+        provincePaintToggle.setMaxWidth(Double.MAX_VALUE);
+
+        selectedProvinceLabel = new Label("Selected: None");
+        selectedProvinceLabel.setStyle("-fx-text-fill: white; -fx-font-style: italic;");
+        selectedProvinceColorBox = new javafx.scene.shape.Rectangle(12, 12, javafx.scene.paint.Color.TRANSPARENT);
+        selectedProvinceColorBox.setStroke(javafx.scene.paint.Color.WHITE);
+        HBox selectedProvinceBox = new HBox(5, new Label("Paint Target:"), selectedProvinceColorBox, selectedProvinceLabel);
+        selectedProvinceBox.setAlignment(Pos.CENTER_LEFT);
+        selectedProvinceBox.setStyle("-fx-text-fill: white;");
+
+        Label brushSizeLabel = new Label("Brush Size");
+        brushSizeLabel.setStyle("-fx-text-fill: white;");
+        brushSizeSlider = new Slider(1, 15, 3);
+        brushSizeSlider.setShowTickMarks(true);
+        brushSizeSlider.setShowTickLabels(true);
+        brushSizeSlider.setMajorTickUnit(7);
+        brushSizeSlider.setMinorTickCount(6);
+
+        Label provListTitle = new Label("Provinces");
+        provListTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
+        provinceListPanel = new ProvinceListPanel(null);
+        VBox.setVgrow(provinceListPanel, Priority.ALWAYS);
+
+        kingdomsContent.getChildren().addAll(
+                new Separator(),
+                provincePaintToggle,
+                selectedProvinceBox,
+                brushSizeLabel, brushSizeSlider,
+                new Separator(),
+                provListTitle,
+                provinceListPanel
+        );
 
         // Create POIs Tab
         Tab poisTab = new Tab("POIs");
@@ -522,4 +569,11 @@ public class MainView extends AnchorPane {
     public Slider getRuinCastleDensitySlider() { return ruinCastleDensitySlider; }
     
     public POIListPanel getPOIListPanel() { return poiListPanel; }
+
+    public ToggleButton getProvincePaintToggle()    { return provincePaintToggle; }
+    public Tab getKingdomsTab()                     { return kingdomsTab; }
+    public Slider       getBrushSizeSlider()        { return brushSizeSlider; }
+    public ProvinceListPanel getProvinceListPanel() { return provinceListPanel; }
+    public Label getSelectedProvinceLabel()         { return selectedProvinceLabel; }
+    public javafx.scene.shape.Rectangle getSelectedProvinceColorBox() { return selectedProvinceColorBox; }
 }

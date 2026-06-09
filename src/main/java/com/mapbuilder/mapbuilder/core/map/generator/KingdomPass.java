@@ -29,7 +29,13 @@ public class KingdomPass implements MapGenerationPass {
 
     @Override
     public void execute(MapGrid grid, GenerationParameters params) {
-        if (params.kingdomCount() <= 0) return;
+        if (params.kingdomCount() <= 0) {
+            grid.setKingdoms(new ArrayList<>());
+            for (int x = 0; x < grid.getWidth(); x++)
+                for (int y = 0; y < grid.getHeight(); y++)
+                    grid.getCell(x, y).setKingdom(null);
+            return;
+        }
 
         int width = grid.getWidth();
         int height = grid.getHeight();
@@ -117,5 +123,6 @@ public class KingdomPass implements MapGenerationPass {
                 }
             }
         }
+        grid.setKingdoms(kingdoms);
     }
 }

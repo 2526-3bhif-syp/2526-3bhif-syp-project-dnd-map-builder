@@ -234,3 +234,27 @@
     -fx-background-color: #ffffff;
 }
 
+/* Province Paint Mode toggle — active state */
+.toggle-button:selected {
+    -fx-background-color: #6a3d9a;
+    -fx-text-fill: #ffffff;
+}
+.toggle-button:selected:hover {
+    -fx-background-color: #7a4daa;
+}
+
+#province-paint-toggle {
+    -fx-background-color: #d35400; /* vibrant orange to stand out */
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+#province-paint-toggle:hover {
+    -fx-background-color: #e67e22;
+}
+#province-paint-toggle:selected {
+    -fx-background-color: #27ae60; /* vibrant green when active */
+    -fx-text-fill: #ffffff;
+}
+#province-paint-toggle:selected:hover {
+    -fx-background-color: #2ecc71;
+}
