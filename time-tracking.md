@@ -14,6 +14,7 @@
 - 7.4.26 - 1 Hour - Improve ui, add randomize seed feature
 - 6.5.26 - 1 Hour - Improve/fix ui, update issue template
 - 9.6.26 - 30 min - Created icons for ui
+- 9.6.26 - 30 min - Refactor ui and bugfix
 
 # Lukas
 
