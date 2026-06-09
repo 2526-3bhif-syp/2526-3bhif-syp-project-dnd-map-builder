@@ -1,4 +1,5 @@
 # Erik
+
 - 4.4.26 - 1,5 Hours - Set up project and discuss responsibilities and project structure
 - 6.4.26 - 1 Hour - Improve ui and added zoom and pan functionality
 - 7.4.26 - 1 Hour - Add new map panels and make them hideable
@@ -8,9 +9,15 @@
 - 20.5.26 - 30 Minutes - Fixed label rendering
 
 # Almir
+
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
+- 7.4.26 - 1 Hour - Improve ui, add randomize seed feature
+- 6.5.26 - 1 Hour - Improve/fix ui, update issue template
+- 9.6.26 - 30 min - Created icons for ui
+- 9.6.26 - 30 min - Refactor ui and bugfix
 
 # Lukas
+
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
 - 6.4.26 - 3 Hours - River and Lake generation
 - 21.4.26 - 45 Minutes - Kingdom generation and border rendering
@@ -19,6 +26,7 @@
 - 12.5.26 - 1 Hour - Generation Algorithm refactor and improvements
 
 # Nico
+
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
 - 4.4.26 - 2 Hours - Core Map Generation
 - 28.4.26 - 2 Hours - LOD
@@ -26,6 +34,7 @@
 - 4.5.26 - 2 Hours - LOD last fixes and Map Gen Fix
 
 # Ali
+
 - 4.4.26 - 1,5 Hours - Discuss responsibilities and project structure
 - 21.5.26 - 1 Hour - Implemented basic Map Labels (create, edit, delete, drag-and-drop)
 - 21.5.26 - 1 Hour - Fixed map label rendering issues with the new LOD viewport system

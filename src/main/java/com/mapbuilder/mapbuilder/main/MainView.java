@@ -17,6 +17,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -76,8 +78,9 @@ public class MainView extends AnchorPane {
         HBox topActionBar = setupTopActionBar();
         VBox layersPanel = setupRightLayersPanel();
         Button showRightBtn = setupRightPanelShowButton(layersPanel);
+        HBox infoToast = setupInfoToast();
         
-        this.getChildren().addAll(canvasContainer, leftScroll, showLeftBtn, topActionBar, layersPanel, showRightBtn);
+        this.getChildren().addAll(canvasContainer, leftScroll, showLeftBtn, topActionBar, layersPanel, showRightBtn, infoToast);
     }
 
     private void setupCanvasContainer() {
@@ -431,21 +434,70 @@ public class MainView extends AnchorPane {
         topActionBar.setPadding(new Insets(10, 15, 10, 15));
         topActionBar.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 0);");
         topActionBar.setAlignment(Pos.CENTER_RIGHT);
-        
-        Label hintLabel = new Label("Labels: Double-click to add/edit, Drag to move, Right-click to remove.");
-        hintLabel.setStyle("-fx-text-fill: #aaaaaa; -fx-padding: 0 15 0 0;");
 
         String btnStyle = "-fx-background-color: #3c3f41; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;";
         Button saveBtn = new Button("Save"); saveBtn.setStyle(btnStyle);
         Button loadBtn = new Button("Load"); loadBtn.setStyle(btnStyle);
         Button exportBtn = new Button("Export"); exportBtn.setStyle(btnStyle);
         Button printBtn = new Button("Print"); printBtn.setStyle(btnStyle);
-        
-        topActionBar.getChildren().addAll(hintLabel, saveBtn, loadBtn, exportBtn, printBtn);
+
+        topActionBar.getChildren().addAll(saveBtn, loadBtn, exportBtn, printBtn);
         AnchorPane.setTopAnchor(topActionBar, 10.0);
         AnchorPane.setRightAnchor(topActionBar, 10.0);
-        
+
         return topActionBar;
+    }
+
+    private HBox setupInfoToast() {
+        // Icon
+        ImageView infoIcon = new ImageView(loadIcon("/assets/info.png"));
+        infoIcon.setFitWidth(16);
+        infoIcon.setFitHeight(16);
+        infoIcon.setPreserveRatio(true);
+        infoIcon.setSmooth(true);
+
+        Label hintLabel = new Label("Labels: Double-click to add/edit · Drag to move · Right-click to remove");
+        hintLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
+        hintLabel.setWrapText(false);
+
+        Button dismissBtn = new Button("✕");
+        dismissBtn.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #888888; -fx-cursor: hand; " +
+            "-fx-font-size: 11px; -fx-padding: 0 0 0 6;"
+        );
+        dismissBtn.setOnMouseEntered(e -> dismissBtn.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-cursor: hand; " +
+            "-fx-font-size: 11px; -fx-padding: 0 0 0 6;"
+        ));
+        dismissBtn.setOnMouseExited(e -> dismissBtn.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #888888; -fx-cursor: hand; " +
+            "-fx-font-size: 11px; -fx-padding: 0 0 0 6;"
+        ));
+
+        HBox infoToast = new HBox(8, infoIcon, hintLabel, dismissBtn);
+        infoToast.setAlignment(Pos.CENTER_LEFT);
+        infoToast.setPadding(new Insets(8, 12, 8, 12));
+        infoToast.setStyle(
+            "-fx-background-color: rgba(30,30,30,0.88); " +
+            "-fx-background-radius: 8; " +
+            "-fx-border-color: #444444; " +
+            "-fx-border-radius: 8; " +
+            "-fx-border-width: 1; " +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.55), 8, 0, 0, 2);"
+        );
+
+        dismissBtn.setOnAction(e -> {
+            javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(Duration.millis(250), infoToast);
+            ft.setFromValue(1.0);
+            ft.setToValue(0.0);
+            ft.setOnFinished(evt -> infoToast.setVisible(false));
+            ft.play();
+        });
+
+        AnchorPane.setBottomAnchor(infoToast, 18.0);
+        AnchorPane.setRightAnchor(infoToast, 18.0);
+
+        return infoToast;
     }
 
     private VBox setupRightLayersPanel() {
@@ -467,6 +519,9 @@ public class MainView extends AnchorPane {
 
         String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
 
+        Image eyeOpen  = loadIcon("/assets/eye.png");
+        Image eyeClosed = loadIcon("/assets/eye-blind.png");
+
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
             row.setAlignment(Pos.CENTER_LEFT);
@@ -478,17 +533,19 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            ToggleButton toggle = new ToggleButton("(o)");
-            toggle.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
+            ImageView iconView = new ImageView(eyeOpen);
+            iconView.setFitWidth(18);
+            iconView.setFitHeight(18);
+            iconView.setPreserveRatio(true);
+            iconView.setSmooth(true);
+
+            ToggleButton toggle = new ToggleButton("", iconView);
+            toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
             toggle.setSelected(true);  // All layers visible by default
             int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
-                if (newV) {
-                    toggle.setText("(/)");
-                } else {
-                    toggle.setText("(o)");
-                }
-                
+                iconView.setImage(newV ? eyeOpen : eyeClosed);
+
                 // Wire POI toggle to control POI canvas opacity
                 if (finalI == 1) {
                     poiCanvas.setOpacity(newV ? 1.0 : 0.0);
@@ -576,4 +633,13 @@ public class MainView extends AnchorPane {
     public ProvinceListPanel getProvinceListPanel() { return provinceListPanel; }
     public Label getSelectedProvinceLabel()         { return selectedProvinceLabel; }
     public javafx.scene.shape.Rectangle getSelectedProvinceColorBox() { return selectedProvinceColorBox; }
+
+    private Image loadIcon(String resourcePath) {
+        java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);
+        if (stream != null) {
+            return new Image(stream);
+        }
+        // Transparent 1×1 fallback so the button still renders
+        return new javafx.scene.image.WritableImage(1, 1);
+    }
 }
