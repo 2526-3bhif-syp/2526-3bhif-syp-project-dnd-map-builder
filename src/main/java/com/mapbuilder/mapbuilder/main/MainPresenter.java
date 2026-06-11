@@ -8,6 +8,7 @@ import com.mapbuilder.mapbuilder.core.map.MapCell;
 import com.mapbuilder.mapbuilder.core.map.MapGenerator;
 import com.mapbuilder.mapbuilder.core.map.MapGrid;
 import com.mapbuilder.mapbuilder.core.map.PointOfInterest;
+import com.mapbuilder.mapbuilder.core.map.POIType;
 import com.mapbuilder.mapbuilder.ui.POIEditorDialog;
 import com.mapbuilder.mapbuilder.ui.POIIconMapper;
 import com.mapbuilder.mapbuilder.ui.ProvinceListPanel;
@@ -66,6 +67,10 @@ public class MainPresenter {
     private double lastPaintX = -1;
     private double lastPaintY = -1;
 
+    // POI editing
+    private boolean addPoiMode = false;
+    private PointOfInterest draggedPOI = null;
+
     public MainPresenter() {
         this.model = new MainModel();
         this.debounce = new PauseTransition(Duration.millis(300));
@@ -106,12 +111,25 @@ public class MainPresenter {
                 event.consume();
                 return;
             }
+            // Add-POI mode — place a new POI on press
+            if (addPoiMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                placePOIAtScreen(event.getX(), event.getY());
+                event.consume();
+                return;
+            }
             if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                 double x = event.getX();
                 double y = event.getY();
                 com.mapbuilder.mapbuilder.core.map.MapLabel label = getLabelAt(x, y);
                 if (label != null) {
                     draggedLabel = label;
+                    event.consume();
+                    return;
+                }
+                // Start dragging a POI marker under the cursor
+                PointOfInterest poi = getPOIAt(x, y);
+                if (poi != null) {
+                    draggedPOI = poi;
                     event.consume();
                     return;
                 }
@@ -142,6 +160,20 @@ public class MainPresenter {
                 event.consume();
                 return;
             }
+            if (draggedPOI != null) {
+                MapGrid grid = model.getCurrentGrid();
+                if (grid != null) {
+                    int cx = (int) (viewOffsetX + event.getX() / pixelsPerCell);
+                    int cy = (int) (viewOffsetY + event.getY() / pixelsPerCell);
+                    cx = Math.max(0, Math.min(grid.getWidth() - 1, cx));
+                    cy = Math.max(0, Math.min(grid.getHeight() - 1, cy));
+                    draggedPOI.setX(cx);
+                    draggedPOI.setY(cy);
+                    renderMap();
+                }
+                event.consume();
+                return;
+            }
             double dx = event.getSceneX() - dragStart[0];
             double dy = event.getSceneY() - dragStart[1];
             dragStart[0] = event.getSceneX();
@@ -156,6 +188,7 @@ public class MainPresenter {
                 annexEnclosedAreas();
             }
             draggedLabel = null;
+            draggedPOI = null;
         });
 
         view.getRandomSeedButton().setOnAction(e -> {
@@ -188,6 +221,15 @@ public class MainPresenter {
             double x = event.getX();
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
+
+            // Double-click on a POI marker opens its editor (takes priority)
+            if (event.getClickCount() == 2 && !provincePaintMode && !addPoiMode) {
+                PointOfInterest poiHit = getPOIAt(x, y);
+                if (poiHit != null) {
+                    openPOIEditor(poiHit);
+                    return;
+                }
+            }
 
             if (event.getClickCount() == 2 && !provincePaintMode) {
                 if (clickedLabel != null) {
@@ -242,6 +284,21 @@ public class MainPresenter {
             view.getCanvasContainer().setCursor(
                     newV ? javafx.scene.Cursor.CROSSHAIR : javafx.scene.Cursor.DEFAULT);
             if (!newV) setSelectedKingdom(null);
+            // Mutually exclusive with add-POI mode
+            if (newV && view.getAddPoiToggle().isSelected()) {
+                view.getAddPoiToggle().setSelected(false);
+            }
+        });
+
+        // Add-POI mode toggle
+        view.getAddPoiToggle().selectedProperty().addListener((obs, oldV, newV) -> {
+            addPoiMode = newV;
+            view.getCanvasContainer().setCursor(
+                    newV ? javafx.scene.Cursor.CROSSHAIR : javafx.scene.Cursor.DEFAULT);
+            // Mutually exclusive with province paint mode
+            if (newV && view.getProvincePaintToggle().isSelected()) {
+                view.getProvincePaintToggle().setSelected(false);
+            }
         });
 
         // Automatically turn off paint mode when leaving the Kingdoms tab
@@ -264,6 +321,60 @@ public class MainPresenter {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the POI whose marker is under the given screen position, or null.
+     * Uses the same hover-radius logic as {@link #renderPOIs()}, picking the
+     * closest marker when several overlap.
+     */
+    private PointOfInterest getPOIAt(double screenX, double screenY) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return null;
+        List<PointOfInterest> pois = grid.getPointsOfInterest();
+        if (pois == null) return null;
+
+        double hoverRadius = Math.max(12, Math.min(28, 20 * pixelsPerCell));
+        PointOfInterest hit = null;
+        double bestDist = Double.MAX_VALUE;
+        for (PointOfInterest poi : pois) {
+            double sx = (poi.getX() - viewOffsetX) * pixelsPerCell;
+            double sy = (poi.getY() - viewOffsetY) * pixelsPerCell;
+            double dist = Math.hypot(screenX - sx, screenY - sy);
+            if (dist < hoverRadius && dist < bestDist) {
+                bestDist = dist;
+                hit = poi;
+            }
+        }
+        return hit;
+    }
+
+    /**
+     * Places a new user POI at the cell under the given screen position, adds it
+     * to the map, and opens the editor for naming/typing. Add-POI mode is turned
+     * off after a single placement to avoid repeated modal dialogs.
+     */
+    private void placePOIAtScreen(double screenX, double screenY) {
+        MapGrid grid = model.getCurrentGrid();
+        if (grid == null) return;
+
+        int cx = (int) (viewOffsetX + screenX / pixelsPerCell);
+        int cy = (int) (viewOffsetY + screenY / pixelsPerCell);
+        cx = Math.max(0, Math.min(grid.getWidth() - 1, cx));
+        cy = Math.max(0, Math.min(grid.getHeight() - 1, cy));
+
+        int nextId = 0;
+        for (PointOfInterest poi : grid.getPointsOfInterest()) {
+            if (poi.getId() >= nextId) nextId = poi.getId() + 1;
+        }
+
+        PointOfInterest created = new PointOfInterest(
+                nextId, cx, cy, POIType.CITY, "New POI", "user_placed");
+        grid.addPointOfInterest(created);
+        renderMap();
+
+        view.getAddPoiToggle().setSelected(false);
+        openPOIEditor(created);
     }
 
     private void applyDarkTheme(javafx.scene.control.Dialog<?> dialog) {

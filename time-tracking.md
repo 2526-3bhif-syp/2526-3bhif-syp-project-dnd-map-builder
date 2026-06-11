@@ -32,6 +32,7 @@
 - 28.4.26 - 2 Hours - LOD
 - 29.4.26 - 2 Hours - LOD improvements & fixes
 - 4.5.26 - 2 Hours - LOD last fixes and Map Gen Fix
+- 11.6.26 - 1.5 Hours - manage POIs 
 
 # Ali
 
