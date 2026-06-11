@@ -258,3 +258,15 @@
 #province-paint-toggle:selected:hover {
     -fx-background-color: #2ecc71;
 }
+
+#add-poi-toggle {
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+}
+#add-poi-toggle:selected {
+    -fx-background-color: #58d68d; /* light green so black text stays readable */
+    -fx-text-fill: black;
+}
+#add-poi-toggle:selected:hover {
+    -fx-background-color: #6fe09e;
+}
