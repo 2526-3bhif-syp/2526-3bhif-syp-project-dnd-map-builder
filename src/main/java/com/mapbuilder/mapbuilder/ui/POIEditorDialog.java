@@ -149,6 +149,7 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         saveBtn.setOnAction(e -> {
             // Update POI with field values
             poi.setName(nameField.getText());
+            poi.setType(typeCombo.getValue());
             poi.setDescription(descriptionArea.getText());
             poi.setCustomColor(colorToARGB(colorPicker.getValue()));
             poi.setCustomIcon(iconCombo.getValue());
