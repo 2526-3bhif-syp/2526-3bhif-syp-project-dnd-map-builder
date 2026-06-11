@@ -63,6 +63,7 @@ public class MainView extends AnchorPane {
     private Slider ruinCastleDensitySlider;
     
     private POIListPanel poiListPanel;
+    private ToggleButton addPoiToggle;
 
     // Province editing
     private ProvinceListPanel provinceListPanel;
@@ -284,12 +285,17 @@ public class MainView extends AnchorPane {
         ruinCastleDensitySlider.setMinorTickCount(4);
         ruinCastleDensitySlider.setSnapToTicks(true);
 
+        addPoiToggle = new ToggleButton("➕  POI hinzufügen");
+        addPoiToggle.setId("add-poi-toggle");
+        addPoiToggle.setMaxWidth(Double.MAX_VALUE);
+
         poisContent.getChildren().addAll(
                 new Label("Dungeon Density"), dungeonDensitySlider,
                 new Label("Settlement Density"), settlementDensitySlider,
                 new Label("Ruin & Castle Density"), ruinCastleDensitySlider,
                 new Separator(),
-                new Label("Points of Interest")
+                new Label("Points of Interest"),
+                addPoiToggle
         );
 
         // Add POI List Panel to POIs tab
@@ -626,6 +632,7 @@ public class MainView extends AnchorPane {
     public Slider getRuinCastleDensitySlider() { return ruinCastleDensitySlider; }
     
     public POIListPanel getPOIListPanel() { return poiListPanel; }
+    public ToggleButton getAddPoiToggle() { return addPoiToggle; }
 
     public ToggleButton getProvincePaintToggle()    { return provincePaintToggle; }
     public Tab getKingdomsTab()                     { return kingdomsTab; }
