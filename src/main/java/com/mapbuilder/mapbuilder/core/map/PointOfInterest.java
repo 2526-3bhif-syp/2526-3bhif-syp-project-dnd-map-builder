@@ -2,21 +2,22 @@ package com.mapbuilder.mapbuilder.core.map;
 
 /**
  * Represents a Point of Interest (POI) on the map.
- * POIs are immutable after construction, except for editable fields:
- * name, description, customColor, and customIcon.
- * 
+ * The identity fields {@code id}, {@code createdAt}, and {@code createdByRule}
+ * are immutable after construction. All other fields are editable to support
+ * manual POI management (rename, retype, move, recolor, re-icon).
+ *
  * This class is designed to be serialization-friendly with no circular references.
  */
 public class PointOfInterest {
-    // Immutable fields (set at construction)
+    // Immutable identity fields (set at construction)
     private final int id;
-    private final int x;
-    private final int y;
-    private final POIType type;
     private final long createdAt;
     private final String createdByRule;
-    
+
     // Editable fields
+    private int x;
+    private int y;
+    private POIType type;
     private String name;
     private String description;
     private Integer customColor;      // ARGB as Integer, nullable
@@ -76,19 +77,41 @@ public class PointOfInterest {
     public int getX() {
         return x;
     }
-    
+
+    /**
+     * Set the X coordinate of this POI on the map. Used when moving a POI.
+     */
+    public void setX(int x) {
+        this.x = x;
+    }
+
     /**
      * Get the Y coordinate of this POI on the map.
      */
     public int getY() {
         return y;
     }
-    
+
+    /**
+     * Set the Y coordinate of this POI on the map. Used when moving a POI.
+     */
+    public void setY(int y) {
+        this.y = y;
+    }
+
     /**
      * Get the POIType of this POI.
      */
     public POIType getType() {
         return type;
+    }
+
+    /**
+     * Set the POIType of this POI. Changing the type updates the default
+     * icon sprite and color used during rendering.
+     */
+    public void setType(POIType type) {
+        this.type = type;
     }
     
     /**
