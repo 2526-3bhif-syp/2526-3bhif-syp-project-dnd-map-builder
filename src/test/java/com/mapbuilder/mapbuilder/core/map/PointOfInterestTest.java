@@ -56,17 +56,22 @@ class PointOfInterestTest {
     }
 
     @Test
-    void testPointOfInterestImmutableFields() {
+    void testPointOfInterestPositionAndTypeSetters() {
         PointOfInterest poi = new PointOfInterest(4, 30, 40, POIType.RUIN, "Ancient Ruin", "border_dungeon");
-        int originalX = poi.getX();
-        int originalY = poi.getY();
-        POIType originalType = poi.getType();
-        
-        // Verify we can't change immutable fields by trying to create similar POI with different values
-        PointOfInterest poi2 = new PointOfInterest(4, 31, 41, POIType.DUNGEON, "Ancient Ruin", "border_dungeon");
-        assertNotEquals(originalX, poi2.getX(), "Different POI should have different X");
-        assertNotEquals(originalY, poi2.getY(), "Different POI should have different Y");
-        assertNotEquals(originalType, poi2.getType(), "Different POI should have different type");
+
+        // Moving a POI updates its coordinates
+        poi.setX(31);
+        poi.setY(41);
+        assertEquals(31, poi.getX(), "setX should update the X coordinate");
+        assertEquals(41, poi.getY(), "setY should update the Y coordinate");
+
+        // Retyping a POI updates its type
+        poi.setType(POIType.DUNGEON);
+        assertEquals(POIType.DUNGEON, poi.getType(), "setType should update the type");
+
+        // Identity fields remain unchanged
+        assertEquals(4, poi.getId(), "ID must stay constant");
+        assertEquals("border_dungeon", poi.getCreatedByRule(), "createdByRule must stay constant");
     }
 
     @Test
