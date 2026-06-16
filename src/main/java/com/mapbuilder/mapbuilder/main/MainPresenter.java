@@ -105,6 +105,11 @@ public class MainPresenter {
             view.getCanvasContainer().requestFocus();
             // Province paint mode — paint cells on press
             if (provincePaintMode && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                if (selectedPaintKingdom == null) {
+                    view.getProvinceListPanel().flashError();
+                    event.consume();
+                    return;
+                }
                 lastPaintX = event.getX();
                 lastPaintY = event.getY();
                 paintCellsAtScreen(event.getX(), event.getY());
