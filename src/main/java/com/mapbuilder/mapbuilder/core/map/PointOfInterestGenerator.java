@@ -139,8 +139,9 @@ public class PointOfInterestGenerator {
                     MapCell cell = grid.getCell(x, y);
                     
                     if (cell != null && isDungeonLocation(grid, cell)) {
-                        String dungeonName = "Dungeon_" + placed;
                         POIType type = rand.nextBoolean() ? POIType.DUNGEON : POIType.CAVE;
+                        String prefix = (type == POIType.DUNGEON) ? "Dungeon" : "Cave";
+                        String dungeonName = prefix + "_" + placed;
                         
                         PointOfInterest dungeon = new PointOfInterest(
                             idCounter.getAndIncrement(),
@@ -191,8 +192,9 @@ public class PointOfInterestGenerator {
                     MapCell cell = grid.getCell(x, y);
                     
                     if (cell != null && isHabitableBiome(cell.getBiome())) {
-                        String name = "Ruin_" + placed;
                         POIType type = rand.nextBoolean() ? POIType.RUIN : POIType.CASTLE;
+                        String prefix = (type == POIType.CASTLE) ? "Castle" : "Ruin";
+                        String name = prefix + "_" + placed;
                         
                         PointOfInterest poi = new PointOfInterest(
                             idCounter.getAndIncrement(),
