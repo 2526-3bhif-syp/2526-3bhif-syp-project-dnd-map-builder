@@ -464,7 +464,6 @@ public class MainPresenter {
 
     private void resetSettings() {
         // Terrain
-        view.getSeedField().setText("12345");
         view.getSizeSlider().setValue(800);
         view.getOctavesSlider().setValue(5);
         view.getScaleSlider().setValue(0.005);

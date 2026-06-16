@@ -321,13 +321,15 @@ public class MainView extends AnchorPane {
                 "-fx-text-base-color: white;");
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
 
+        Label seedLabel = new Label("Seed");
+        seedLabel.setStyle("-fx-text-fill: white;");
         seedField = new TextField("12345");
         seedField.setPrefWidth(100);
         randomSeedButton = new Button("Random Seed");
         randomSeedButton.setStyle("-fx-cursor: hand;");
         HBox seedRow = new HBox(8);
         seedRow.setAlignment(Pos.CENTER_LEFT);
-        seedRow.getChildren().addAll(new Label("Seed"), seedField, randomSeedButton);
+        seedRow.getChildren().addAll(seedLabel, seedField, randomSeedButton);
 
         sizeSlider = new Slider(200, 2000, 800);
         sizeSlider.setShowTickMarks(true);
@@ -366,7 +368,6 @@ public class MainView extends AnchorPane {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
-        Label seedLabel = new Label("Seed"); seedLabel.setStyle("-fx-text-fill: white;");
         Label mapSizeLabel = new Label("Map Size"); mapSizeLabel.setStyle("-fx-text-fill: white;");
         Label octavesLabel = new Label("Octaves (Detail Level)"); octavesLabel.setStyle("-fx-text-fill: white;");
         Label scaleLabel = new Label("Scale (Zoom Level)"); scaleLabel.setStyle("-fx-text-fill: white;");
@@ -395,7 +396,6 @@ public class MainView extends AnchorPane {
         leftPanel.getChildren().addAll(
             headerBox,
             seedRow,
-            seedField,
             tabPane,
             actionRow
         );
