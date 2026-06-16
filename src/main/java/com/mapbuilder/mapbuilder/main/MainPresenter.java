@@ -201,6 +201,7 @@ public class MainPresenter {
             view.getSeedField().setText(String.valueOf(randomSeed));
         });
         view.getRandomizeSettingsButton().setOnAction(e -> randomizeSettings());
+        view.getResetSettingsButton().setOnAction(e -> resetSettings());
         view.getSizeSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getOctavesSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
         view.getScaleSlider().valueProperty().addListener((obs, oldV, newV) -> triggerGeneration());
@@ -458,6 +459,32 @@ public class MainPresenter {
         view.getRiverDensitySlider().setValue(rand.nextDouble(0, 200));
         view.getLakeSizeSlider().setValue(rand.nextDouble(0, 200));
         view.getMinLakeAreaSlider().setValue(rand.nextDouble(10, 500));
+        triggerGeneration();
+    }
+
+    private void resetSettings() {
+        // Terrain
+        view.getSeedField().setText("12345");
+        view.getSizeSlider().setValue(800);
+        view.getOctavesSlider().setValue(5);
+        view.getScaleSlider().setValue(0.005);
+        view.getFalloffSlider().setValue(0.0);
+        view.getWaterLevelSlider().setValue(0.0);
+        view.getTempBiasSlider().setValue(0.0);
+        view.getRainBiasSlider().setValue(0.0);
+        // Hydrology
+        view.getEnableRiversToggle().setSelected(true);
+        view.getEnableLakesToggle().setSelected(true);
+        view.getRiverDensitySlider().setValue(100);
+        view.getLakeSizeSlider().setValue(100);
+        view.getMinLakeAreaSlider().setValue(100);
+        // Kingdoms
+        view.getKingdomCountSlider().setValue(10);
+        view.getLloydPassesSlider().setValue(1);
+        // POIs
+        view.getDungeonDensitySlider().setValue(0.3);
+        view.getSettlementDensitySlider().setValue(0.3);
+        view.getRuinCastleDensitySlider().setValue(0.3);
         triggerGeneration();
     }
 

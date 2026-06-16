@@ -45,6 +45,7 @@ public class MainView extends AnchorPane {
     private Slider tempBiasSlider;
     private Slider rainBiasSlider;
     private Button randomizeSettingsButton;
+    private Button resetSettingsButton;
     private CheckBox enableRiversToggle;
     private CheckBox enableLakesToggle;
     private Slider riverDensitySlider;
@@ -373,9 +374,10 @@ public class MainView extends AnchorPane {
         terrainTab.setContent(terrainContent);
         
         randomizeSettingsButton = new Button("Randomize Settings");
-        
+        resetSettingsButton = new Button("Reset Settings");
+
         HBox actionRow = new HBox(8);
-        actionRow.getChildren().addAll(randomizeSettingsButton);
+        actionRow.getChildren().addAll(randomizeSettingsButton, resetSettingsButton);
 
         leftPanel.getChildren().addAll(
             headerBox,
@@ -648,6 +650,7 @@ public class MainView extends AnchorPane {
     public Slider getRainBiasSlider() { return rainBiasSlider; }
     public Button getRandomSeedButton() { return randomSeedButton; }
     public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
+    public Button getResetSettingsButton() { return resetSettingsButton; }
     public CheckBox getEnableRiversToggle() { return enableRiversToggle; }
     public CheckBox getEnableLakesToggle() { return enableLakesToggle; }
     public Slider getRiverDensitySlider() { return riverDensitySlider; }
