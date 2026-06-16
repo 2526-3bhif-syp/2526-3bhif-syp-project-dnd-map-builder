@@ -15,6 +15,7 @@
 - 6.5.26 - 1 Hour - Improve/fix ui, update issue template
 - 9.6.26 - 30 min - Created icons for ui
 - 9.6.26 - 30 min - Refactor ui and bugfix
+- 16.6.26 - 1,5 Hours - ui/ux, bugfixes, province layers, settings reset, icons
 
 # Lukas
 
