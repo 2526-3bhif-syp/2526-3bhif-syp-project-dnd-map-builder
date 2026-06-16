@@ -279,6 +279,8 @@ public class MainView extends AnchorPane {
         addPoiToggle = new ToggleButton("➕  Add POI");
         addPoiToggle.setId("add-poi-toggle");
         addPoiToggle.setMaxWidth(Double.MAX_VALUE);
+        addPoiToggle.selectedProperty().addListener((obs, oldV, newV) ->
+                addPoiToggle.setText(newV ? "📍  Click on map to place" : "➕  Add POI"));
 
         poisContent.getChildren().addAll(
                 new Label("Dungeon Density"), dungeonDensitySlider,
