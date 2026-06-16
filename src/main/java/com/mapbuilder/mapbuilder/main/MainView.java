@@ -53,8 +53,8 @@ public class MainView extends AnchorPane {
 
     private Slider kingdomCountSlider;
     private Slider lloydPassesSlider;
-    private CheckBox enableBordersToggle;
-    private CheckBox enableKingdomOverlayToggle;
+    private ToggleButton enableBordersToggle;
+    private ToggleButton enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
     private Tab kingdomsTab;
     
@@ -201,18 +201,9 @@ public class MainView extends AnchorPane {
         lloydPassesSlider.setMinorTickCount(0);
         lloydPassesSlider.setSnapToTicks(true);
 
-        enableBordersToggle = new CheckBox("Show Borders");
-        enableBordersToggle.setSelected(true);
-
-        enableKingdomOverlayToggle = new CheckBox("Show Kingdom Overlay");
-        enableKingdomOverlayToggle.setSelected(true);
-
         kingdomsContent.getChildren().addAll(
                 new Label("Kingdom Count"), kingdomCountSlider,
-                new Label("Lloyd's Relaxation Passes"), lloydPassesSlider,
-                new Separator(),
-                enableBordersToggle,
-                enableKingdomOverlayToggle
+                new Label("Lloyd's Relaxation Passes"), lloydPassesSlider
         );
         kingdomsTab.setContent(kingdomsContent);
 
@@ -567,6 +558,44 @@ public class MainView extends AnchorPane {
             layersPanel.getChildren().add(row);
         }
 
+        // ── Kingdom display layers (wired to regenerateImages) ───────────────
+        String[][] kingdomLayerDefs = {
+            {"Kingdom Borders",  "borders"},
+            {"Kingdom Overlay",  "overlay"}
+        };
+        for (String[] def : kingdomLayerDefs) {
+            HBox row = new HBox();
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setStyle("-fx-background-color: #3c3f41; -fx-padding: 8; -fx-background-radius: 5;");
+
+            Label nameLabel = new Label(def[0]);
+            nameLabel.setStyle("-fx-text-fill: white;");
+
+            Pane rowSpacer = new Pane();
+            HBox.setHgrow(rowSpacer, Priority.ALWAYS);
+
+            ImageView iconView = new ImageView(eyeOpen);
+            iconView.setFitWidth(18);
+            iconView.setFitHeight(18);
+            iconView.setPreserveRatio(true);
+            iconView.setSmooth(true);
+
+            ToggleButton toggle = new ToggleButton("", iconView);
+            toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
+            toggle.setSelected(true);
+            toggle.selectedProperty().addListener((obs, oldV, newV) ->
+                    iconView.setImage(newV ? eyeOpen : eyeClosed));
+
+            if (def[1].equals("borders")) {
+                enableBordersToggle = toggle;
+            } else {
+                enableKingdomOverlayToggle = toggle;
+            }
+
+            row.getChildren().addAll(nameLabel, rowSpacer, toggle);
+            layersPanel.getChildren().add(row);
+        }
+
         AnchorPane.setTopAnchor(layersPanel, 80.0);
         AnchorPane.setRightAnchor(layersPanel, 0.0);
 
@@ -624,8 +653,8 @@ public class MainView extends AnchorPane {
     public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
     public Slider getKingdomCountSlider() { return kingdomCountSlider; }
     public Slider getLloydPassesSlider() { return lloydPassesSlider; }
-    public CheckBox getEnableBordersToggle() { return enableBordersToggle; }
-    public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
+    public ToggleButton getEnableBordersToggle() { return enableBordersToggle; }
+    public ToggleButton getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
     
     public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
     public Slider getSettlementDensitySlider() { return settlementDensitySlider; }
