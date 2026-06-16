@@ -3,6 +3,7 @@ package com.mapbuilder.mapbuilder.ui;
 import com.mapbuilder.mapbuilder.core.map.Kingdom;
 import com.mapbuilder.mapbuilder.main.MainPresenter;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -98,24 +99,25 @@ public class ProvinceListPanel extends VBox {
                     }
                 });
 
-                swatch.setOnMouseClicked(e -> {
-                    picker.show();
-                    e.consume(); // prevent bubbling to listView — swatch click must not select paint target
-                });
+                swatch.setMouseTransparent(true); // let swatchPane handle the click
 
                 // Stack the invisible picker over the swatch so its popup anchors near it
                 javafx.scene.layout.StackPane swatchPane =
                         new javafx.scene.layout.StackPane(swatch, picker);
                 swatchPane.setPrefSize(16, 16);
                 swatchPane.setMaxSize(16, 16);
-
-                // Province name — clicking selects the paint target
-                Label nameLabel = new Label(k.getName());
-                nameLabel.setStyle("-fx-text-fill: #e0e0e0; -fx-cursor: hand;");
-                HBox.setHgrow(nameLabel, Priority.ALWAYS);
-                nameLabel.setOnMouseClicked(e -> {
-                    if (presenter != null) presenter.setSelectedKingdom(k);
+                // Consume on the pane level so no click in this area reaches the listView.
+                // Defer picker.show() via Platform.runLater to avoid the phantom-click
+                // problem where the same event that opens the popup closes it immediately.
+                swatchPane.setOnMouseClicked(e -> {
+                    e.consume();
+                    Platform.runLater(picker::show);
                 });
+
+                // Province name
+                Label nameLabel = new Label(k.getName());
+                nameLabel.setStyle("-fx-text-fill: #e0e0e0;");
+                HBox.setHgrow(nameLabel, Priority.ALWAYS);
 
                 row.getChildren().addAll(swatchPane, nameLabel);
                 setGraphic(row);
@@ -123,13 +125,15 @@ public class ProvinceListPanel extends VBox {
             }
         });
 
-        // Click handling — only used for double-click rename now
+        // Single click → select paint target (swatch clicks are consumed and won't reach here)
+        // Double-click → rename dialog
         listView.setOnMouseClicked(event -> {
             Kingdom selected = listView.getSelectionModel().getSelectedItem();
             if (selected == null || presenter == null) return;
 
-            // Double-click → rename dialog
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 1) {
+                presenter.setSelectedKingdom(selected);
+            } else if (event.getClickCount() == 2) {
                 TextInputDialog dlg = new TextInputDialog(selected.getName());
                 dlg.setTitle("Rename Province");
                 dlg.setHeaderText("Enter a new name for this province:");
