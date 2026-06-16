@@ -285,7 +285,7 @@ public class MainView extends AnchorPane {
         ruinCastleDensitySlider.setMinorTickCount(4);
         ruinCastleDensitySlider.setSnapToTicks(true);
 
-        addPoiToggle = new ToggleButton("➕  POI hinzufügen");
+        addPoiToggle = new ToggleButton("➕  Add POI");
         addPoiToggle.setId("add-poi-toggle");
         addPoiToggle.setMaxWidth(Double.MAX_VALUE);
 
@@ -523,7 +523,7 @@ public class MainView extends AnchorPane {
 
         layersPanel.getChildren().add(layersHeaderBox);
 
-        String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
+        String[] layerNames = {"Labels", "Points of Interest", "Structures & Roads", "Mountains", "Rivers & Lakes", "Grid"};
 
         Image eyeOpen  = loadIcon("/assets/eye.png");
         Image eyeClosed = loadIcon("/assets/eye-blind.png");
