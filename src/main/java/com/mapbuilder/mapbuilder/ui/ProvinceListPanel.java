@@ -72,20 +72,22 @@ public class ProvinceListPanel extends VBox {
                 row.setAlignment(Pos.CENTER_LEFT);
                 row.setStyle("-fx-background-color: #1e1e1e;");
 
-                // Colour swatch – updated whenever the picker fires
-                Rectangle swatch = new Rectangle(14, 14);
+                // Colour swatch — acts as the clickable colour button
+                Rectangle swatch = new Rectangle(16, 16);
                 swatch.setArcWidth(3);
                 swatch.setArcHeight(3);
                 swatch.setFill(argbToFX(k.getColorARGB()));
+                swatch.setCursor(javafx.scene.Cursor.HAND);
+                javafx.scene.control.Tooltip.install(swatch,
+                        new javafx.scene.control.Tooltip("Click to change colour"));
 
-                // Province name
-                Label nameLabel = new Label(k.getName());
-                nameLabel.setStyle("-fx-text-fill: #e0e0e0;");
-                HBox.setHgrow(nameLabel, Priority.ALWAYS);
-
-                // Compact inline colour picker
+                // Hidden ColorPicker — triggered by clicking the swatch
                 ColorPicker picker = new ColorPicker(argbToFX(k.getColorARGB()));
-                picker.setPrefSize(60, 24);
+                picker.setOpacity(0);
+                picker.setMouseTransparent(true);
+                picker.setPrefSize(1, 1);
+                picker.setMaxSize(1, 1);
+                picker.setMinSize(1, 1);
                 picker.setOnAction(e -> {
                     Color c = picker.getValue();
                     k.setColorARGB(fxToArgb(c));
@@ -96,18 +98,35 @@ public class ProvinceListPanel extends VBox {
                     }
                 });
 
-                row.getChildren().addAll(swatch, nameLabel, picker);
+                swatch.setOnMouseClicked(e -> {
+                    picker.show();
+                    e.consume(); // prevent bubbling to listView — swatch click must not select paint target
+                });
+
+                // Stack the invisible picker over the swatch so its popup anchors near it
+                javafx.scene.layout.StackPane swatchPane =
+                        new javafx.scene.layout.StackPane(swatch, picker);
+                swatchPane.setPrefSize(16, 16);
+                swatchPane.setMaxSize(16, 16);
+
+                // Province name — clicking selects the paint target
+                Label nameLabel = new Label(k.getName());
+                nameLabel.setStyle("-fx-text-fill: #e0e0e0; -fx-cursor: hand;");
+                HBox.setHgrow(nameLabel, Priority.ALWAYS);
+                nameLabel.setOnMouseClicked(e -> {
+                    if (presenter != null) presenter.setSelectedKingdom(k);
+                });
+
+                row.getChildren().addAll(swatchPane, nameLabel);
                 setGraphic(row);
+
             }
         });
 
-        // Click handling
+        // Click handling — only used for double-click rename now
         listView.setOnMouseClicked(event -> {
             Kingdom selected = listView.getSelectionModel().getSelectedItem();
             if (selected == null || presenter == null) return;
-
-            // Always inform the presenter of the selection
-            presenter.setSelectedKingdom(selected);
 
             // Double-click → rename dialog
             if (event.getClickCount() == 2) {
