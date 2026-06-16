@@ -24,9 +24,22 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 public class MainView extends AnchorPane {
+
+    static {
+        try (java.io.InputStream stream = MainView.class.getResourceAsStream("/assets/fontawesome-webfont.ttf")) {
+            if (stream != null) {
+                Font.loadFont(stream, 16);
+            } else {
+                System.err.println("Could not find FontAwesome font file at /assets/fontawesome-webfont.ttf");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     private Canvas canvas;
     private Canvas poiCanvas;
@@ -451,11 +464,9 @@ public class MainView extends AnchorPane {
 
     private HBox setupInfoToast() {
         // Icon
-        ImageView infoIcon = new ImageView(loadIcon("/assets/info.png"));
-        infoIcon.setFitWidth(16);
-        infoIcon.setFitHeight(16);
-        infoIcon.setPreserveRatio(true);
-        infoIcon.setSmooth(true);
+        Label infoIcon = new Label("\uf05a");
+        infoIcon.setFont(Font.font("FontAwesome", 16));
+        infoIcon.setStyle("-fx-text-fill: #4fc3f7;");
 
         Label hintLabel = new Label("Labels: Double-click to add/edit · Drag to move · Right-click to remove");
         hintLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
@@ -520,9 +531,6 @@ public class MainView extends AnchorPane {
 
         String[] layerNames = {"Labels", "Points of Interest", "Structures & Roads", "Mountains", "Rivers & Lakes", "Grid"};
 
-        Image eyeOpen  = loadIcon("/assets/eye.png");
-        Image eyeClosed = loadIcon("/assets/eye-blind.png");
-
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
             row.setAlignment(Pos.CENTER_LEFT);
@@ -534,18 +542,17 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            ImageView iconView = new ImageView(eyeOpen);
-            iconView.setFitWidth(18);
-            iconView.setFitHeight(18);
-            iconView.setPreserveRatio(true);
-            iconView.setSmooth(true);
+            Label iconLabel = new Label("\uf06e");
+            iconLabel.setFont(Font.font("FontAwesome", 16));
+            iconLabel.setStyle("-fx-text-fill: #cccccc;");
 
-            ToggleButton toggle = new ToggleButton("", iconView);
+            ToggleButton toggle = new ToggleButton("", iconLabel);
             toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
             toggle.setSelected(true);  // All layers visible by default
             int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
-                iconView.setImage(newV ? eyeOpen : eyeClosed);
+                iconLabel.setText(newV ? "\uf06e" : "\uf070");
+                iconLabel.setStyle(newV ? "-fx-text-fill: #cccccc;" : "-fx-text-fill: #777777;");
 
                 // Wire POI toggle to control POI canvas opacity
                 if (finalI == 1) {
@@ -578,17 +585,17 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            ImageView iconView = new ImageView(eyeOpen);
-            iconView.setFitWidth(18);
-            iconView.setFitHeight(18);
-            iconView.setPreserveRatio(true);
-            iconView.setSmooth(true);
+            Label iconLabel = new Label("\uf06e");
+            iconLabel.setFont(Font.font("FontAwesome", 16));
+            iconLabel.setStyle("-fx-text-fill: #cccccc;");
 
-            ToggleButton toggle = new ToggleButton("", iconView);
+            ToggleButton toggle = new ToggleButton("", iconLabel);
             toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
             toggle.setSelected(true);
-            toggle.selectedProperty().addListener((obs, oldV, newV) ->
-                    iconView.setImage(newV ? eyeOpen : eyeClosed));
+            toggle.selectedProperty().addListener((obs, oldV, newV) -> {
+                iconLabel.setText(newV ? "\uf06e" : "\uf070");
+                iconLabel.setStyle(newV ? "-fx-text-fill: #cccccc;" : "-fx-text-fill: #777777;");
+            });
 
             if (def[1].equals("borders")) {
                 enableBordersToggle = toggle;
