@@ -77,8 +77,8 @@ public class POIListPanel extends VBox {
                     colorSquare.setFill(toFXColor(poiColor));
                     
                     // POI name and details
-                    String displayText = String.format("%s (%s) @ %d,%d", 
-                        poi.getName(), poi.getType(), poi.getX(), poi.getY());
+                    String displayText = String.format("%s (%s)", 
+                        poi.getName(), poi.getType());
                     Label label = new Label(displayText);
                     label.setStyle("-fx-text-fill: #e0e0e0;");
                     

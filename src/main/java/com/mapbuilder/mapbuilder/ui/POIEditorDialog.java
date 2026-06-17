@@ -33,7 +33,6 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
     private ComboBox<POIType> typeCombo;
     private TextArea descriptionArea;
     private ColorPicker colorPicker;
-    private ComboBox<POIType> iconCombo;
     
     /**
      * Constructs a POI editor dialog.
@@ -109,26 +108,11 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
         colorLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
         colorBox.getChildren().addAll(colorLabel, colorPicker);
 
-        // Icon override combo
-        iconCombo = new ComboBox<>(FXCollections.observableArrayList(POIType.values()));
-        if (poi.getCustomIcon() != null) {
-            iconCombo.setValue(poi.getCustomIcon());
-        } else {
-            iconCombo.setValue(poi.getType());
-        }
-        iconCombo.setPrefWidth(200);
-        HBox iconBox = new HBox(10);
-        iconBox.setAlignment(Pos.CENTER_LEFT);
-        Label iconLabel = new Label("Icon:");
-        iconLabel.setTextFill(javafx.scene.paint.Color.web("#e0e0e0"));
-        iconBox.getChildren().addAll(iconLabel, iconCombo);
-        
         form.getChildren().addAll(
             nameBox,
             typeBox,
             descBox,
-            colorBox,
-            iconBox
+            colorBox
         );
         
         this.getDialogPane().setContent(form);
@@ -152,7 +136,7 @@ public class POIEditorDialog extends Dialog<PointOfInterest> {
             poi.setType(typeCombo.getValue());
             poi.setDescription(descriptionArea.getText());
             poi.setCustomColor(colorToARGB(colorPicker.getValue()));
-            poi.setCustomIcon(iconCombo.getValue());
+            poi.setCustomIcon(null);
             
             // Notify presenter to save
             if (presenter != null) {
