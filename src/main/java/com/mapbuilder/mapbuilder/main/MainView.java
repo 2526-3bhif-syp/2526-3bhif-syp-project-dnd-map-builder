@@ -24,9 +24,22 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 public class MainView extends AnchorPane {
+
+    static {
+        try (java.io.InputStream stream = MainView.class.getResourceAsStream("/assets/fontawesome-webfont.ttf")) {
+            if (stream != null) {
+                Font.loadFont(stream, 16);
+            } else {
+                System.err.println("Could not find FontAwesome font file at /assets/fontawesome-webfont.ttf");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     private Canvas canvas;
     private Canvas poiCanvas;
@@ -45,6 +58,7 @@ public class MainView extends AnchorPane {
     private Slider tempBiasSlider;
     private Slider rainBiasSlider;
     private Button randomizeSettingsButton;
+    private Button resetSettingsButton;
     private CheckBox enableRiversToggle;
     private CheckBox enableLakesToggle;
     private Slider riverDensitySlider;
@@ -53,8 +67,8 @@ public class MainView extends AnchorPane {
 
     private Slider kingdomCountSlider;
     private Slider lloydPassesSlider;
-    private CheckBox enableBordersToggle;
-    private CheckBox enableKingdomOverlayToggle;
+    private ToggleButton enableBordersToggle;
+    private ToggleButton enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
     private Tab kingdomsTab;
     
@@ -125,7 +139,7 @@ public class MainView extends AnchorPane {
 
     private ScrollPane setupLeftPanel() {
         VBox leftPanel = new VBox(10);
-        leftPanel.setPrefWidth(260);
+        leftPanel.setPrefWidth(280);
         leftPanel.setPadding(new Insets(15));
         leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0;");
         leftPanel.getStyleClass().add("left-panel");
@@ -201,18 +215,9 @@ public class MainView extends AnchorPane {
         lloydPassesSlider.setMinorTickCount(0);
         lloydPassesSlider.setSnapToTicks(true);
 
-        enableBordersToggle = new CheckBox("Show Borders");
-        enableBordersToggle.setSelected(true);
-
-        enableKingdomOverlayToggle = new CheckBox("Show Kingdom Overlay");
-        enableKingdomOverlayToggle.setSelected(true);
-
         kingdomsContent.getChildren().addAll(
                 new Label("Kingdom Count"), kingdomCountSlider,
-                new Label("Lloyd's Relaxation Passes"), lloydPassesSlider,
-                new Separator(),
-                enableBordersToggle,
-                enableKingdomOverlayToggle
+                new Label("Lloyd's Relaxation Passes"), lloydPassesSlider
         );
         kingdomsTab.setContent(kingdomsContent);
 
@@ -285,9 +290,11 @@ public class MainView extends AnchorPane {
         ruinCastleDensitySlider.setMinorTickCount(4);
         ruinCastleDensitySlider.setSnapToTicks(true);
 
-        addPoiToggle = new ToggleButton("➕  POI hinzufügen");
+        addPoiToggle = new ToggleButton("➕  Add POI");
         addPoiToggle.setId("add-poi-toggle");
         addPoiToggle.setMaxWidth(Double.MAX_VALUE);
+        addPoiToggle.selectedProperty().addListener((obs, oldV, newV) ->
+                addPoiToggle.setText(newV ? "📍  Click on map to place" : "➕  Add POI"));
 
         poisContent.getChildren().addAll(
                 new Label("Dungeon Density"), dungeonDensitySlider,
@@ -314,13 +321,15 @@ public class MainView extends AnchorPane {
                 "-fx-text-base-color: white;");
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
 
+        Label seedLabel = new Label("Seed");
+        seedLabel.setStyle("-fx-text-fill: white;");
         seedField = new TextField("12345");
         seedField.setPrefWidth(100);
         randomSeedButton = new Button("Random Seed");
         randomSeedButton.setStyle("-fx-cursor: hand;");
         HBox seedRow = new HBox(8);
         seedRow.setAlignment(Pos.CENTER_LEFT);
-        seedRow.getChildren().addAll(new Label("Seed"), seedField, randomSeedButton);
+        seedRow.getChildren().addAll(seedLabel, seedField, randomSeedButton);
 
         sizeSlider = new Slider(200, 2000, 800);
         sizeSlider.setShowTickMarks(true);
@@ -359,7 +368,6 @@ public class MainView extends AnchorPane {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
-        Label seedLabel = new Label("Seed"); seedLabel.setStyle("-fx-text-fill: white;");
         Label mapSizeLabel = new Label("Map Size"); mapSizeLabel.setStyle("-fx-text-fill: white;");
         Label octavesLabel = new Label("Octaves (Detail Level)"); octavesLabel.setStyle("-fx-text-fill: white;");
         Label scaleLabel = new Label("Scale (Zoom Level)"); scaleLabel.setStyle("-fx-text-fill: white;");
@@ -380,14 +388,14 @@ public class MainView extends AnchorPane {
         terrainTab.setContent(terrainContent);
         
         randomizeSettingsButton = new Button("Randomize Settings");
-        
+        resetSettingsButton = new Button("Reset Settings");
+
         HBox actionRow = new HBox(8);
-        actionRow.getChildren().addAll(randomizeSettingsButton);
+        actionRow.getChildren().addAll(randomizeSettingsButton, resetSettingsButton);
 
         leftPanel.getChildren().addAll(
             headerBox,
             seedRow,
-            seedField,
             tabPane,
             actionRow
         );
@@ -420,7 +428,7 @@ public class MainView extends AnchorPane {
         Button collapseLeftBtn = (Button) leftScroll.getProperties().get("collapseLeftBtn");
         collapseLeftBtn.setOnAction(e -> {
             TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
-            tt.setToX(-280);
+            tt.setToX(-300);
             tt.setOnFinished(evt -> showLeftBtn.setVisible(true));
             tt.play();
         });
@@ -456,11 +464,9 @@ public class MainView extends AnchorPane {
 
     private HBox setupInfoToast() {
         // Icon
-        ImageView infoIcon = new ImageView(loadIcon("/assets/info.png"));
-        infoIcon.setFitWidth(16);
-        infoIcon.setFitHeight(16);
-        infoIcon.setPreserveRatio(true);
-        infoIcon.setSmooth(true);
+        Label infoIcon = new Label("\uf05a");
+        infoIcon.setFont(Font.font("FontAwesome", 16));
+        infoIcon.setStyle("-fx-text-fill: #4fc3f7;");
 
         Label hintLabel = new Label("Labels: Double-click to add/edit · Drag to move · Right-click to remove");
         hintLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
@@ -523,10 +529,7 @@ public class MainView extends AnchorPane {
 
         layersPanel.getChildren().add(layersHeaderBox);
 
-        String[] layerNames = {"Markierungen", "Punkte von Interesse", "Strukturen & Straßen", "Berge", "Flüsse und Seen", "Grid"};
-
-        Image eyeOpen  = loadIcon("/assets/eye.png");
-        Image eyeClosed = loadIcon("/assets/eye-blind.png");
+        String[] layerNames = {"Labels", "Points of Interest", "Structures & Roads", "Mountains", "Rivers & Lakes", "Grid"};
 
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
@@ -539,18 +542,17 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            ImageView iconView = new ImageView(eyeOpen);
-            iconView.setFitWidth(18);
-            iconView.setFitHeight(18);
-            iconView.setPreserveRatio(true);
-            iconView.setSmooth(true);
+            Label iconLabel = new Label("\uf06e");
+            iconLabel.setFont(Font.font("FontAwesome", 16));
+            iconLabel.setStyle("-fx-text-fill: #cccccc;");
 
-            ToggleButton toggle = new ToggleButton("", iconView);
+            ToggleButton toggle = new ToggleButton("", iconLabel);
             toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
             toggle.setSelected(true);  // All layers visible by default
             int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
-                iconView.setImage(newV ? eyeOpen : eyeClosed);
+                iconLabel.setText(newV ? "\uf06e" : "\uf070");
+                iconLabel.setStyle(newV ? "-fx-text-fill: #cccccc;" : "-fx-text-fill: #777777;");
 
                 // Wire POI toggle to control POI canvas opacity
                 if (finalI == 1) {
@@ -561,6 +563,44 @@ public class MainView extends AnchorPane {
             // Store reference to POI toggle
             if (i == 1) {
                 poiToggle = toggle;
+            }
+
+            row.getChildren().addAll(nameLabel, rowSpacer, toggle);
+            layersPanel.getChildren().add(row);
+        }
+
+        // ── Kingdom display layers (wired to regenerateImages) ───────────────
+        String[][] kingdomLayerDefs = {
+            {"Kingdom Borders",  "borders"},
+            {"Kingdom Overlay",  "overlay"}
+        };
+        for (String[] def : kingdomLayerDefs) {
+            HBox row = new HBox();
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setStyle("-fx-background-color: #3c3f41; -fx-padding: 8; -fx-background-radius: 5;");
+
+            Label nameLabel = new Label(def[0]);
+            nameLabel.setStyle("-fx-text-fill: white;");
+
+            Pane rowSpacer = new Pane();
+            HBox.setHgrow(rowSpacer, Priority.ALWAYS);
+
+            Label iconLabel = new Label("\uf06e");
+            iconLabel.setFont(Font.font("FontAwesome", 16));
+            iconLabel.setStyle("-fx-text-fill: #cccccc;");
+
+            ToggleButton toggle = new ToggleButton("", iconLabel);
+            toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
+            toggle.setSelected(true);
+            toggle.selectedProperty().addListener((obs, oldV, newV) -> {
+                iconLabel.setText(newV ? "\uf06e" : "\uf070");
+                iconLabel.setStyle(newV ? "-fx-text-fill: #cccccc;" : "-fx-text-fill: #777777;");
+            });
+
+            if (def[1].equals("borders")) {
+                enableBordersToggle = toggle;
+            } else {
+                enableKingdomOverlayToggle = toggle;
             }
 
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
@@ -617,6 +657,7 @@ public class MainView extends AnchorPane {
     public Slider getRainBiasSlider() { return rainBiasSlider; }
     public Button getRandomSeedButton() { return randomSeedButton; }
     public Button getRandomizeSettingsButton() { return randomizeSettingsButton; }
+    public Button getResetSettingsButton() { return resetSettingsButton; }
     public CheckBox getEnableRiversToggle() { return enableRiversToggle; }
     public CheckBox getEnableLakesToggle() { return enableLakesToggle; }
     public Slider getRiverDensitySlider() { return riverDensitySlider; }
@@ -624,8 +665,8 @@ public class MainView extends AnchorPane {
     public Slider getMinLakeAreaSlider() { return minLakeAreaSlider; }
     public Slider getKingdomCountSlider() { return kingdomCountSlider; }
     public Slider getLloydPassesSlider() { return lloydPassesSlider; }
-    public CheckBox getEnableBordersToggle() { return enableBordersToggle; }
-    public CheckBox getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
+    public ToggleButton getEnableBordersToggle() { return enableBordersToggle; }
+    public ToggleButton getEnableKingdomOverlayToggle() { return enableKingdomOverlayToggle; }
     
     public Slider getDungeonDensitySlider() { return dungeonDensitySlider; }
     public Slider getSettlementDensitySlider() { return settlementDensitySlider; }

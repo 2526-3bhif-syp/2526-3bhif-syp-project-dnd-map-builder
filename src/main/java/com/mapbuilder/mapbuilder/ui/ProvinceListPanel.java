@@ -2,12 +2,15 @@ package com.mapbuilder.mapbuilder.ui;
 
 import com.mapbuilder.mapbuilder.core.map.Kingdom;
 import com.mapbuilder.mapbuilder.main.MainPresenter;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import java.util.List;
 
@@ -26,6 +29,8 @@ public class ProvinceListPanel extends VBox {
 
     private MainPresenter presenter;
     private ListView<Kingdom> listView;
+    private ScrollPane scroll;
+    private Label warningLabel;
 
     /**
      * @param presenter the {@link MainPresenter} (may be {@code null}; set later via
@@ -37,6 +42,7 @@ public class ProvinceListPanel extends VBox {
         setStyle("-fx-padding: 5; -fx-border-color: transparent;");
         setFillWidth(true);
         initListView();
+        initWarningLabel();
     }
 
     /** Late-initialises the presenter reference (called from {@code MainPresenter.setView()}). */
@@ -67,20 +73,22 @@ public class ProvinceListPanel extends VBox {
                 row.setAlignment(Pos.CENTER_LEFT);
                 row.setStyle("-fx-background-color: #1e1e1e;");
 
-                // Colour swatch – updated whenever the picker fires
-                Rectangle swatch = new Rectangle(14, 14);
+                // Colour swatch — acts as the clickable colour button
+                Rectangle swatch = new Rectangle(16, 16);
                 swatch.setArcWidth(3);
                 swatch.setArcHeight(3);
                 swatch.setFill(argbToFX(k.getColorARGB()));
+                swatch.setCursor(javafx.scene.Cursor.HAND);
+                javafx.scene.control.Tooltip.install(swatch,
+                        new javafx.scene.control.Tooltip("Click to change colour"));
 
-                // Province name
-                Label nameLabel = new Label(k.getName());
-                nameLabel.setStyle("-fx-text-fill: #e0e0e0;");
-                HBox.setHgrow(nameLabel, Priority.ALWAYS);
-
-                // Compact inline colour picker
+                // Hidden ColorPicker — triggered by clicking the swatch
                 ColorPicker picker = new ColorPicker(argbToFX(k.getColorARGB()));
-                picker.setPrefSize(60, 24);
+                picker.setOpacity(0);
+                picker.setMouseTransparent(true);
+                picker.setPrefSize(1, 1);
+                picker.setMaxSize(1, 1);
+                picker.setMinSize(1, 1);
                 picker.setOnAction(e -> {
                     Color c = picker.getValue();
                     k.setColorARGB(fxToArgb(c));
@@ -91,21 +99,41 @@ public class ProvinceListPanel extends VBox {
                     }
                 });
 
-                row.getChildren().addAll(swatch, nameLabel, picker);
+                swatch.setMouseTransparent(true); // let swatchPane handle the click
+
+                // Stack the invisible picker over the swatch so its popup anchors near it
+                javafx.scene.layout.StackPane swatchPane =
+                        new javafx.scene.layout.StackPane(swatch, picker);
+                swatchPane.setPrefSize(16, 16);
+                swatchPane.setMaxSize(16, 16);
+                // Consume on the pane level so no click in this area reaches the listView.
+                // Defer picker.show() via Platform.runLater to avoid the phantom-click
+                // problem where the same event that opens the popup closes it immediately.
+                swatchPane.setOnMouseClicked(e -> {
+                    e.consume();
+                    Platform.runLater(picker::show);
+                });
+
+                // Province name
+                Label nameLabel = new Label(k.getName());
+                nameLabel.setStyle("-fx-text-fill: #e0e0e0;");
+                HBox.setHgrow(nameLabel, Priority.ALWAYS);
+
+                row.getChildren().addAll(swatchPane, nameLabel);
                 setGraphic(row);
+
             }
         });
 
-        // Click handling
+        // Single click → select paint target (swatch clicks are consumed and won't reach here)
+        // Double-click → rename dialog
         listView.setOnMouseClicked(event -> {
             Kingdom selected = listView.getSelectionModel().getSelectedItem();
             if (selected == null || presenter == null) return;
 
-            // Always inform the presenter of the selection
-            presenter.setSelectedKingdom(selected);
-
-            // Double-click → rename dialog
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 1) {
+                presenter.setSelectedKingdom(selected);
+            } else if (event.getClickCount() == 2) {
                 TextInputDialog dlg = new TextInputDialog(selected.getName());
                 dlg.setTitle("Rename Province");
                 dlg.setHeaderText("Enter a new name for this province:");
@@ -124,12 +152,24 @@ public class ProvinceListPanel extends VBox {
 
         VBox.setVgrow(listView, Priority.ALWAYS);
 
-        ScrollPane scroll = new ScrollPane(listView);
+        scroll = new ScrollPane(listView);
         scroll.setFitToWidth(true);
         scroll.setStyle(
                 "-fx-background: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-padding: 0;");
 
         getChildren().add(scroll);
+    }
+
+    private void initWarningLabel() {
+        warningLabel = new Label("Please select a Province before painting");
+        warningLabel.setStyle(
+                "-fx-text-fill: #ff6b6b; -fx-font-size: 11px; -fx-padding: 4 6; " +
+                "-fx-background-color: rgba(255,60,60,0.12); -fx-background-radius: 4;");
+        warningLabel.setWrapText(true);
+        warningLabel.setMaxWidth(Double.MAX_VALUE);
+        warningLabel.setVisible(false);
+        warningLabel.setManaged(false);
+        getChildren().add(0, warningLabel);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -157,6 +197,30 @@ public class ProvinceListPanel extends VBox {
     /** Returns the currently selected kingdom, or {@code null}. */
     public Kingdom getSelectedKingdom() {
         return listView.getSelectionModel().getSelectedItem();
+    }
+
+    /**
+     * Shows a "please select a province" warning and briefly highlights the
+     * list with a red border. Safe to call from any event handler on the FX thread.
+     */
+    public void flashError() {
+        // Show warning label
+        warningLabel.setVisible(true);
+        warningLabel.setManaged(true);
+
+        // Red border on the scroll pane
+        scroll.setStyle(
+                "-fx-background: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-padding: 0; " +
+                "-fx-border-color: #ff4444; -fx-border-width: 2;");
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(2.5));
+        pause.setOnFinished(e -> {
+            warningLabel.setVisible(false);
+            warningLabel.setManaged(false);
+            scroll.setStyle(
+                    "-fx-background: #1e1e1e; -fx-control-inner-background: #1e1e1e; -fx-padding: 0;");
+        });
+        pause.play();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
