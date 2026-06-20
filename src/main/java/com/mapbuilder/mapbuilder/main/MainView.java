@@ -246,6 +246,9 @@ public class MainView extends AnchorPane {
         brushSizeSlider.setMajorTickUnit(7);
         brushSizeSlider.setMinorTickCount(6);
 
+        Label undoTipLabel = new Label("\uD83D\uDCA1 Tip: Press Ctrl+Z to undo last stroke");
+        undoTipLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px; -fx-font-style: italic;");
+
         Label provListTitle = new Label("Provinces");
         provListTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
 
@@ -257,6 +260,7 @@ public class MainView extends AnchorPane {
                 provincePaintToggle,
                 selectedProvinceBox,
                 brushSizeLabel, brushSizeSlider,
+                undoTipLabel,
                 new Separator(),
                 provListTitle,
                 provinceListPanel
