@@ -66,6 +66,8 @@ public class MainPresenter {
     private Kingdom selectedPaintKingdom = null;
     private double lastPaintX = -1;
     private double lastPaintY = -1;
+    private final java.util.Stack<java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom>> paintUndoStack = new java.util.Stack<>();
+    private java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> currentStrokeChanges = null;
 
     // POI editing
     private boolean addPoiMode = false;
@@ -110,6 +112,7 @@ public class MainPresenter {
                     event.consume();
                     return;
                 }
+                currentStrokeChanges = new java.util.HashMap<>();
                 lastPaintX = event.getX();
                 lastPaintY = event.getY();
                 paintCellsAtScreen(event.getX(), event.getY());
@@ -191,6 +194,12 @@ public class MainPresenter {
                 lastPaintX = -1;
                 lastPaintY = -1;
                 annexEnclosedAreas();
+                if (currentStrokeChanges != null) {
+                    if (!currentStrokeChanges.isEmpty()) {
+                        paintUndoStack.push(currentStrokeChanges);
+                    }
+                    currentStrokeChanges = null;
+                }
             }
             draggedLabel = null;
             draggedPOI = null;
@@ -314,6 +323,17 @@ public class MainPresenter {
         view.getKingdomsTab().selectedProperty().addListener((obs, oldV, newV) -> {
             if (!newV) {
                 view.getProvincePaintToggle().setSelected(false);
+            }
+        });
+
+        view.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.setOnKeyPressed(event -> {
+                    if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.Z) {
+                        undoLastPaintStroke();
+                        event.consume();
+                    }
+                });
             }
         });
     }
@@ -537,6 +557,8 @@ public class MainPresenter {
         };
 
         task.setOnSucceeded(e -> {
+            paintUndoStack.clear();
+            currentStrokeChanges = null;
             // Invalidate all cached LOD grids — they belong to the old map
             Task<MapGrid> oldLod = runningLodTask;
             if (oldLod != null) oldLod.cancel(false);
@@ -1225,6 +1247,9 @@ public class MainPresenter {
                     MapCell cell = grid.getCell(cx + dx, cy + dy);
                     if (cell != null && cell.getElevation() > waterLevel) {
                         if (cell.getKingdom() != selectedPaintKingdom) {
+                            if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                                currentStrokeChanges.put(cell, cell.getKingdom());
+                            }
                             cell.setKingdom(selectedPaintKingdom);
                             minX = Math.min(minX, cx + dx);
                             minY = Math.min(minY, cy + dy);
@@ -1273,6 +1298,9 @@ public class MainPresenter {
                         MapCell cell = grid.getCell(cx + dx, cy + dy);
                         if (cell != null && cell.getElevation() > waterLevel) {
                             if (cell.getKingdom() != selectedPaintKingdom) {
+                                if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                                    currentStrokeChanges.put(cell, cell.getKingdom());
+                                }
                                 cell.setKingdom(selectedPaintKingdom);
                                 minX = Math.min(minX, cx + dx);
                                 minY = Math.min(minY, cy + dy);
@@ -1375,6 +1403,9 @@ public class MainPresenter {
                 if (!reachesEdge[x][y]) {
                     MapCell cell = grid.getCell(x, y);
                     if (cell.getKingdom() != selectedPaintKingdom && cell.getElevation() > waterLevel) {
+                        if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                            currentStrokeChanges.put(cell, cell.getKingdom());
+                        }
                         cell.setKingdom(selectedPaintKingdom);
                         minX = Math.min(minX, x);
                         minY = Math.min(minY, y);
@@ -1389,5 +1420,29 @@ public class MainPresenter {
         if (changed) {
             updateImagePixels(minX, minY, maxX, maxY);
         }
+    }
+
+    private void undoLastPaintStroke() {
+        if (paintUndoStack.isEmpty()) return;
+        java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> stroke = paintUndoStack.pop();
+        if (stroke.isEmpty()) return;
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (java.util.Map.Entry<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> entry : stroke.entrySet()) {
+            com.mapbuilder.mapbuilder.core.map.MapCell cell = entry.getKey();
+            Kingdom oldKingdom = entry.getValue();
+            cell.setKingdom(oldKingdom);
+            
+            minX = Math.min(minX, cell.getX());
+            minY = Math.min(minY, cell.getY());
+            maxX = Math.max(maxX, cell.getX());
+            maxY = Math.max(maxY, cell.getY());
+        }
+
+        updateImagePixels(minX, minY, maxX, maxY);
     }
 }
