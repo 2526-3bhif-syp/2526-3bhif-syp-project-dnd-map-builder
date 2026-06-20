@@ -338,6 +338,9 @@ public class MainPresenter {
      * closest marker when several overlap.
      */
     private PointOfInterest getPOIAt(double screenX, double screenY) {
+        if (view.getPoiToggle() != null && !view.getPoiToggle().isSelected()) {
+            return null;
+        }
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return null;
         List<PointOfInterest> pois = grid.getPointsOfInterest();
