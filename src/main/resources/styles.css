@@ -258,6 +258,13 @@
 #province-paint-toggle:selected:hover {
     -fx-background-color: #2ecc71;
 }
+#province-paint-toggle.no-target:selected {
+    -fx-background-color: #d4ac0d; /* amber/yellow warning style */
+    -fx-text-fill: #ffffff;
+}
+#province-paint-toggle.no-target:selected:hover {
+    -fx-background-color: #f1c40f;
+}
 
 #add-poi-toggle {
     -fx-background-color: #d35400;

@@ -1214,11 +1214,16 @@ public class MainPresenter {
         if (provincePaintMode) {
             if (selectedPaintKingdom == null) {
                 view.getProvincePaintToggle().setText("\uD83C\uDFA8  Select from provinces list!");
+                if (!view.getProvincePaintToggle().getStyleClass().contains("no-target")) {
+                    view.getProvincePaintToggle().getStyleClass().add("no-target");
+                }
             } else {
                 view.getProvincePaintToggle().setText("\uD83C\uDFA8  Start painting on map!");
+                view.getProvincePaintToggle().getStyleClass().remove("no-target");
             }
         } else {
             view.getProvincePaintToggle().setText("\uD83C\uDFA8  Province Paint Mode");
+            view.getProvincePaintToggle().getStyleClass().remove("no-target");
         }
     }
 
