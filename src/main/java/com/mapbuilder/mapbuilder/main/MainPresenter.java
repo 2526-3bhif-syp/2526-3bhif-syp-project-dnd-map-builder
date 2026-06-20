@@ -306,6 +306,7 @@ public class MainPresenter {
             if (newV && view.getAddPoiToggle().isSelected()) {
                 view.getAddPoiToggle().setSelected(false);
             }
+            updateProvincePaintButtonText();
         });
 
         // Add-POI mode toggle
@@ -1205,6 +1206,19 @@ public class MainPresenter {
         } else {
             view.getSelectedProvinceLabel().setText("None");
             view.getSelectedProvinceColorBox().setFill(javafx.scene.paint.Color.TRANSPARENT);
+        }
+        updateProvincePaintButtonText();
+    }
+
+    private void updateProvincePaintButtonText() {
+        if (provincePaintMode) {
+            if (selectedPaintKingdom == null) {
+                view.getProvincePaintToggle().setText("\uD83C\uDFA8  Select from provinces list!");
+            } else {
+                view.getProvincePaintToggle().setText("\uD83C\uDFA8  Start painting on map!");
+            }
+        } else {
+            view.getProvincePaintToggle().setText("\uD83C\uDFA8  Province Paint Mode");
         }
     }
 
