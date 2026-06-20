@@ -71,6 +71,7 @@ public class MainView extends AnchorPane {
     private ToggleButton enableKingdomOverlayToggle;
     private ToggleButton poiToggle;
     private ToggleButton labelsLayerToggle;
+    private ToggleButton riversLakesLayerToggle;
     private Tab kingdomsTab;
     
     private Slider dungeonDensitySlider;
@@ -568,6 +569,9 @@ public class MainView extends AnchorPane {
             if (i == 0) {
                 labelsLayerToggle = toggle;
             }
+            if (i == 4) {
+                riversLakesLayerToggle = toggle;
+            }
 
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
             layersPanel.getChildren().add(row);
@@ -687,6 +691,7 @@ public class MainView extends AnchorPane {
     public javafx.scene.shape.Rectangle getSelectedProvinceColorBox() { return selectedProvinceColorBox; }
 
     public ToggleButton getLabelsLayerToggle() { return labelsLayerToggle; }
+    public ToggleButton getRiversLakesLayerToggle() { return riversLakesLayerToggle; }
 
     private Image loadIcon(String resourcePath) {
         java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);

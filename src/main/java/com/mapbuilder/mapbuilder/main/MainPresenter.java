@@ -222,6 +222,7 @@ public class MainPresenter {
         
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getRiversLakesLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
@@ -431,7 +432,8 @@ public class MainPresenter {
         boolean showBorders = view.getEnableBordersToggle().isSelected();
         boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
         
-        baseMapImage = createImageFromGrid(baseGrid, showBorders, showOverlay);
+        baseMapImage = createImageFromGrid(baseGrid, showBorders, showOverlay,
+                view.getRiversLakesLayerToggle().isSelected());
         lodImageCache.clear();
         
         renderMap();
@@ -544,7 +546,8 @@ public class MainPresenter {
             if (grid != null) {
                 boolean showBorders = view.getEnableBordersToggle().isSelected();
                 boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
-                baseMapImage = createImageFromGrid(grid, showBorders, showOverlay);
+                baseMapImage = createImageFromGrid(grid, showBorders, showOverlay,
+                        view.getRiversLakesLayerToggle().isSelected());
             }
             
             renderMap();
@@ -816,7 +819,8 @@ public class MainPresenter {
             
             boolean showBorders = view.getEnableBordersToggle().isSelected();
             boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
-            lodImageCache.put(region.cacheKey(), createImageFromGrid(lodGrid, showBorders, showOverlay));
+            lodImageCache.put(region.cacheKey(), createImageFromGrid(lodGrid, showBorders, showOverlay,
+                    view.getRiversLakesLayerToggle().isSelected()));
             
             activeLodLevel = region.lod;
             renderMap(); // re-render with the freshly cached LOD grid
@@ -873,10 +877,11 @@ public class MainPresenter {
         }
     }
 
-    private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay) {
+    private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay,
+                                               boolean showRiversLakes) {
         int w = grid.getWidth();
         int h = grid.getHeight();
-        int[] pixels = buildColorCache(grid, w, h, showBorders, showOverlay);
+        int[] pixels = buildColorCache(grid, w, h, showBorders, showOverlay, showRiversLakes);
         WritableImage image = new WritableImage(w, h);
         image.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), pixels, 0, w);
         return image;
@@ -884,26 +889,30 @@ public class MainPresenter {
 
     /** Pre-computes one ARGB color per grid cell into a flat array [y*gW+x]. */
     private int[] buildColorCache(MapGrid grid, int gW, int gH,
-                                  boolean showBorders, boolean showOverlay) {
+                                  boolean showBorders, boolean showOverlay,
+                                  boolean showRiversLakes) {
         int[] cache = new int[gW * gH];
         for (int cy = 0; cy < gH; cy++) {
             for (int cx = 0; cx < gW; cx++) {
-                cache[cy * gW + cx] = getColorAt(cx, cy, grid, showBorders, showOverlay);
+                cache[cy * gW + cx] = getColorAt(cx, cy, grid, showBorders, showOverlay, showRiversLakes);
             }
         }
         return cache;
     }
 
-    private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay) {
+    private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay,
+                            boolean showRiversLakes) {
         if (cx < 0 || cx >= grid.getWidth() || cy < 0 || cy >= grid.getHeight()) {
             return 0xFF00008B;
         }
         MapCell cell = grid.getCell(cx, cy);
         int color = cell.getMixedColorARGB();
-        if (cell.isLake()) {
-            color = COLOR_LAKE;
-        } else if (cell.isRiver()) {
-            color = COLOR_RIVER;
+        if (showRiversLakes) {
+            if (cell.isLake()) {
+                color = COLOR_LAKE;
+            } else if (cell.isRiver()) {
+                color = COLOR_RIVER;
+            }
         }
         if (cell.getKingdom() != null) {
             if (showOverlay) {
