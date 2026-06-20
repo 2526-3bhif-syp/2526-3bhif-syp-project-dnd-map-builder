@@ -260,13 +260,17 @@
 }
 
 #add-poi-toggle {
-    -fx-text-fill: black;
+    -fx-background-color: #d35400;
+    -fx-text-fill: #ffffff;
     -fx-font-weight: bold;
 }
+#add-poi-toggle:hover {
+    -fx-background-color: #e67e22;
+}
 #add-poi-toggle:selected {
-    -fx-background-color: #58d68d; /* light green so black text stays readable */
-    -fx-text-fill: black;
+    -fx-background-color: #27ae60;
+    -fx-text-fill: #ffffff;
 }
 #add-poi-toggle:selected:hover {
-    -fx-background-color: #6fe09e;
+    -fx-background-color: #2ecc71;
 }
