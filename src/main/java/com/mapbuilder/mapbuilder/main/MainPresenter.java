@@ -222,6 +222,7 @@ public class MainPresenter {
         
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
@@ -653,6 +654,13 @@ public class MainPresenter {
     }
 
     private void renderLabels() {
+        // Skip rendering if labels layer is toggled off
+        if (!view.getLabelsLayerToggle().isSelected()) {
+            javafx.scene.Group canvasGroup = view.getCanvasGroup();
+            canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.text.Text);
+            return;
+        }
+
         javafx.scene.Group canvasGroup = view.getCanvasGroup();
         java.util.List<com.mapbuilder.mapbuilder.core.map.MapLabel> labels = model.getLabels();
 
