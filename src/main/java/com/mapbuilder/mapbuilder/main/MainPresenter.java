@@ -224,6 +224,7 @@ public class MainPresenter {
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getRiversLakesLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getGridLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
@@ -649,7 +650,39 @@ public class MainPresenter {
             // Draw hardware-accelerated image properly cropped
             gc.drawImage(activeImage, intersectX, intersectY, intersectW, intersectH, destX, destY, destW, destH);
         }
-        
+
+        // ── Grid overlay ──────────────────────────────────────────────────
+        if (view.getGridLayerToggle().isSelected()) {
+            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, 0.15));
+            gc.setLineWidth(0.5);
+            int gridW = baseGrid.getWidth();
+            int gridH = baseGrid.getHeight();
+            // Map bounding box in screen coordinates
+            double mapScreenX0 = (0 - viewOffsetX) * pixelsPerCell;
+            double mapScreenY0 = (0 - viewOffsetY) * pixelsPerCell;
+            double mapScreenX1 = (gridW - viewOffsetX) * pixelsPerCell;
+            double mapScreenY1 = (gridH - viewOffsetY) * pixelsPerCell;
+            // Clamp to canvas
+            double clipTop    = Math.max(0, mapScreenY0);
+            double clipBottom  = Math.min(canvasH, mapScreenY1);
+            double clipLeft   = Math.max(0, mapScreenX0);
+            double clipRight  = Math.min(canvasW, mapScreenX1);
+            // Vertical lines
+            int startCellX = Math.max(0, (int) viewOffsetX);
+            int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
+            for (int cx = startCellX; cx <= endCellX; cx++) {
+                double sx = (cx - viewOffsetX) * pixelsPerCell;
+                gc.strokeLine(sx, clipTop, sx, clipBottom);
+            }
+            // Horizontal lines
+            int startCellY = Math.max(0, (int) viewOffsetY);
+            int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
+            for (int cy = startCellY; cy <= endCellY; cy++) {
+                double sy = (cy - viewOffsetY) * pixelsPerCell;
+                gc.strokeLine(clipLeft, sy, clipRight, sy);
+            }
+        }
+
         renderPOIs();
         renderLabels();
         view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
@@ -1270,7 +1303,8 @@ public class MainPresenter {
         PixelWriter writer = baseMapImage.getPixelWriter();
         for (int cy = minY; cy <= maxY; cy++) {
             for (int cx = minX; cx <= maxX; cx++) {
-                writer.setArgb(cx, cy, getColorAt(cx, cy, grid, showBorders, showOverlay));
+                writer.setArgb(cx, cy, getColorAt(cx, cy, grid, showBorders, showOverlay,
+                        view.getRiversLakesLayerToggle().isSelected()));
             }
         }
         // Invalidate LOD cache so zoomed-out views get the new pixels too

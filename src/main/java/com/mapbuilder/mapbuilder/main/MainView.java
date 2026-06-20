@@ -72,6 +72,7 @@ public class MainView extends AnchorPane {
     private ToggleButton poiToggle;
     private ToggleButton labelsLayerToggle;
     private ToggleButton riversLakesLayerToggle;
+    private ToggleButton gridLayerToggle;
     private Tab kingdomsTab;
     
     private Slider dungeonDensitySlider;
@@ -531,7 +532,8 @@ public class MainView extends AnchorPane {
 
         layersPanel.getChildren().add(layersHeaderBox);
 
-        String[] layerNames = {"Labels", "Points of Interest", "Structures & Roads", "Mountains", "Rivers & Lakes", "Grid"};
+        String[] layerNames = {"Labels", "Points of Interest", "Rivers & Lakes", "Grid"};
+        boolean[] layerDefaults = {true, true, true, false};
 
         for (int i = 0; i < layerNames.length; i++) {
             HBox row = new HBox();
@@ -544,13 +546,14 @@ public class MainView extends AnchorPane {
             Pane rowSpacer = new Pane();
             HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
-            Label iconLabel = new Label("\uf06e");
+            boolean defaultOn = layerDefaults[i];
+            Label iconLabel = new Label(defaultOn ? "\uf06e" : "\uf070");
             iconLabel.setFont(Font.font("FontAwesome", 16));
-            iconLabel.setStyle("-fx-text-fill: #cccccc;");
+            iconLabel.setStyle(defaultOn ? "-fx-text-fill: #cccccc;" : "-fx-text-fill: #777777;");
 
             ToggleButton toggle = new ToggleButton("", iconLabel);
             toggle.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 2 4;");
-            toggle.setSelected(true);  // All layers visible by default
+            toggle.setSelected(defaultOn);
             int finalI = i;
             toggle.selectedProperty().addListener((obs, oldV, newV) -> {
                 iconLabel.setText(newV ? "\uf06e" : "\uf070");
@@ -562,15 +565,12 @@ public class MainView extends AnchorPane {
                 }
             });
 
-            // Store reference to POI toggle
-            if (i == 1) {
-                poiToggle = toggle;
-            }
-            if (i == 0) {
-                labelsLayerToggle = toggle;
-            }
-            if (i == 4) {
-                riversLakesLayerToggle = toggle;
+            // Store toggle references
+            switch (i) {
+                case 0: labelsLayerToggle = toggle; break;
+                case 1: poiToggle = toggle; break;
+                case 2: riversLakesLayerToggle = toggle; break;
+                case 3: gridLayerToggle = toggle; break;
             }
 
             row.getChildren().addAll(nameLabel, rowSpacer, toggle);
@@ -692,6 +692,7 @@ public class MainView extends AnchorPane {
 
     public ToggleButton getLabelsLayerToggle() { return labelsLayerToggle; }
     public ToggleButton getRiversLakesLayerToggle() { return riversLakesLayerToggle; }
+    public ToggleButton getGridLayerToggle()        { return gridLayerToggle; }
 
     private Image loadIcon(String resourcePath) {
         java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);
