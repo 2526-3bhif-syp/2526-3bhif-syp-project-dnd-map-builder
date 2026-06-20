@@ -26,6 +26,7 @@ import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import javafx.scene.image.WritableImage;
@@ -66,8 +67,8 @@ public class MainPresenter {
     private Kingdom selectedPaintKingdom = null;
     private double lastPaintX = -1;
     private double lastPaintY = -1;
-    private final java.util.Stack<java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom>> paintUndoStack = new java.util.Stack<>();
-    private java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> currentStrokeChanges = null;
+    private final Stack<Map<MapCell, Kingdom>> paintUndoStack = new Stack<>();
+    private Map<MapCell, Kingdom> currentStrokeChanges = null;
 
     // POI editing
     private boolean addPoiMode = false;
@@ -112,7 +113,7 @@ public class MainPresenter {
                     event.consume();
                     return;
                 }
-                currentStrokeChanges = new java.util.HashMap<>();
+                currentStrokeChanges = new HashMap<>();
                 lastPaintX = event.getX();
                 lastPaintY = event.getY();
                 paintCellsAtScreen(event.getX(), event.getY());
@@ -1443,7 +1444,7 @@ public class MainPresenter {
 
     private void undoLastPaintStroke() {
         if (paintUndoStack.isEmpty()) return;
-        java.util.Map<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> stroke = paintUndoStack.pop();
+        Map<MapCell, Kingdom> stroke = paintUndoStack.pop();
         if (stroke.isEmpty()) return;
 
         int minX = Integer.MAX_VALUE;
@@ -1451,8 +1452,8 @@ public class MainPresenter {
         int maxX = Integer.MIN_VALUE;
         int maxY = Integer.MIN_VALUE;
 
-        for (java.util.Map.Entry<com.mapbuilder.mapbuilder.core.map.MapCell, Kingdom> entry : stroke.entrySet()) {
-            com.mapbuilder.mapbuilder.core.map.MapCell cell = entry.getKey();
+        for (Map.Entry<MapCell, Kingdom> entry : stroke.entrySet()) {
+            MapCell cell = entry.getKey();
             Kingdom oldKingdom = entry.getValue();
             cell.setKingdom(oldKingdom);
             
