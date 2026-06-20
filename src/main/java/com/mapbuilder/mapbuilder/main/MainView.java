@@ -326,7 +326,7 @@ public class MainView extends AnchorPane {
 
         Label seedLabel = new Label("Seed");
         seedLabel.setStyle("-fx-text-fill: white;");
-        seedField = new TextField("12345");
+        seedField = new TextField("12345678");
         seedField.setPrefWidth(100);
         randomSeedButton = new Button("Random Seed");
         randomSeedButton.setStyle("-fx-cursor: hand;");
