@@ -324,7 +324,38 @@ public class MainView extends AnchorPane {
 
         poisTab.setContent(poisContent);
 
-        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab);
+        // Create Grid Tab
+        Tab gridTab = new Tab("Grid");
+        gridTab.setClosable(false);
+        gridTab.setStyle("-fx-text-fill: white;");
+        VBox gridContent = new VBox(10);
+        gridContent.setPadding(new Insets(10, 0, 10, 0));
+
+        gridTypeComboBox = new javafx.scene.control.ComboBox<>();
+        gridTypeComboBox.getItems().addAll("Square", "Hexagon");
+        gridTypeComboBox.setValue("Square");
+        gridTypeComboBox.setMaxWidth(Double.MAX_VALUE);
+
+        gridSizeSlider = new Slider(1, 10, 7);
+        gridSizeSlider.setShowTickMarks(true);
+        gridSizeSlider.setShowTickLabels(true);
+        gridSizeSlider.setMajorTickUnit(1);
+        gridSizeSlider.setMinorTickCount(0);
+        gridSizeSlider.setSnapToTicks(true);
+
+        gridOpacitySlider = new Slider(0, 100, 25);
+        gridOpacitySlider.setShowTickMarks(true);
+        gridOpacitySlider.setShowTickLabels(true);
+        gridOpacitySlider.setMajorTickUnit(50);
+
+        gridContent.getChildren().addAll(
+            new Label("Grid Type"), gridTypeComboBox,
+            new Label("Grid Cell Size (Cells)"), gridSizeSlider,
+            new Label("Grid Opacity (%)"), gridOpacitySlider
+        );
+        gridTab.setContent(gridContent);
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab, gridTab);
         tabPane.setStyle("-fx-background-color: #2b2b2b; " +
                 "-fx-control-inner-background: #2b2b2b; " +
                 "-fx-tab-header-background: #2b2b2b; " +
@@ -379,23 +410,6 @@ public class MainView extends AnchorPane {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
-        gridTypeComboBox = new javafx.scene.control.ComboBox<>();
-        gridTypeComboBox.getItems().addAll("Square", "Hexagon");
-        gridTypeComboBox.setValue("Square");
-        gridTypeComboBox.setMaxWidth(Double.MAX_VALUE);
-
-        gridSizeSlider = new Slider(1, 10, 7);
-        gridSizeSlider.setShowTickMarks(true);
-        gridSizeSlider.setShowTickLabels(true);
-        gridSizeSlider.setMajorTickUnit(1);
-        gridSizeSlider.setMinorTickCount(0);
-        gridSizeSlider.setSnapToTicks(true);
-
-        gridOpacitySlider = new Slider(0, 100, 25);
-        gridOpacitySlider.setShowTickMarks(true);
-        gridOpacitySlider.setShowTickLabels(true);
-        gridOpacitySlider.setMajorTickUnit(50);
-
         Label mapSizeLabel = new Label("Map Size"); mapSizeLabel.setStyle("-fx-text-fill: white;");
         Label octavesLabel = new Label("Octaves (Detail Level)"); octavesLabel.setStyle("-fx-text-fill: white;");
         Label scaleLabel = new Label("Scale (Zoom Level)"); scaleLabel.setStyle("-fx-text-fill: white;");
@@ -404,11 +418,6 @@ public class MainView extends AnchorPane {
         Label tempBiasLabel = new Label("Temperature Bias"); tempBiasLabel.setStyle("-fx-text-fill: white;");
         Label rainBiasLabel = new Label("Rainfall Bias"); rainBiasLabel.setStyle("-fx-text-fill: white;");
 
-        Label gridTitle = new Label("Grid Options"); gridTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 0 0 0;");
-        Label gridTypeLabel = new Label("Grid Type"); gridTypeLabel.setStyle("-fx-text-fill: white;");
-        Label gridSizeLabel = new Label("Grid Cell Size (Cells)"); gridSizeLabel.setStyle("-fx-text-fill: white;");
-        Label gridOpacityLabel = new Label("Grid Opacity (%)"); gridOpacityLabel.setStyle("-fx-text-fill: white;");
-
         terrainContent.getChildren().addAll(
             mapSizeLabel, sizeSlider,
             octavesLabel, octavesSlider,
@@ -416,12 +425,7 @@ public class MainView extends AnchorPane {
             falloffLabel, falloffSlider,
             seaLevelLabel, waterLevelSlider,
             tempBiasLabel, tempBiasSlider,
-            rainBiasLabel, rainBiasSlider,
-            new Separator(),
-            gridTitle,
-            gridTypeLabel, gridTypeComboBox,
-            gridSizeLabel, gridSizeSlider,
-            gridOpacityLabel, gridOpacitySlider
+            rainBiasLabel, rainBiasSlider
         );
         terrainTab.setContent(terrainContent);
         
