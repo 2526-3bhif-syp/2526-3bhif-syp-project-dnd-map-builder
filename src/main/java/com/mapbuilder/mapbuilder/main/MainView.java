@@ -145,7 +145,7 @@ public class MainView extends AnchorPane {
 
     private ScrollPane setupLeftPanel() {
         VBox leftPanel = new VBox(10);
-        leftPanel.setPrefWidth(280);
+        leftPanel.setPrefWidth(300);
         leftPanel.setPadding(new Insets(15));
         leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0;");
         leftPanel.getStyleClass().add("left-panel");
@@ -471,7 +471,7 @@ public class MainView extends AnchorPane {
         Button collapseLeftBtn = (Button) leftScroll.getProperties().get("collapseLeftBtn");
         collapseLeftBtn.setOnAction(e -> {
             TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
-            tt.setToX(-300);
+            tt.setToX(-320);
             tt.setOnFinished(evt -> showLeftBtn.setVisible(true));
             tt.play();
         });
