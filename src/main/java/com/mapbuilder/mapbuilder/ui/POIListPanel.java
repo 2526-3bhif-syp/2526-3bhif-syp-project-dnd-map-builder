@@ -60,7 +60,7 @@ public class POIListPanel extends VBox {
             @Override
             protected void updateItem(PointOfInterest poi, boolean empty) {
                 super.updateItem(poi, empty);
-                setStyle("-fx-background-color: #1e1e1e; -fx-text-fill: white;");
+                setStyle("-fx-background-color: transparent; -fx-text-fill: white;");
                 if (empty || poi == null) {
                     setText(null);
                     setGraphic(null);
@@ -68,7 +68,7 @@ public class POIListPanel extends VBox {
                     // Create HBox with icon color square + name + coordinates
                     HBox cell = new HBox(5);
                     cell.setAlignment(Pos.CENTER_LEFT);
-                    cell.setStyle("-fx-background-color: #1e1e1e;");
+                    cell.setStyle("-fx-background-color: transparent;");
                     
                     // Color square (16x16px, type color)
                     Rectangle colorSquare = new Rectangle(16, 16);
@@ -80,7 +80,6 @@ public class POIListPanel extends VBox {
                     String displayText = String.format("%s (%s)", 
                         poi.getName(), poi.getType());
                     Label label = new Label(displayText);
-                    label.setStyle("-fx-text-fill: #e0e0e0;");
                     
                     cell.getChildren().addAll(colorSquare, label);
                     setGraphic(cell);
@@ -88,11 +87,15 @@ public class POIListPanel extends VBox {
             }
         });
         
-        // Handle selection: click to open editor
+        // Handle selection: single click to zoom/highlight, double click to edit
         poiListView.setOnMouseClicked(event -> {
             PointOfInterest selected = poiListView.getSelectionModel().getSelectedItem();
             if (selected != null && presenter != null) {
-                presenter.openPOIEditor(selected);
+                if (event.getClickCount() == 2) {
+                    presenter.openPOIEditor(selected);
+                } else if (event.getClickCount() == 1) {
+                    presenter.selectPOI(selected, true);
+                }
             }
         });
         
@@ -118,6 +121,20 @@ public class POIListPanel extends VBox {
             poiListView.setItems(FXCollections.emptyObservableList());
         } else {
             poiListView.setItems(FXCollections.observableArrayList(pois));
+        }
+    }
+
+    /**
+     * Programmatically selects a POI in the list view.
+     * 
+     * @param poi The POI to select, or null to clear selection
+     */
+    public void selectPOI(PointOfInterest poi) {
+        if (poi == null) {
+            poiListView.getSelectionModel().clearSelection();
+        } else {
+            poiListView.getSelectionModel().select(poi);
+            poiListView.scrollTo(poi);
         }
     }
     

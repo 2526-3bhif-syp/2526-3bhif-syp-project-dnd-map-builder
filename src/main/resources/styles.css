@@ -300,3 +300,35 @@
 #add-poi-toggle:selected:hover {
     -fx-background-color: #2ecc71;
 }
+
+/* List views and cells styling */
+.list-view {
+    -fx-background-color: #1e1e1e;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.list-view .list-cell {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #e0e0e0;
+}
+.list-view .list-cell:filled:hover {
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected:hover {
+    -fx-background-color: #4c4f51;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell .label {
+    -fx-text-fill: #e0e0e0;
+}
+.list-view .list-cell:filled:hover .label {
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected .label {
+    -fx-text-fill: #ffffff;
+}

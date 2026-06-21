@@ -73,6 +73,7 @@ public class MainPresenter {
     // POI editing
     private boolean addPoiMode = false;
     private PointOfInterest draggedPOI = null;
+    private PointOfInterest selectedPOI = null;
 
     public MainPresenter() {
         this.model = new MainModel();
@@ -250,12 +251,23 @@ public class MainPresenter {
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
 
-            // Double-click on a POI marker opens its editor (takes priority)
-            if (event.getClickCount() == 2 && !provincePaintMode && !addPoiMode) {
+            // Handle POI interactions first (takes priority)
+            if (!provincePaintMode && !addPoiMode) {
                 PointOfInterest poiHit = getPOIAt(x, y);
                 if (poiHit != null) {
-                    openPOIEditor(poiHit);
+                    if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                        if (event.getClickCount() == 2) {
+                            openPOIEditor(poiHit);
+                        } else if (event.getClickCount() == 1) {
+                            selectPOI(poiHit, false);
+                        }
+                    }
                     return;
+                } else {
+                    // Clicked elsewhere on the map, deselect POI
+                    if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY && event.getClickCount() == 1) {
+                        selectPOI(null, false);
+                    }
                 }
             }
 
@@ -1150,6 +1162,16 @@ public class MainPresenter {
                 );
             }
 
+            // Draw highlight square if selected
+            if (poi == selectedPOI) {
+                gc.save();
+                gc.setStroke(javafx.scene.paint.Color.WHITE);
+                gc.setLineWidth(1.5);
+                double highlightSide = spriteSize + 2.0;
+                gc.strokeRect(screenX - highlightSide / 2.0, screenY - highlightSide / 2.0, highlightSide, highlightSide);
+                gc.restore();
+            }
+
             if (showAllLabels) {
                 labelPositions.add(new double[]{screenX, screenY});
                 labelTexts.add(poi.getName());
@@ -1166,7 +1188,7 @@ public class MainPresenter {
             }
         }
 
-        // Render labels — all visible POIs at high zoom, or just the hovered one
+        // Render labels — all visible POIs at high zoom, or just the hovered/selected one
         if (showAllLabels && labelPositions != null) {
             gc.setFont(new Font("Arial", labelFontSize));
             for (int i = 0; i < labelPositions.size(); i++) {
@@ -1177,14 +1199,22 @@ public class MainPresenter {
                 gc.setFill(javafx.scene.paint.Color.WHITE);
                 gc.fillText(labelTexts.get(i), lx, ly);
             }
-        } else if (hoveredPOI != null) {
-            double labelX = (hoveredPOI.getX() - viewOffsetX) * pixelsPerCell;
-            double labelY = (hoveredPOI.getY() - viewOffsetY) * pixelsPerCell - 20;
-            gc.setFont(new Font("Arial", 11));
-            gc.setFill(javafx.scene.paint.Color.BLACK);
-            gc.fillText(hoveredPOI.getName(), labelX + 1, labelY + 1);
-            gc.setFill(javafx.scene.paint.Color.WHITE);
-            gc.fillText(hoveredPOI.getName(), labelX, labelY);
+        } else {
+            PointOfInterest labelPOI = hoveredPOI != null ? hoveredPOI : selectedPOI;
+            if (labelPOI != null) {
+                double screenX = (labelPOI.getX() - viewOffsetX) * pixelsPerCell;
+                double screenY = (labelPOI.getY() - viewOffsetY) * pixelsPerCell;
+                if (screenX >= -halfIcon && screenX < width + halfIcon &&
+                    screenY >= -halfIcon && screenY < height + halfIcon) {
+                    double labelX = screenX;
+                    double labelY = screenY - halfSprite - 4;
+                    gc.setFont(new Font("Arial", 11));
+                    gc.setFill(javafx.scene.paint.Color.BLACK);
+                    gc.fillText(labelPOI.getName(), labelX + 1, labelY + 1);
+                    gc.setFill(javafx.scene.paint.Color.WHITE);
+                    gc.fillText(labelPOI.getName(), labelX, labelY);
+                }
+            }
         }
     }
 
@@ -1202,6 +1232,49 @@ public class MainPresenter {
         return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
     }
     
+    /**
+     * Highlights and optionally centers viewport on the given POI.
+     * 
+     * @param poi The POI to highlight, or null to clear selection
+     * @param zoom Whether to center and zoom in on the POI
+     */
+    public void selectPOI(PointOfInterest poi, boolean zoom) {
+        if (poi == null) {
+            selectedPOI = null;
+            if (view != null && view.getPOIListPanel() != null) {
+                view.getPOIListPanel().selectPOI(null);
+            }
+            renderMap();
+            return;
+        }
+        
+        selectedPOI = poi;
+        
+        if (view != null) {
+            // Synchronize the sidebar list selection
+            if (view.getPOIListPanel() != null) {
+                view.getPOIListPanel().selectPOI(poi);
+            }
+            
+            if (zoom) {
+                // Adjust zoom to a reasonable level if currently zoomed out
+                if (pixelsPerCell < 3.0) {
+                    pixelsPerCell = 3.0;
+                }
+                
+                // Center viewport on the POI
+                double canvasW = view.getCanvas().getWidth();
+                double canvasH = view.getCanvas().getHeight();
+                if (canvasW > 0 && canvasH > 0) {
+                    viewOffsetX = poi.getX() - (canvasW / pixelsPerCell) / 2.0;
+                    viewOffsetY = poi.getY() - (canvasH / pixelsPerCell) / 2.0;
+                }
+            }
+        }
+        
+        renderMap();
+    }
+
     /**
      * Opens the POI editor modal dialog for the given POI.
      * 
@@ -1236,6 +1309,10 @@ public class MainPresenter {
      */
     public void deletePOI(PointOfInterest poi) {
         if (poi == null) return;
+        
+        if (poi == selectedPOI) {
+            selectedPOI = null;
+        }
         
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return;
