@@ -524,8 +524,8 @@ public class MainPresenter {
         view.getRuinCastleDensitySlider().setValue(0.3);
         // Grid Options
         view.getGridTypeComboBox().setValue("Square");
-        view.getGridSizeSlider().setValue(1);
-        view.getGridOpacitySlider().setValue(15);
+        view.getGridSizeSlider().setValue(7);
+        view.getGridOpacitySlider().setValue(25);
         triggerGeneration();
     }
 

@@ -384,14 +384,14 @@ public class MainView extends AnchorPane {
         gridTypeComboBox.setValue("Square");
         gridTypeComboBox.setMaxWidth(Double.MAX_VALUE);
 
-        gridSizeSlider = new Slider(1, 10, 1);
+        gridSizeSlider = new Slider(1, 10, 7);
         gridSizeSlider.setShowTickMarks(true);
         gridSizeSlider.setShowTickLabels(true);
         gridSizeSlider.setMajorTickUnit(1);
         gridSizeSlider.setMinorTickCount(0);
         gridSizeSlider.setSnapToTicks(true);
 
-        gridOpacitySlider = new Slider(0, 100, 15);
+        gridOpacitySlider = new Slider(0, 100, 25);
         gridOpacitySlider.setShowTickMarks(true);
         gridOpacitySlider.setShowTickLabels(true);
         gridOpacitySlider.setMajorTickUnit(50);
