@@ -73,6 +73,7 @@ public class MainPresenter {
     // POI editing
     private boolean addPoiMode = false;
     private PointOfInterest draggedPOI = null;
+    private PointOfInterest selectedPOI = null;
 
     public MainPresenter() {
         this.model = new MainModel();
@@ -235,18 +236,38 @@ public class MainPresenter {
         view.getRiversLakesLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
         view.getGridLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getGridTypeComboBox().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
+        view.getGridSizeSlider().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
+        view.getGridOpacitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
             double y = event.getY();
             com.mapbuilder.mapbuilder.core.map.MapLabel clickedLabel = getLabelAt(x, y);
 
-            // Double-click on a POI marker opens its editor (takes priority)
-            if (event.getClickCount() == 2 && !provincePaintMode && !addPoiMode) {
+            // Handle POI interactions first (takes priority)
+            if (!provincePaintMode && !addPoiMode) {
                 PointOfInterest poiHit = getPOIAt(x, y);
                 if (poiHit != null) {
-                    openPOIEditor(poiHit);
+                    if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                        if (event.getClickCount() == 2) {
+                            openPOIEditor(poiHit);
+                        } else if (event.getClickCount() == 1) {
+                            selectPOI(poiHit, false);
+                        }
+                    }
                     return;
+                } else {
+                    // Clicked elsewhere on the map, deselect POI
+                    if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY && event.getClickCount() == 1) {
+                        selectPOI(null, false);
+                    }
                 }
             }
 
@@ -513,6 +534,10 @@ public class MainPresenter {
         view.getDungeonDensitySlider().setValue(0.3);
         view.getSettlementDensitySlider().setValue(0.3);
         view.getRuinCastleDensitySlider().setValue(0.3);
+        // Grid Options
+        view.getGridTypeComboBox().setValue("Square");
+        view.getGridSizeSlider().setValue(7);
+        view.getGridOpacitySlider().setValue(25);
         triggerGeneration();
     }
 
@@ -680,34 +705,82 @@ public class MainPresenter {
 
         // ── Grid overlay ──────────────────────────────────────────────────
         if (view.getGridLayerToggle().isSelected()) {
-            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, 0.15));
+            String gridType = view.getGridTypeComboBox().getValue();
+            int gridSize = (int) view.getGridSizeSlider().getValue();
+            double opacity = view.getGridOpacitySlider().getValue() / 100.0;
+
+            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, opacity));
             gc.setLineWidth(0.5);
+
             int gridW = baseGrid.getWidth();
             int gridH = baseGrid.getHeight();
+
             // Map bounding box in screen coordinates
             double mapScreenX0 = (0 - viewOffsetX) * pixelsPerCell;
             double mapScreenY0 = (0 - viewOffsetY) * pixelsPerCell;
             double mapScreenX1 = (gridW - viewOffsetX) * pixelsPerCell;
             double mapScreenY1 = (gridH - viewOffsetY) * pixelsPerCell;
+
             // Clamp to canvas
             double clipTop    = Math.max(0, mapScreenY0);
             double clipBottom  = Math.min(canvasH, mapScreenY1);
             double clipLeft   = Math.max(0, mapScreenX0);
             double clipRight  = Math.min(canvasW, mapScreenX1);
-            // Vertical lines
-            int startCellX = Math.max(0, (int) viewOffsetX);
-            int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
-            for (int cx = startCellX; cx <= endCellX; cx++) {
-                double sx = (cx - viewOffsetX) * pixelsPerCell;
-                gc.strokeLine(sx, clipTop, sx, clipBottom);
+
+            gc.save();
+            gc.beginPath();
+            gc.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
+            gc.clip();
+
+            if ("Hexagon".equals(gridType)) {
+                double R_map = gridSize;
+                double R_screen = R_map * pixelsPerCell;
+                double width_screen = R_screen * Math.sqrt(3);
+                double colSpacing = width_screen;
+                double rowSpacing = 1.5 * R_screen;
+                double h = colSpacing / 2.0;
+
+                int minRow = Math.max(-1, (int) (viewOffsetY / (1.5 * R_map)) - 1);
+                int maxRow = Math.min((int) (gridH / (1.5 * R_map)) + 1, (int) ((viewOffsetY + canvasH / pixelsPerCell) / (1.5 * R_map)) + 1);
+
+                int minCol = Math.max(-1, (int) (viewOffsetX / (Math.sqrt(3) * R_map)) - 2);
+                int maxCol = Math.min((int) (gridW / (Math.sqrt(3) * R_map)) + 1, (int) ((viewOffsetX + canvasW / pixelsPerCell) / (Math.sqrt(3) * R_map)) + 2);
+
+                for (int r = minRow; r <= maxRow; r++) {
+                    for (int c = minCol; c <= maxCol; c++) {
+                        double cx = (c * colSpacing) - viewOffsetX * pixelsPerCell;
+                        if (r % 2 != 0) {
+                            cx += colSpacing / 2.0;
+                        }
+                        double cy = (r * rowSpacing) - viewOffsetY * pixelsPerCell;
+
+                        // Top-left segment
+                        gc.strokeLine(cx, cy - R_screen, cx - h, cy - R_screen / 2.0);
+                        // Top-right segment
+                        gc.strokeLine(cx, cy - R_screen, cx + h, cy - R_screen / 2.0);
+                        // Left vertical segment
+                        gc.strokeLine(cx - h, cy - R_screen / 2.0, cx - h, cy + R_screen / 2.0);
+                    }
+                }
+            } else {
+                // Vertical lines
+                int startCellX = Math.max(0, (int) viewOffsetX);
+                int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
+                startCellX = startCellX - (startCellX % gridSize);
+                for (int cx = startCellX; cx <= endCellX; cx += gridSize) {
+                    double sx = (cx - viewOffsetX) * pixelsPerCell;
+                    gc.strokeLine(sx, mapScreenY0, sx, mapScreenY1);
+                }
+                // Horizontal lines
+                int startCellY = Math.max(0, (int) viewOffsetY);
+                int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
+                startCellY = startCellY - (startCellY % gridSize);
+                for (int cy = startCellY; cy <= endCellY; cy += gridSize) {
+                    double sy = (cy - viewOffsetY) * pixelsPerCell;
+                    gc.strokeLine(mapScreenX0, sy, mapScreenX1, sy);
+                }
             }
-            // Horizontal lines
-            int startCellY = Math.max(0, (int) viewOffsetY);
-            int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
-            for (int cy = startCellY; cy <= endCellY; cy++) {
-                double sy = (cy - viewOffsetY) * pixelsPerCell;
-                gc.strokeLine(clipLeft, sy, clipRight, sy);
-            }
+            gc.restore();
         }
 
         renderPOIs();
@@ -1089,6 +1162,16 @@ public class MainPresenter {
                 );
             }
 
+            // Draw highlight square if selected
+            if (poi == selectedPOI) {
+                gc.save();
+                gc.setStroke(javafx.scene.paint.Color.WHITE);
+                gc.setLineWidth(1.5);
+                double highlightSide = spriteSize + 2.0;
+                gc.strokeRect(screenX - highlightSide / 2.0, screenY - highlightSide / 2.0, highlightSide, highlightSide);
+                gc.restore();
+            }
+
             if (showAllLabels) {
                 labelPositions.add(new double[]{screenX, screenY});
                 labelTexts.add(poi.getName());
@@ -1105,7 +1188,7 @@ public class MainPresenter {
             }
         }
 
-        // Render labels — all visible POIs at high zoom, or just the hovered one
+        // Render labels — all visible POIs at high zoom, or just the hovered/selected one
         if (showAllLabels && labelPositions != null) {
             gc.setFont(new Font("Arial", labelFontSize));
             for (int i = 0; i < labelPositions.size(); i++) {
@@ -1116,14 +1199,22 @@ public class MainPresenter {
                 gc.setFill(javafx.scene.paint.Color.WHITE);
                 gc.fillText(labelTexts.get(i), lx, ly);
             }
-        } else if (hoveredPOI != null) {
-            double labelX = (hoveredPOI.getX() - viewOffsetX) * pixelsPerCell;
-            double labelY = (hoveredPOI.getY() - viewOffsetY) * pixelsPerCell - 20;
-            gc.setFont(new Font("Arial", 11));
-            gc.setFill(javafx.scene.paint.Color.BLACK);
-            gc.fillText(hoveredPOI.getName(), labelX + 1, labelY + 1);
-            gc.setFill(javafx.scene.paint.Color.WHITE);
-            gc.fillText(hoveredPOI.getName(), labelX, labelY);
+        } else {
+            PointOfInterest labelPOI = hoveredPOI != null ? hoveredPOI : selectedPOI;
+            if (labelPOI != null) {
+                double screenX = (labelPOI.getX() - viewOffsetX) * pixelsPerCell;
+                double screenY = (labelPOI.getY() - viewOffsetY) * pixelsPerCell;
+                if (screenX >= -halfIcon && screenX < width + halfIcon &&
+                    screenY >= -halfIcon && screenY < height + halfIcon) {
+                    double labelX = screenX;
+                    double labelY = screenY - halfSprite - 4;
+                    gc.setFont(new Font("Arial", 11));
+                    gc.setFill(javafx.scene.paint.Color.BLACK);
+                    gc.fillText(labelPOI.getName(), labelX + 1, labelY + 1);
+                    gc.setFill(javafx.scene.paint.Color.WHITE);
+                    gc.fillText(labelPOI.getName(), labelX, labelY);
+                }
+            }
         }
     }
 
@@ -1141,6 +1232,49 @@ public class MainPresenter {
         return javafx.scene.paint.Color.color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
     }
     
+    /**
+     * Highlights and optionally centers viewport on the given POI.
+     * 
+     * @param poi The POI to highlight, or null to clear selection
+     * @param zoom Whether to center and zoom in on the POI
+     */
+    public void selectPOI(PointOfInterest poi, boolean zoom) {
+        if (poi == null) {
+            selectedPOI = null;
+            if (view != null && view.getPOIListPanel() != null) {
+                view.getPOIListPanel().selectPOI(null);
+            }
+            renderMap();
+            return;
+        }
+        
+        selectedPOI = poi;
+        
+        if (view != null) {
+            // Synchronize the sidebar list selection
+            if (view.getPOIListPanel() != null) {
+                view.getPOIListPanel().selectPOI(poi, !zoom);
+            }
+            
+            if (zoom) {
+                // Adjust zoom to a reasonable level if currently zoomed out
+                if (pixelsPerCell < 3.0) {
+                    pixelsPerCell = 3.0;
+                }
+                
+                // Center viewport on the POI
+                double canvasW = view.getCanvas().getWidth();
+                double canvasH = view.getCanvas().getHeight();
+                if (canvasW > 0 && canvasH > 0) {
+                    viewOffsetX = poi.getX() - (canvasW / pixelsPerCell) / 2.0;
+                    viewOffsetY = poi.getY() - (canvasH / pixelsPerCell) / 2.0;
+                }
+            }
+        }
+        
+        renderMap();
+    }
+
     /**
      * Opens the POI editor modal dialog for the given POI.
      * 
@@ -1175,6 +1309,10 @@ public class MainPresenter {
      */
     public void deletePOI(PointOfInterest poi) {
         if (poi == null) return;
+        
+        if (poi == selectedPOI) {
+            selectedPOI = null;
+        }
         
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return;

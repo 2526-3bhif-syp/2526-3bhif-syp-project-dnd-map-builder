@@ -136,26 +136,45 @@
 .dialog-pane .text-area .content {
     -fx-background-color: #3c3f41;
 }
-.dialog-pane .combo-box {
+.combo-box {
     -fx-background-color: #3c3f41;
     -fx-border-color: #555555;
     -fx-border-radius: 3;
     -fx-background-radius: 3;
 }
-.dialog-pane .combo-box .list-cell {
+.combo-box:focused {
+    -fx-border-color: #777777;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.combo-box .list-cell {
     -fx-background-color: #3c3f41;
     -fx-text-fill: #ffffff;
 }
-.dialog-pane .combo-box-popup .list-view {
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+.combo-box .arrow {
+    -fx-background-color: #ffffff;
+}
+.combo-box-popup .list-view {
     -fx-background-color: #3c3f41;
     -fx-border-color: #555555;
 }
-.dialog-pane .combo-box-popup .list-cell {
+.combo-box-popup .list-view .list-cell {
     -fx-background-color: #3c3f41;
     -fx-text-fill: #ffffff;
 }
-.dialog-pane .combo-box-popup .list-cell:hover {
+.combo-box-popup .list-view .list-cell:hover {
     -fx-background-color: #4c4f51;
+}
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #4c4f51;
+    -fx-text-fill: #ffffff;
+}
+.combo-box-popup .list-view .list-cell:filled:selected:hover {
+    -fx-background-color: #5c5f61;
+    -fx-text-fill: #ffffff;
 }
 .dialog-pane > .label {
     -fx-text-fill: #e0e0e0;
@@ -280,4 +299,37 @@
 }
 #add-poi-toggle:selected:hover {
     -fx-background-color: #2ecc71;
+}
+
+/* List views and cells styling */
+.list-view {
+    -fx-background-color: #1e1e1e;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.list-view .list-cell {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #e0e0e0;
+}
+.list-view .list-cell:filled:hover {
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #3c3f41;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected:hover {
+    -fx-background-color: #4c4f51;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell .label {
+    -fx-text-fill: #e0e0e0;
+}
+.list-view .list-cell:filled:hover .label {
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell:filled:selected .label {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
 }

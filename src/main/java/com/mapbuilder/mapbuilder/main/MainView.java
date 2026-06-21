@@ -74,6 +74,9 @@ public class MainView extends AnchorPane {
     private ToggleButton riversLakesLayerToggle;
     private ToggleButton gridLayerToggle;
     private Tab kingdomsTab;
+    private javafx.scene.control.ComboBox<String> gridTypeComboBox;
+    private Slider gridSizeSlider;
+    private Slider gridOpacitySlider;
     
     private Slider dungeonDensitySlider;
     private Slider settlementDensitySlider;
@@ -142,7 +145,7 @@ public class MainView extends AnchorPane {
 
     private ScrollPane setupLeftPanel() {
         VBox leftPanel = new VBox(10);
-        leftPanel.setPrefWidth(280);
+        leftPanel.setPrefWidth(340);
         leftPanel.setPadding(new Insets(15));
         leftPanel.setStyle("-fx-background-color: #2b2b2b; -fx-background-radius: 0;");
         leftPanel.getStyleClass().add("left-panel");
@@ -321,7 +324,38 @@ public class MainView extends AnchorPane {
 
         poisTab.setContent(poisContent);
 
-        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab);
+        // Create Grid Tab
+        Tab gridTab = new Tab("Grid");
+        gridTab.setClosable(false);
+        gridTab.setStyle("-fx-text-fill: white;");
+        VBox gridContent = new VBox(10);
+        gridContent.setPadding(new Insets(10, 0, 10, 0));
+
+        gridTypeComboBox = new javafx.scene.control.ComboBox<>();
+        gridTypeComboBox.getItems().addAll("Square", "Hexagon");
+        gridTypeComboBox.setValue("Square");
+        gridTypeComboBox.setMaxWidth(Double.MAX_VALUE);
+
+        gridSizeSlider = new Slider(1, 10, 7);
+        gridSizeSlider.setShowTickMarks(true);
+        gridSizeSlider.setShowTickLabels(true);
+        gridSizeSlider.setMajorTickUnit(1);
+        gridSizeSlider.setMinorTickCount(0);
+        gridSizeSlider.setSnapToTicks(true);
+
+        gridOpacitySlider = new Slider(0, 100, 25);
+        gridOpacitySlider.setShowTickMarks(true);
+        gridOpacitySlider.setShowTickLabels(true);
+        gridOpacitySlider.setMajorTickUnit(50);
+
+        gridContent.getChildren().addAll(
+            new Label("Grid Type"), gridTypeComboBox,
+            new Label("Grid Cell Size (Cells)"), gridSizeSlider,
+            new Label("Grid Opacity (%)"), gridOpacitySlider
+        );
+        gridTab.setContent(gridContent);
+
+        TabPane tabPane = new TabPane(terrainTab, hydrologyTab, kingdomsTab, poisTab, gridTab);
         tabPane.setStyle("-fx-background-color: #2b2b2b; " +
                 "-fx-control-inner-background: #2b2b2b; " +
                 "-fx-tab-header-background: #2b2b2b; " +
@@ -342,7 +376,7 @@ public class MainView extends AnchorPane {
         sizeSlider = new Slider(200, 2000, 800);
         sizeSlider.setShowTickMarks(true);
         sizeSlider.setShowTickLabels(true);
-        sizeSlider.setMajorTickUnit(400);
+        sizeSlider.setMajorTickUnit(600);
 
         octavesSlider = new Slider(1, 10, 5);
         octavesSlider.setShowTickMarks(true);
@@ -437,7 +471,7 @@ public class MainView extends AnchorPane {
         Button collapseLeftBtn = (Button) leftScroll.getProperties().get("collapseLeftBtn");
         collapseLeftBtn.setOnAction(e -> {
             TranslateTransition tt = new TranslateTransition(Duration.millis(300), leftScroll);
-            tt.setToX(-300);
+            tt.setToX(-360);
             tt.setOnFinished(evt -> showLeftBtn.setVisible(true));
             tt.play();
         });
@@ -701,6 +735,10 @@ public class MainView extends AnchorPane {
     public ToggleButton getLabelsLayerToggle() { return labelsLayerToggle; }
     public ToggleButton getRiversLakesLayerToggle() { return riversLakesLayerToggle; }
     public ToggleButton getGridLayerToggle()        { return gridLayerToggle; }
+
+    public javafx.scene.control.ComboBox<String> getGridTypeComboBox() { return gridTypeComboBox; }
+    public Slider getGridSizeSlider() { return gridSizeSlider; }
+    public Slider getGridOpacitySlider() { return gridOpacitySlider; }
 
     private Image loadIcon(String resourcePath) {
         java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);

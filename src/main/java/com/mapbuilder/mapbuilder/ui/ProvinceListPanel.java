@@ -62,7 +62,7 @@ public class ProvinceListPanel extends VBox {
             @Override
             protected void updateItem(Kingdom k, boolean empty) {
                 super.updateItem(k, empty);
-                setStyle("-fx-background-color: #1e1e1e;");
+                setStyle("-fx-background-color: transparent;");
                 if (empty || k == null) {
                     setText(null);
                     setGraphic(null);
@@ -71,7 +71,7 @@ public class ProvinceListPanel extends VBox {
 
                 HBox row = new HBox(8);
                 row.setAlignment(Pos.CENTER_LEFT);
-                row.setStyle("-fx-background-color: #1e1e1e;");
+                row.setStyle("-fx-background-color: transparent;");
 
                 // Colour swatch — acts as the clickable colour button
                 Rectangle swatch = new Rectangle(16, 16);
@@ -116,7 +116,6 @@ public class ProvinceListPanel extends VBox {
 
                 // Province name
                 Label nameLabel = new Label(k.getName());
-                nameLabel.setStyle("-fx-text-fill: #e0e0e0;");
                 HBox.setHgrow(nameLabel, Priority.ALWAYS);
 
                 row.getChildren().addAll(swatchPane, nameLabel);
