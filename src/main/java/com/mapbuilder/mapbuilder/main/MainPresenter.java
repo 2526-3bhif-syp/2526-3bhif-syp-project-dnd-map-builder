@@ -235,6 +235,15 @@ public class MainPresenter {
         view.getRiversLakesLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
         view.getGridLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getGridTypeComboBox().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
+        view.getGridSizeSlider().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
+        view.getGridOpacitySlider().valueProperty().addListener((obs, oldV, newV) -> {
+            if (view.getGridLayerToggle().isSelected()) renderMap();
+        });
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
@@ -513,6 +522,10 @@ public class MainPresenter {
         view.getDungeonDensitySlider().setValue(0.3);
         view.getSettlementDensitySlider().setValue(0.3);
         view.getRuinCastleDensitySlider().setValue(0.3);
+        // Grid Options
+        view.getGridTypeComboBox().setValue("Square");
+        view.getGridSizeSlider().setValue(1);
+        view.getGridOpacitySlider().setValue(15);
         triggerGeneration();
     }
 
@@ -680,34 +693,82 @@ public class MainPresenter {
 
         // ── Grid overlay ──────────────────────────────────────────────────
         if (view.getGridLayerToggle().isSelected()) {
-            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, 0.15));
+            String gridType = view.getGridTypeComboBox().getValue();
+            int gridSize = (int) view.getGridSizeSlider().getValue();
+            double opacity = view.getGridOpacitySlider().getValue() / 100.0;
+
+            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, opacity));
             gc.setLineWidth(0.5);
+
             int gridW = baseGrid.getWidth();
             int gridH = baseGrid.getHeight();
+
             // Map bounding box in screen coordinates
             double mapScreenX0 = (0 - viewOffsetX) * pixelsPerCell;
             double mapScreenY0 = (0 - viewOffsetY) * pixelsPerCell;
             double mapScreenX1 = (gridW - viewOffsetX) * pixelsPerCell;
             double mapScreenY1 = (gridH - viewOffsetY) * pixelsPerCell;
+
             // Clamp to canvas
             double clipTop    = Math.max(0, mapScreenY0);
             double clipBottom  = Math.min(canvasH, mapScreenY1);
             double clipLeft   = Math.max(0, mapScreenX0);
             double clipRight  = Math.min(canvasW, mapScreenX1);
-            // Vertical lines
-            int startCellX = Math.max(0, (int) viewOffsetX);
-            int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
-            for (int cx = startCellX; cx <= endCellX; cx++) {
-                double sx = (cx - viewOffsetX) * pixelsPerCell;
-                gc.strokeLine(sx, clipTop, sx, clipBottom);
+
+            gc.save();
+            gc.beginPath();
+            gc.rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop);
+            gc.clip();
+
+            if ("Hexagon".equals(gridType)) {
+                double R_map = gridSize;
+                double R_screen = R_map * pixelsPerCell;
+                double width_screen = R_screen * Math.sqrt(3);
+                double colSpacing = width_screen;
+                double rowSpacing = 1.5 * R_screen;
+                double h = colSpacing / 2.0;
+
+                int minRow = Math.max(-1, (int) (viewOffsetY / (1.5 * R_map)) - 1);
+                int maxRow = Math.min((int) (gridH / (1.5 * R_map)) + 1, (int) ((viewOffsetY + canvasH / pixelsPerCell) / (1.5 * R_map)) + 1);
+
+                int minCol = Math.max(-1, (int) (viewOffsetX / (Math.sqrt(3) * R_map)) - 2);
+                int maxCol = Math.min((int) (gridW / (Math.sqrt(3) * R_map)) + 1, (int) ((viewOffsetX + canvasW / pixelsPerCell) / (Math.sqrt(3) * R_map)) + 2);
+
+                for (int r = minRow; r <= maxRow; r++) {
+                    for (int c = minCol; c <= maxCol; c++) {
+                        double cx = (c * colSpacing) - viewOffsetX * pixelsPerCell;
+                        if (r % 2 != 0) {
+                            cx += colSpacing / 2.0;
+                        }
+                        double cy = (r * rowSpacing) - viewOffsetY * pixelsPerCell;
+
+                        // Top-left segment
+                        gc.strokeLine(cx, cy - R_screen, cx - h, cy - R_screen / 2.0);
+                        // Top-right segment
+                        gc.strokeLine(cx, cy - R_screen, cx + h, cy - R_screen / 2.0);
+                        // Left vertical segment
+                        gc.strokeLine(cx - h, cy - R_screen / 2.0, cx - h, cy + R_screen / 2.0);
+                    }
+                }
+            } else {
+                // Vertical lines
+                int startCellX = Math.max(0, (int) viewOffsetX);
+                int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
+                startCellX = startCellX - (startCellX % gridSize);
+                for (int cx = startCellX; cx <= endCellX; cx += gridSize) {
+                    double sx = (cx - viewOffsetX) * pixelsPerCell;
+                    gc.strokeLine(sx, mapScreenY0, sx, mapScreenY1);
+                }
+                // Horizontal lines
+                int startCellY = Math.max(0, (int) viewOffsetY);
+                int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
+                startCellY = startCellY - (startCellY % gridSize);
+                for (int cy = startCellY; cy <= endCellY; cy += gridSize) {
+                    double sy = (cy - viewOffsetY) * pixelsPerCell;
+                    gc.strokeLine(mapScreenX0, sy, mapScreenX1, sy);
+                }
             }
-            // Horizontal lines
-            int startCellY = Math.max(0, (int) viewOffsetY);
-            int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
-            for (int cy = startCellY; cy <= endCellY; cy++) {
-                double sy = (cy - viewOffsetY) * pixelsPerCell;
-                gc.strokeLine(clipLeft, sy, clipRight, sy);
-            }
+            gc.restore();
         }
 
         renderPOIs();

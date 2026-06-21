@@ -74,6 +74,9 @@ public class MainView extends AnchorPane {
     private ToggleButton riversLakesLayerToggle;
     private ToggleButton gridLayerToggle;
     private Tab kingdomsTab;
+    private javafx.scene.control.ComboBox<String> gridTypeComboBox;
+    private Slider gridSizeSlider;
+    private Slider gridOpacitySlider;
     
     private Slider dungeonDensitySlider;
     private Slider settlementDensitySlider;
@@ -376,6 +379,23 @@ public class MainView extends AnchorPane {
         rainBiasSlider.setShowTickLabels(true);
         rainBiasSlider.setMajorTickUnit(0.25);
 
+        gridTypeComboBox = new javafx.scene.control.ComboBox<>();
+        gridTypeComboBox.getItems().addAll("Square", "Hexagon");
+        gridTypeComboBox.setValue("Square");
+        gridTypeComboBox.setMaxWidth(Double.MAX_VALUE);
+
+        gridSizeSlider = new Slider(1, 10, 1);
+        gridSizeSlider.setShowTickMarks(true);
+        gridSizeSlider.setShowTickLabels(true);
+        gridSizeSlider.setMajorTickUnit(1);
+        gridSizeSlider.setMinorTickCount(0);
+        gridSizeSlider.setSnapToTicks(true);
+
+        gridOpacitySlider = new Slider(0, 100, 15);
+        gridOpacitySlider.setShowTickMarks(true);
+        gridOpacitySlider.setShowTickLabels(true);
+        gridOpacitySlider.setMajorTickUnit(50);
+
         Label mapSizeLabel = new Label("Map Size"); mapSizeLabel.setStyle("-fx-text-fill: white;");
         Label octavesLabel = new Label("Octaves (Detail Level)"); octavesLabel.setStyle("-fx-text-fill: white;");
         Label scaleLabel = new Label("Scale (Zoom Level)"); scaleLabel.setStyle("-fx-text-fill: white;");
@@ -384,6 +404,11 @@ public class MainView extends AnchorPane {
         Label tempBiasLabel = new Label("Temperature Bias"); tempBiasLabel.setStyle("-fx-text-fill: white;");
         Label rainBiasLabel = new Label("Rainfall Bias"); rainBiasLabel.setStyle("-fx-text-fill: white;");
 
+        Label gridTitle = new Label("Grid Options"); gridTitle.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 0 0 0;");
+        Label gridTypeLabel = new Label("Grid Type"); gridTypeLabel.setStyle("-fx-text-fill: white;");
+        Label gridSizeLabel = new Label("Grid Cell Size (Cells)"); gridSizeLabel.setStyle("-fx-text-fill: white;");
+        Label gridOpacityLabel = new Label("Grid Opacity (%)"); gridOpacityLabel.setStyle("-fx-text-fill: white;");
+
         terrainContent.getChildren().addAll(
             mapSizeLabel, sizeSlider,
             octavesLabel, octavesSlider,
@@ -391,7 +416,12 @@ public class MainView extends AnchorPane {
             falloffLabel, falloffSlider,
             seaLevelLabel, waterLevelSlider,
             tempBiasLabel, tempBiasSlider,
-            rainBiasLabel, rainBiasSlider
+            rainBiasLabel, rainBiasSlider,
+            new Separator(),
+            gridTitle,
+            gridTypeLabel, gridTypeComboBox,
+            gridSizeLabel, gridSizeSlider,
+            gridOpacityLabel, gridOpacitySlider
         );
         terrainTab.setContent(terrainContent);
         
@@ -701,6 +731,10 @@ public class MainView extends AnchorPane {
     public ToggleButton getLabelsLayerToggle() { return labelsLayerToggle; }
     public ToggleButton getRiversLakesLayerToggle() { return riversLakesLayerToggle; }
     public ToggleButton getGridLayerToggle()        { return gridLayerToggle; }
+
+    public javafx.scene.control.ComboBox<String> getGridTypeComboBox() { return gridTypeComboBox; }
+    public Slider getGridSizeSlider() { return gridSizeSlider; }
+    public Slider getGridOpacitySlider() { return gridOpacitySlider; }
 
     private Image loadIcon(String resourcePath) {
         java.io.InputStream stream = getClass().getResourceAsStream(resourcePath);
