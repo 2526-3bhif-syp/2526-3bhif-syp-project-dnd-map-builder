@@ -26,6 +26,7 @@ import javafx.util.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import javafx.scene.image.WritableImage;
@@ -66,6 +67,8 @@ public class MainPresenter {
     private Kingdom selectedPaintKingdom = null;
     private double lastPaintX = -1;
     private double lastPaintY = -1;
+    private final Stack<Map<MapCell, Kingdom>> paintUndoStack = new Stack<>();
+    private Map<MapCell, Kingdom> currentStrokeChanges = null;
 
     // POI editing
     private boolean addPoiMode = false;
@@ -110,6 +113,7 @@ public class MainPresenter {
                     event.consume();
                     return;
                 }
+                currentStrokeChanges = new HashMap<>();
                 lastPaintX = event.getX();
                 lastPaintY = event.getY();
                 paintCellsAtScreen(event.getX(), event.getY());
@@ -191,6 +195,12 @@ public class MainPresenter {
                 lastPaintX = -1;
                 lastPaintY = -1;
                 annexEnclosedAreas();
+                if (currentStrokeChanges != null) {
+                    if (!currentStrokeChanges.isEmpty()) {
+                        paintUndoStack.push(currentStrokeChanges);
+                    }
+                    currentStrokeChanges = null;
+                }
             }
             draggedLabel = null;
             draggedPOI = null;
@@ -222,6 +232,9 @@ public class MainPresenter {
         
         view.getEnableBordersToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
         view.getEnableKingdomOverlayToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getRiversLakesLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> regenerateImages());
+        view.getLabelsLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
+        view.getGridLayerToggle().selectedProperty().addListener((obs, oldV, newV) -> renderMap());
 
         view.getCanvasContainer().setOnMouseClicked(event -> {
             double x = event.getX();
@@ -294,6 +307,7 @@ public class MainPresenter {
             if (newV && view.getAddPoiToggle().isSelected()) {
                 view.getAddPoiToggle().setSelected(false);
             }
+            updateProvincePaintButtonText();
         });
 
         // Add-POI mode toggle
@@ -311,6 +325,17 @@ public class MainPresenter {
         view.getKingdomsTab().selectedProperty().addListener((obs, oldV, newV) -> {
             if (!newV) {
                 view.getProvincePaintToggle().setSelected(false);
+            }
+        });
+
+        view.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.setOnKeyPressed(event -> {
+                    if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.Z) {
+                        undoLastPaintStroke();
+                        event.consume();
+                    }
+                });
             }
         });
     }
@@ -335,6 +360,9 @@ public class MainPresenter {
      * closest marker when several overlap.
      */
     private PointOfInterest getPOIAt(double screenX, double screenY) {
+        if (view.getPoiToggle() != null && !view.getPoiToggle().isSelected()) {
+            return null;
+        }
         MapGrid grid = model.getCurrentGrid();
         if (grid == null) return null;
         List<PointOfInterest> pois = grid.getPointsOfInterest();
@@ -430,7 +458,8 @@ public class MainPresenter {
         boolean showBorders = view.getEnableBordersToggle().isSelected();
         boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
         
-        baseMapImage = createImageFromGrid(baseGrid, showBorders, showOverlay);
+        baseMapImage = createImageFromGrid(baseGrid, showBorders, showOverlay,
+                view.getRiversLakesLayerToggle().isSelected());
         lodImageCache.clear();
         
         renderMap();
@@ -530,6 +559,8 @@ public class MainPresenter {
         };
 
         task.setOnSucceeded(e -> {
+            paintUndoStack.clear();
+            currentStrokeChanges = null;
             // Invalidate all cached LOD grids — they belong to the old map
             Task<MapGrid> oldLod = runningLodTask;
             if (oldLod != null) oldLod.cancel(false);
@@ -543,7 +574,8 @@ public class MainPresenter {
             if (grid != null) {
                 boolean showBorders = view.getEnableBordersToggle().isSelected();
                 boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
-                baseMapImage = createImageFromGrid(grid, showBorders, showOverlay);
+                baseMapImage = createImageFromGrid(grid, showBorders, showOverlay,
+                        view.getRiversLakesLayerToggle().isSelected());
             }
             
             renderMap();
@@ -645,7 +677,39 @@ public class MainPresenter {
             // Draw hardware-accelerated image properly cropped
             gc.drawImage(activeImage, intersectX, intersectY, intersectW, intersectH, destX, destY, destW, destH);
         }
-        
+
+        // ── Grid overlay ──────────────────────────────────────────────────
+        if (view.getGridLayerToggle().isSelected()) {
+            gc.setStroke(javafx.scene.paint.Color.color(1, 1, 1, 0.15));
+            gc.setLineWidth(0.5);
+            int gridW = baseGrid.getWidth();
+            int gridH = baseGrid.getHeight();
+            // Map bounding box in screen coordinates
+            double mapScreenX0 = (0 - viewOffsetX) * pixelsPerCell;
+            double mapScreenY0 = (0 - viewOffsetY) * pixelsPerCell;
+            double mapScreenX1 = (gridW - viewOffsetX) * pixelsPerCell;
+            double mapScreenY1 = (gridH - viewOffsetY) * pixelsPerCell;
+            // Clamp to canvas
+            double clipTop    = Math.max(0, mapScreenY0);
+            double clipBottom  = Math.min(canvasH, mapScreenY1);
+            double clipLeft   = Math.max(0, mapScreenX0);
+            double clipRight  = Math.min(canvasW, mapScreenX1);
+            // Vertical lines
+            int startCellX = Math.max(0, (int) viewOffsetX);
+            int endCellX = Math.min(gridW, (int) (viewOffsetX + canvasW / pixelsPerCell) + 1);
+            for (int cx = startCellX; cx <= endCellX; cx++) {
+                double sx = (cx - viewOffsetX) * pixelsPerCell;
+                gc.strokeLine(sx, clipTop, sx, clipBottom);
+            }
+            // Horizontal lines
+            int startCellY = Math.max(0, (int) viewOffsetY);
+            int endCellY = Math.min(gridH, (int) (viewOffsetY + canvasH / pixelsPerCell) + 1);
+            for (int cy = startCellY; cy <= endCellY; cy++) {
+                double sy = (cy - viewOffsetY) * pixelsPerCell;
+                gc.strokeLine(clipLeft, sy, clipRight, sy);
+            }
+        }
+
         renderPOIs();
         renderLabels();
         view.getPOIListPanel().updatePOIList(baseGrid.getPointsOfInterest());
@@ -653,6 +717,13 @@ public class MainPresenter {
     }
 
     private void renderLabels() {
+        // Skip rendering if labels layer is toggled off
+        if (!view.getLabelsLayerToggle().isSelected()) {
+            javafx.scene.Group canvasGroup = view.getCanvasGroup();
+            canvasGroup.getChildren().removeIf(node -> node instanceof javafx.scene.text.Text);
+            return;
+        }
+
         javafx.scene.Group canvasGroup = view.getCanvasGroup();
         java.util.List<com.mapbuilder.mapbuilder.core.map.MapLabel> labels = model.getLabels();
 
@@ -808,7 +879,8 @@ public class MainPresenter {
             
             boolean showBorders = view.getEnableBordersToggle().isSelected();
             boolean showOverlay = view.getEnableKingdomOverlayToggle().isSelected();
-            lodImageCache.put(region.cacheKey(), createImageFromGrid(lodGrid, showBorders, showOverlay));
+            lodImageCache.put(region.cacheKey(), createImageFromGrid(lodGrid, showBorders, showOverlay,
+                    view.getRiversLakesLayerToggle().isSelected()));
             
             activeLodLevel = region.lod;
             renderMap(); // re-render with the freshly cached LOD grid
@@ -865,10 +937,11 @@ public class MainPresenter {
         }
     }
 
-    private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay) {
+    private WritableImage createImageFromGrid(MapGrid grid, boolean showBorders, boolean showOverlay,
+                                               boolean showRiversLakes) {
         int w = grid.getWidth();
         int h = grid.getHeight();
-        int[] pixels = buildColorCache(grid, w, h, showBorders, showOverlay);
+        int[] pixels = buildColorCache(grid, w, h, showBorders, showOverlay, showRiversLakes);
         WritableImage image = new WritableImage(w, h);
         image.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), pixels, 0, w);
         return image;
@@ -876,26 +949,30 @@ public class MainPresenter {
 
     /** Pre-computes one ARGB color per grid cell into a flat array [y*gW+x]. */
     private int[] buildColorCache(MapGrid grid, int gW, int gH,
-                                  boolean showBorders, boolean showOverlay) {
+                                  boolean showBorders, boolean showOverlay,
+                                  boolean showRiversLakes) {
         int[] cache = new int[gW * gH];
         for (int cy = 0; cy < gH; cy++) {
             for (int cx = 0; cx < gW; cx++) {
-                cache[cy * gW + cx] = getColorAt(cx, cy, grid, showBorders, showOverlay);
+                cache[cy * gW + cx] = getColorAt(cx, cy, grid, showBorders, showOverlay, showRiversLakes);
             }
         }
         return cache;
     }
 
-    private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay) {
+    private int getColorAt(int cx, int cy, MapGrid grid, boolean showBorders, boolean showOverlay,
+                            boolean showRiversLakes) {
         if (cx < 0 || cx >= grid.getWidth() || cy < 0 || cy >= grid.getHeight()) {
             return 0xFF00008B;
         }
         MapCell cell = grid.getCell(cx, cy);
         int color = cell.getMixedColorARGB();
-        if (cell.isLake()) {
-            color = COLOR_LAKE;
-        } else if (cell.isRiver()) {
-            color = COLOR_RIVER;
+        if (showRiversLakes) {
+            if (cell.isLake()) {
+                color = COLOR_LAKE;
+            } else if (cell.isRiver()) {
+                color = COLOR_RIVER;
+            }
         }
         if (cell.getKingdom() != null) {
             if (showOverlay) {
@@ -1131,6 +1208,24 @@ public class MainPresenter {
             view.getSelectedProvinceLabel().setText("None");
             view.getSelectedProvinceColorBox().setFill(javafx.scene.paint.Color.TRANSPARENT);
         }
+        updateProvincePaintButtonText();
+    }
+
+    private void updateProvincePaintButtonText() {
+        if (provincePaintMode) {
+            if (selectedPaintKingdom == null) {
+                view.getProvincePaintToggle().setText("\uD83C\uDFA8  Select from provinces list!");
+                if (!view.getProvincePaintToggle().getStyleClass().contains("no-target")) {
+                    view.getProvincePaintToggle().getStyleClass().add("no-target");
+                }
+            } else {
+                view.getProvincePaintToggle().setText("\uD83C\uDFA8  Start painting on map!");
+                view.getProvincePaintToggle().getStyleClass().remove("no-target");
+            }
+        } else {
+            view.getProvincePaintToggle().setText("\uD83C\uDFA8  Province Paint Mode");
+            view.getProvincePaintToggle().getStyleClass().remove("no-target");
+        }
     }
 
     /**
@@ -1172,6 +1267,9 @@ public class MainPresenter {
                     MapCell cell = grid.getCell(cx + dx, cy + dy);
                     if (cell != null && cell.getElevation() > waterLevel) {
                         if (cell.getKingdom() != selectedPaintKingdom) {
+                            if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                                currentStrokeChanges.put(cell, cell.getKingdom());
+                            }
                             cell.setKingdom(selectedPaintKingdom);
                             minX = Math.min(minX, cx + dx);
                             minY = Math.min(minY, cy + dy);
@@ -1220,6 +1318,9 @@ public class MainPresenter {
                         MapCell cell = grid.getCell(cx + dx, cy + dy);
                         if (cell != null && cell.getElevation() > waterLevel) {
                             if (cell.getKingdom() != selectedPaintKingdom) {
+                                if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                                    currentStrokeChanges.put(cell, cell.getKingdom());
+                                }
                                 cell.setKingdom(selectedPaintKingdom);
                                 minX = Math.min(minX, cx + dx);
                                 minY = Math.min(minY, cy + dy);
@@ -1253,7 +1354,8 @@ public class MainPresenter {
         PixelWriter writer = baseMapImage.getPixelWriter();
         for (int cy = minY; cy <= maxY; cy++) {
             for (int cx = minX; cx <= maxX; cx++) {
-                writer.setArgb(cx, cy, getColorAt(cx, cy, grid, showBorders, showOverlay));
+                writer.setArgb(cx, cy, getColorAt(cx, cy, grid, showBorders, showOverlay,
+                        view.getRiversLakesLayerToggle().isSelected()));
             }
         }
         // Invalidate LOD cache so zoomed-out views get the new pixels too
@@ -1321,6 +1423,9 @@ public class MainPresenter {
                 if (!reachesEdge[x][y]) {
                     MapCell cell = grid.getCell(x, y);
                     if (cell.getKingdom() != selectedPaintKingdom && cell.getElevation() > waterLevel) {
+                        if (currentStrokeChanges != null && !currentStrokeChanges.containsKey(cell)) {
+                            currentStrokeChanges.put(cell, cell.getKingdom());
+                        }
                         cell.setKingdom(selectedPaintKingdom);
                         minX = Math.min(minX, x);
                         minY = Math.min(minY, y);
@@ -1335,5 +1440,29 @@ public class MainPresenter {
         if (changed) {
             updateImagePixels(minX, minY, maxX, maxY);
         }
+    }
+
+    private void undoLastPaintStroke() {
+        if (paintUndoStack.isEmpty()) return;
+        Map<MapCell, Kingdom> stroke = paintUndoStack.pop();
+        if (stroke.isEmpty()) return;
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (Map.Entry<MapCell, Kingdom> entry : stroke.entrySet()) {
+            MapCell cell = entry.getKey();
+            Kingdom oldKingdom = entry.getValue();
+            cell.setKingdom(oldKingdom);
+            
+            minX = Math.min(minX, cell.getX());
+            minY = Math.min(minY, cell.getY());
+            maxX = Math.max(maxX, cell.getX());
+            maxY = Math.max(maxY, cell.getY());
+        }
+
+        updateImagePixels(minX, minY, maxX, maxY);
     }
 }
