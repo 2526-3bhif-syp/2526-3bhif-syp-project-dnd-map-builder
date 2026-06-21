@@ -1253,7 +1253,7 @@ public class MainPresenter {
         if (view != null) {
             // Synchronize the sidebar list selection
             if (view.getPOIListPanel() != null) {
-                view.getPOIListPanel().selectPOI(poi);
+                view.getPOIListPanel().selectPOI(poi, !zoom);
             }
             
             if (zoom) {

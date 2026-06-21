@@ -120,22 +120,90 @@ public class POIListPanel extends VBox {
         if (pois == null) {
             poiListView.setItems(FXCollections.emptyObservableList());
         } else {
-            poiListView.setItems(FXCollections.observableArrayList(pois));
+            List<PointOfInterest> sortedPois = new java.util.ArrayList<>(pois);
+            sortedPois.sort((p1, p2) -> {
+                String t1 = p1.getType() != null ? p1.getType().toString() : "";
+                String t2 = p2.getType() != null ? p2.getType().toString() : "";
+                int typeComp = t1.compareTo(t2);
+                if (typeComp != 0) {
+                    return typeComp;
+                }
+                String n1 = p1.getName() != null ? p1.getName() : "";
+                String n2 = p2.getName() != null ? p2.getName() : "";
+                return compareNatural(n1, n2);
+            });
+            poiListView.setItems(FXCollections.observableArrayList(sortedPois));
         }
+    }
+
+    public void selectPOI(PointOfInterest poi) {
+        selectPOI(poi, false);
     }
 
     /**
      * Programmatically selects a POI in the list view.
      * 
      * @param poi The POI to select, or null to clear selection
+     * @param scrollTo Whether to scroll the selected POI into view
      */
-    public void selectPOI(PointOfInterest poi) {
+    public void selectPOI(PointOfInterest poi, boolean scrollTo) {
         if (poi == null) {
             poiListView.getSelectionModel().clearSelection();
         } else {
             poiListView.getSelectionModel().select(poi);
-            poiListView.scrollTo(poi);
+            if (scrollTo) {
+                poiListView.scrollTo(poi);
+            }
         }
+    }
+
+    /**
+     * Performs a natural alphanumeric comparison between two strings.
+     * 
+     * @param s1 First string
+     * @param s2 Second string
+     * @return comparison result
+     */
+    private static int compareNatural(String s1, String s2) {
+        int len1 = s1.length();
+        int len2 = s2.length();
+        int i = 0, j = 0;
+        while (i < len1 && j < len2) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(j);
+            if (Character.isDigit(c1) && Character.isDigit(c2)) {
+                int start1 = i;
+                while (i < len1 && Character.isDigit(s1.charAt(i))) {
+                    i++;
+                }
+                int start2 = j;
+                while (j < len2 && Character.isDigit(s2.charAt(j))) {
+                    j++;
+                }
+                String numStr1 = s1.substring(start1, i);
+                String numStr2 = s2.substring(start2, j);
+                try {
+                    long n1 = Long.parseLong(numStr1);
+                    long n2 = Long.parseLong(numStr2);
+                    int comp = Long.compare(n1, n2);
+                    if (comp != 0) {
+                        return comp;
+                    }
+                } catch (NumberFormatException e) {
+                    int comp = numStr1.compareTo(numStr2);
+                    if (comp != 0) {
+                        return comp;
+                    }
+                }
+            } else {
+                if (c1 != c2) {
+                    return Character.compare(c1, c2);
+                }
+                i++;
+                j++;
+            }
+        }
+        return Integer.compare(len1 - i, len2 - j);
     }
     
     /**

@@ -331,4 +331,5 @@
 }
 .list-view .list-cell:filled:selected .label {
     -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
 }
