@@ -578,12 +578,19 @@ public class MainPresenter {
                 model.generateMap(seed, size, octaves, scale, falloff, waterLevel, tempBias, rainBias,
                                   enableRivers, enableLakes, riverDensity, lakeSize, minLakeArea,
                                   kingdomCount, lloydPasses,
-                                  dungeonDensity, ruinCastleDensity, settlementDensity);
+                                  dungeonDensity, ruinCastleDensity, settlementDensity,
+                                  (fraction, stage) -> {
+                                      updateProgress(fraction, 1.0);
+                                      updateMessage(stage + "…");
+                                  });
                 return null;
             }
         };
 
+        showLoading(task);
+
         task.setOnSucceeded(e -> {
+            hideLoading();
             paintUndoStack.clear();
             currentStrokeChanges = null;
             // Invalidate all cached LOD grids — they belong to the old map
@@ -605,7 +612,21 @@ public class MainPresenter {
             
             renderMap();
         });
+        task.setOnFailed(e -> hideLoading());
         new Thread(task).start();
+    }
+
+    /** Shows the loading overlay and binds the progress bar/label to the running task. */
+    private void showLoading(Task<?> task) {
+        view.getLoadingProgressBar().progressProperty().bind(task.progressProperty());
+        view.getLoadingLabel().textProperty().bind(task.messageProperty());
+        view.getLoadingOverlay().setVisible(true);
+    }
+
+    private void hideLoading() {
+        view.getLoadingProgressBar().progressProperty().unbind();
+        view.getLoadingLabel().textProperty().unbind();
+        view.getLoadingOverlay().setVisible(false);
     }
 
     private void onZoom(double factor, double mouseX, double mouseY) {
