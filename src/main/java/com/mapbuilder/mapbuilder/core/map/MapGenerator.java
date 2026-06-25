@@ -6,9 +6,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MapGenerator {
-    
+
+    /** Reports generation progress as a fraction [0,1] with a human-readable stage label. */
+    public interface ProgressListener {
+        void onProgress(double fraction, String stage);
+    }
+
+    private static final String[] PASS_LABELS = {
+        "Generating terrain",
+        "Carving rivers & lakes",
+        "Forming kingdoms",
+        "Placing points of interest"
+    };
+
     private final List<MapGenerationPass> passes = new ArrayList<>();
-    
+
     private GenerationParameters lastParams = null;
     private MapGrid lastGrid = null;
 
@@ -21,23 +33,29 @@ public class MapGenerator {
 
     public void generate(MapGrid grid, int seed, int octaves, float scale, double falloff, double waterLevel, double temperatureBias, double rainfallBias,
                          boolean enableRivers, boolean enableLakes, double riverDensityPercent, double lakeSizePercent, int customMinLakeArea,
-                         int kingdomCount, int lloydPasses, double dungeonDensity, double ruinCastleDensity, double settlementDensity) {
-        
+                         int kingdomCount, int lloydPasses, double dungeonDensity, double ruinCastleDensity, double settlementDensity,
+                         ProgressListener progress) {
+
         GenerationParameters params = new GenerationParameters(
             seed, octaves, scale, falloff, waterLevel, temperatureBias, rainfallBias,
             enableRivers, enableLakes, riverDensityPercent, lakeSizePercent, customMinLakeArea,
             kingdomCount, lloydPasses, dungeonDensity, ruinCastleDensity, settlementDensity
         );
-        
+
         int startPass = 0;
         if (lastParams != null && lastGrid == grid) {
             startPass = determineStartingPass(lastParams, params);
         }
-        
+
+        int total = passes.size() - startPass;
         for (int i = startPass; i < passes.size(); i++) {
+            if (progress != null) {
+                progress.onProgress((double) (i - startPass) / total, PASS_LABELS[i]);
+            }
             passes.get(i).execute(grid, params);
         }
-        
+        if (progress != null) progress.onProgress(1.0, "Rendering map");
+
         lastParams = params;
         lastGrid = grid;
     }

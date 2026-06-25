@@ -25,6 +25,21 @@
     -fx-background-color: #ffffff;
 }
 
+/* Map generation loading bar */
+.map-loading-bar {
+    -fx-accent: #4fc3f7;
+}
+.map-loading-bar > .track {
+    -fx-background-color: #3c3f41;
+    -fx-background-radius: 4;
+}
+.map-loading-bar > .bar {
+    -fx-background-color: #4fc3f7;
+    -fx-background-radius: 4;
+    -fx-background-insets: 0;
+    -fx-padding: 4;
+}
+
 .text-field {
     -fx-background-color: #3c3f41;
     -fx-text-fill: #ffffff;

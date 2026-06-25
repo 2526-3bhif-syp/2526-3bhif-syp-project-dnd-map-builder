@@ -45,6 +45,9 @@ public class MainView extends AnchorPane {
     private Canvas poiCanvas;
     private Pane canvasContainer;
     private Group canvasGroup;
+    private javafx.scene.layout.StackPane loadingOverlay;
+    private javafx.scene.control.ProgressBar loadingProgressBar;
+    private Label loadingLabel;
     private double mouseX = 0;
     private double mouseY = 0;
     private TextField seedField;
@@ -123,7 +126,9 @@ public class MainView extends AnchorPane {
 
         canvasGroup = new Group(canvas, poiCanvas);
         canvasContainer.getChildren().add(canvasGroup);
-        
+
+        setupLoadingOverlay();
+
         AnchorPane.setTopAnchor(canvasContainer, 0.0);
         AnchorPane.setBottomAnchor(canvasContainer, 0.0);
         AnchorPane.setLeftAnchor(canvasContainer, 0.0);
@@ -141,6 +146,33 @@ public class MainView extends AnchorPane {
             mouseY = event.getY();
         });
         // Scroll/drag handlers are set by MainPresenter via getCanvasContainer()
+    }
+
+    private void setupLoadingOverlay() {
+        loadingProgressBar = new javafx.scene.control.ProgressBar(0);
+        loadingProgressBar.setPrefWidth(260);
+        loadingProgressBar.setPrefHeight(18);
+        loadingProgressBar.setMaxWidth(Double.MAX_VALUE);
+        loadingProgressBar.getStyleClass().add("map-loading-bar");
+
+        loadingLabel = new Label("Generating map…");
+        loadingLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+        VBox box = new VBox(12, loadingLabel, loadingProgressBar);
+        box.setAlignment(Pos.CENTER);
+        box.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+        box.setPadding(new Insets(24, 32, 24, 32));
+        box.setStyle("-fx-background-color: rgba(30,30,30,0.92); -fx-background-radius: 10; "
+                + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 12, 0, 0, 4);");
+
+        loadingOverlay = new javafx.scene.layout.StackPane(box);
+        loadingOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.12);");
+        loadingOverlay.setVisible(false);
+        // Fill the container so the spinner stays centred and input is blocked while generating
+        loadingOverlay.prefWidthProperty().bind(canvasContainer.widthProperty());
+        loadingOverlay.prefHeightProperty().bind(canvasContainer.heightProperty());
+
+        canvasContainer.getChildren().add(loadingOverlay);
     }
 
     private ScrollPane setupLeftPanel() {
@@ -692,6 +724,9 @@ public class MainView extends AnchorPane {
 
     public Canvas getCanvas() { return canvas; }
     public Pane getCanvasContainer() { return canvasContainer; }
+    public javafx.scene.layout.StackPane getLoadingOverlay() { return loadingOverlay; }
+    public javafx.scene.control.ProgressBar getLoadingProgressBar() { return loadingProgressBar; }
+    public Label getLoadingLabel() { return loadingLabel; }
     public Group getCanvasGroup() { return canvasGroup; }
     public Canvas getPoiCanvas() { return poiCanvas; }
     public double getMouseX() { return mouseX; }
